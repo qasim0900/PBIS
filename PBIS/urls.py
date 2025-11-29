@@ -1,0 +1,34 @@
+from django.contrib import admin
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+
+from counts.views import CountEntryViewSet, CountSheetViewSet
+from inventory.views import CatalogItemViewSet
+from locations.views import LocationOverrideViewSet, LocationViewSet
+from reports.views import ReportArchiveViewSet
+from users.views import CurrentUserView
+
+# -----------------------------------
+# :: URL Patterns
+# -----------------------------------
+
+"""
+Define URL routing for the project
+"""
+
+router = DefaultRouter()
+router.register(r'catalog/items', CatalogItemViewSet, basename='catalog-item')
+router.register(r'locations', LocationViewSet, basename='location')
+router.register(r'location-overrides', LocationOverrideViewSet,
+                basename='location-override')
+router.register(r'counts/sheets', CountSheetViewSet, basename='count-sheet')
+router.register(r'counts/entries', CountEntryViewSet, basename='count-entry')
+router.register(r'reports/archives', ReportArchiveViewSet,
+                basename='report-archive')
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/auth/', include('users.urls')),
+    path('api/', include(router.urls)),
+    path('api/reports/', include('reports.urls')),
+]
