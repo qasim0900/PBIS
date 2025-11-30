@@ -67,16 +67,13 @@ Define allowed domains for the project
 """
 
 try:
-    ALLOWED_HOSTS = ["*"]
+    ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost").split(",")]
 
-    CORS_ALLOWED_ORIGINS = [
-        "http://localhost:5000",
-    ]
+    CORS_ALLOWED_ORIGINS = [f"http://{host}" for host in ALLOWED_HOSTS]
+    CORS_ALLOW_ALL_ORIGINS = False
 
-    CORS_ALLOW_ALL_ORIGINS = True
 except Exception as e:
     logging.error(f"ALLOWED_HOSTS initialization failed: {e}")
-
 
 # -----------------------------------
 # :: INSTALLED_APPS
