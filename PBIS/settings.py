@@ -73,7 +73,7 @@ try:
         "http://localhost:5000",
     ]
 
-    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOW_ALL_ORIGINS = True
 except Exception as e:
     logging.error(f"ALLOWED_HOSTS initialization failed: {e}")
 
@@ -161,6 +161,7 @@ try:
     MIDDLEWARE = [
         "corsheaders.middleware.CorsMiddleware",
         'django.middleware.security.SecurityMiddleware',
+        'whitenoise.middleware.WhiteNoiseMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
         'django.middleware.csrf.CsrfViewMiddleware',
@@ -198,7 +199,7 @@ try:
     TEMPLATES = [
         {
             'BACKEND': 'django.template.backends.django.DjangoTemplates',
-            'DIRS': [],
+            'DIRS': [BASE_DIR / 'frontend' / 'dist'],
             'APP_DIRS': True,
             'OPTIONS': {
                 'context_processors': [
@@ -336,7 +337,14 @@ Define URL prefix for static files
 """
 
 try:
-    STATIC_URL = 'static/'
+    STATIC_URL = '/static/'
+    STATIC_ROOT = BASE_DIR / 'staticfiles'
+    
+    frontend_dist = BASE_DIR / 'frontend' / 'dist'
+    STATICFILES_DIRS = [frontend_dist] if frontend_dist.exists() else []
+    
+    if not DEBUG:
+        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 except Exception as e:
     logging.error(f"STATIC_URL initialization failed: {e}")
 
