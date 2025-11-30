@@ -42,9 +42,18 @@ const CountsView = () => {
   const dispatch = useDispatch();
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState('');
+  // Range support
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+  const [sheetsInRange, setSheetsInRange] = useState([]);
   const [sheet, setSheet] = useState(null);
   const [entries, setEntries] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrev, setHasPrev] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -66,38 +75,67 @@ const CountsView = () => {
     fetchLocations();
   }, [fetchLocations]);
 
-  const fetchSheet = useCallback(async () => {
-    if (!selectedLocation || !selectedDate) return;
-    setLoading(true);
+  const fetchEntries = useCallback(async (sheetId, page = 1) => {
     try {
-      const response = await countsAPI.ensureSheet(selectedLocation, selectedDate);
-      setSheet(response.data);
-      fetchEntries(response.data.id);
+      const response = await countsAPI.getEntries(sheetId, page, pageSize);
+      setEntries(response.data.results || response.data || []);
+      setTotalEntries(response.data.count || 0);
+      setHasNext(Boolean(response.data.next));
+      setHasPrev(Boolean(response.data.previous));
     } catch (error) {
-      console.error('Failed to fetch sheet:', error);
-      setSheet(null);
-      setEntries([]);
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch entries:', error);
     }
-  }, [selectedLocation, selectedDate]);
+  }, []);
+
+const fetchSheet = useCallback(async () => {
+  if (!selectedLocation || !selectedDate) return;
+  setLoading(true);
+  try {
+    const response = await countsAPI.ensureSheet(selectedLocation, selectedDate);
+    setSheet(response.data);
+      setPage(1);
+      fetchEntries(response.data.id, 1);
+  } catch (error) {
+    console.error('Failed to load sheet:', error);
+    dispatch(showNotification({
+      message: error.response?.data?.detail || 'Failed to load count sheet',
+      type: 'error'
+    }));
+    setSheet(null);
+    setEntries([]);
+  } finally {
+    setLoading(false);
+  }
+  }, [selectedLocation, selectedDate, dispatch, fetchEntries]);
 
   useEffect(() => {
     fetchSheet();
   }, [fetchSheet]);
 
-
-
-
-
-  const fetchEntries = useCallback(async (sheetId) => {
-    try {
-      const response = await countsAPI.getEntries(sheetId);
-      setEntries(response.data.results || response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch entries:', error);
+  useEffect(() => {
+    // whenever page changes, fetch entries for current sheet
+    if (sheet && sheet.id) {
+      fetchEntries(sheet.id, page);
     }
-  }, []);
+  }, [page, sheet, fetchEntries]);
+
+const fetchSheetsInRange = useCallback(async () => {
+  if (!selectedLocation || !rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
+  
+  setLoading(true);
+  try {
+    const response = await countsAPI.getSheetsInRange(selectedLocation, rangeStart, rangeEnd);
+    setSheetsInRange(response.data.results || []);
+  } catch (error) {
+    console.error('Failed to fetch sheets in range:', error);
+    dispatch(showNotification({ message: 'No sheets found in this range', type: 'info' }));
+    setSheetsInRange([]);
+  } finally {
+    setLoading(false);
+  }
+}, [selectedLocation, rangeStart, rangeEnd, dispatch]);
+
+
 
   const handleUpdateEntry = async (entryId, field, value) => {
     try {
@@ -166,17 +204,22 @@ const CountsView = () => {
         <TextField
           type="date"
           size="small"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          sx={{ minWidth: 180 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <CalendarToday color="action" fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
+          value={rangeStart}
+          onChange={(e) => setRangeStart(e.target.value)}
+          sx={{ minWidth: 200 }}
         />
+
+        {/* Range end */}
+        <TextField
+          type="date"
+          size="small"
+          value={rangeEnd}
+          onChange={(e) => setRangeEnd(e.target.value)}
+          sx={{ minWidth: 200 }}
+        />
+
+        <Button sx={{ ml: 2 }} variant="outlined" onClick={fetchSheetsInRange} disabled={!rangeStart || !rangeEnd || !selectedLocation || rangeStart > rangeEnd}>Fetch Range</Button>
+        <Button sx={{ ml: 1 }} variant="text" onClick={() => { setRangeStart(''); setRangeEnd(''); setSheetsInRange([]); }}>Clear Range</Button>
       </Header>
 
       {loading ? (
@@ -337,7 +380,56 @@ const CountsView = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+              {/* Pagination controls */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  Showing {entries.length > 0 ? (page - 1) * pageSize + 1 : 0} - {Math.min(page * pageSize, totalEntries)} of {totalEntries}
+                </Typography>
+                <Box>
+                  <Button variant="outlined" size="small" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!hasPrev} sx={{ mr: 1 }}>
+                    Previous
+                  </Button>
+                  <Button variant="outlined" size="small" onClick={() => setPage((p) => p + 1)} disabled={!hasNext}>
+                    Next
+                  </Button>
+                </Box>
+              </Box>
             </Card>
+
+            {/* If user fetched a range, show sheets list */}
+            {sheetsInRange.length > 0 && (
+              <Card sx={{ mt: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Sheets in Range ({sheetsInRange.length})</Typography>
+                  <TableContainer>
+                    <Table>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Date</TableCell>
+                          <TableCell>Status</TableCell>
+                          <TableCell align="center">Total Items</TableCell>
+                          <TableCell align="right">Actions</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {sheetsInRange.map((s) => (
+                          <TableRow key={s.id} hover>
+                            <TableCell>{s.count_date || s.created_at || 'N/A'}</TableCell>
+                            <TableCell sx={{ textTransform: 'capitalize' }}>{s.status}</TableCell>
+                            <TableCell align="center">{s.entry_count || s.total_entries || (s.entries ? s.entries.length : '-')}</TableCell>
+                            <TableCell align="right">
+                              <Button size="small" onClick={() => { setSheet(s); fetchEntries(s.id); }}>
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </Card>
+            )}
           </Box>
         </Fade>
       ) : (

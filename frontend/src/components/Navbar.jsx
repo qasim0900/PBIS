@@ -1,4 +1,3 @@
-// removed unused React namespace import — JSX runtime automatic with Vite
 import {
   AppBar,
   Box,

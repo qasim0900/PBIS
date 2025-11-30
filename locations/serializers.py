@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from .models import Location, LocationOverride
 from inventory.serializers import CatalogItemSerializer
-
-
+from rest_framework.validators import UniqueTogetherValidator
+from inventory.models import CatalogItem
 # -----------------------------------
 # :: Location Serializer Class
 # -----------------------------------
@@ -25,7 +25,7 @@ class LocationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = fields
+        read_only_fields = ("id", "created_at", "updated_at")
 
 
 # -----------------------------------
@@ -39,48 +39,57 @@ handling write-only IDs and providing a readable frequency display.
 
 
 class LocationOverrideSerializer(serializers.ModelSerializer):
-    item = CatalogItemSerializer(read_only=True)
-    item_id = serializers.PrimaryKeyRelatedField(
-        source="item",
-        queryset=LocationOverride._meta.get_field(
-            "item").remote_field.model.objects.active(),
-        write_only=True,
-    )
     location_id = serializers.PrimaryKeyRelatedField(
-        source="location",
-        queryset=Location.objects.filter(is_active=True),
-        write_only=True,
+        queryset=Location.objects.all(),
+        write_only=True
     )
-    frequency_display = serializers.CharField(
-        source="get_frequency_display", read_only=True)
+    item_id = serializers.PrimaryKeyRelatedField(
+        queryset=CatalogItem.objects.all(),
+        write_only=True
+    )
 
-    # -----------------------------------
-    # :: Meta Class
-    # -----------------------------------
-
-    """
-    Defines the LocationOverrideSerializer metadata, specifying fields to include and which ones are read-only.
-    """
+    # Related fields for read
+    location_name = serializers.CharField(source="location.name", read_only=True)
+    item_name = serializers.CharField(source="item.name", read_only=True)
 
     class Meta:
         model = LocationOverride
-        fields = (
+        fields = [
             "id",
-            "location",
             "location_id",
-            "item",
+            "location_name",   # Added
             "item_id",
+            "item_name",       # Added
             "par_level",
             "order_point",
             "frequency",
-            "frequency_display",
             "storage_location",
             "min_order_qty",
             "is_active",
-            "notes",
-            "display_order",
-            "created_at",
-            "updated_at",
+        ]
+
+    def validate(self, data):
+        par = data.get("par_level")
+        op = data.get("order_point")
+        if op and par and op > par:
+            raise serializers.ValidationError(
+                "Order point cannot exceed par level."
+            )
+        return data
+
+    def create(self, validated_data):
+        location = validated_data.pop("location_id")
+        item = validated_data.pop("item_id")
+        obj, created = LocationOverride.objects.update_or_create(
+            location=location,
+            item=item,
+            defaults=validated_data
         )
-        read_only_fields = ("id", "location", "item",
-                            "frequency_display", "created_at", "updated_at")
+        return obj
+
+    def update(self, instance, validated_data):
+        if "location_id" in validated_data:
+            instance.location = validated_data.pop("location_id")
+        if "item_id" in validated_data:
+            instance.item = validated_data.pop("item_id")
+        return super().update(instance, validated_data)

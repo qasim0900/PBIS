@@ -42,7 +42,6 @@ const Login = () => {
   const { loading, error, isAuthenticated } = useSelector(selectAuth);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     if (isAuthenticated) {

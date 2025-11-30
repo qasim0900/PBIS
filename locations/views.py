@@ -17,13 +17,9 @@ Exposes active locations. Staff only see assigned locations.
 """
 
 
-class LocationViewSet(viewsets.ReadOnlyModelViewSet):
+class LocationViewSet(viewsets.ModelViewSet):
     serializer_class = LocationSerializer
     permission_classes = (IsAuthenticated,)
-    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    search_fields = ("name", "code")
-    ordering_fields = ("name", "code")
-    ordering = ("name",)
 
     # -----------------------------------
     # :: Get Query Set Function
@@ -119,9 +115,15 @@ class LocationOverrideViewSet(viewsets.ModelViewSet):
     """
 
     def perform_create(self, serializer):
-        location = serializer.validated_data["location"]
+        location = serializer.validated_data.pop("location_id")
+        item = serializer.validated_data.pop("item_id")
+
+        obj, created = LocationOverride.objects.update_or_create(
+            location=location,
+            item=item,
+            defaults=serializer.validated_data
+        )
         self._ensure_location_access(location)
-        serializer.save()
 
     # -----------------------------------
     # :: Perform update Function

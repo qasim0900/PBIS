@@ -187,17 +187,17 @@ const LowStockView = () => {
                             </Box>
                             <Box>
                               <Typography variant="subtitle2" fontWeight={600}>
-                                {item.catalog_item?.name || 'Unknown'}
+                                {item.item?.name || 'Unknown'}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                {item.catalog_item?.category || 'General'}
+                                {item.item?.category || 'General'}
                               </Typography>
                             </Box>
                           </Box>
                         </TableCell>
                         <TableCell>
                           <Chip 
-                            label={item.sheet?.location_name || 'N/A'} 
+                            label={item?.location || 'N/A'} 
                             size="small" 
                             variant="outlined"
                           />
@@ -206,14 +206,14 @@ const LowStockView = () => {
                           <Typography 
                             variant="h6" 
                             fontWeight={600}
-                            color={item.on_hand_quantity < 5 ? 'error' : 'text.primary'}
+                            color={item.item?.on_hand_quantity < 5 ? 'error' : 'text.primary'}
                           >
                             {item.on_hand_quantity}
                           </Typography>
                         </TableCell>
                         <TableCell align="center">
                           <Typography variant="body1">
-                            {item.override?.par_level || 'N/A'}
+                            {item.item?.par_level || 'N/A'}
                           </Typography>
                         </TableCell>
                         <TableCell align="center">

@@ -50,40 +50,19 @@ allows updating on_hand_quantity and notes, and tracks who updated the entry.
 
 class CountEntrySerializer(serializers.ModelSerializer):
     item = CatalogItemSerializer(read_only=True)
-    location_id = serializers.IntegerField(
-        source="sheet.location_id", read_only=True)
+    
+    # YE DO LINES ADD KAR DO – LOCATION NAME + LOCATION OBJECT
+    location = serializers.CharField(source="sheet.location.name", read_only=True)
+    location_id = serializers.IntegerField(source="sheet.location_id", read_only=True)
+    
     sheet_id = serializers.IntegerField(read_only=True)
-    frequency = serializers.CharField(
-        source="override.frequency", read_only=True)
-    frequency_display = serializers.CharField(
-        source="override.get_frequency_display", read_only=True)
-    par_level = serializers.DecimalField(
-        max_digits=9, decimal_places=2, source="override.par_level", read_only=True)
-    order_point = serializers.DecimalField(
-        max_digits=9,
-        decimal_places=2,
-        source="override.order_point",
-        read_only=True,
-    )
-    storage_location = serializers.CharField(
-        source="override.storage_location", read_only=True)
-    min_order_qty = serializers.DecimalField(
-        max_digits=9,
-        decimal_places=2,
-        source="override.min_order_qty",
-        read_only=True,
-    )
-    highlight_display = serializers.CharField(
-        source="get_highlight_state_display", read_only=True)
-
-    # -----------------------------------
-    # :: Meta Class
-    # -----------------------------------
-
-    """
-    Defines the serializer for CountEntry with mostly read-only fields, 
-    allows updating on_hand_quantity and notes, and records who made the update.
-    """
+    frequency = serializers.CharField(source="override.frequency", read_only=True)
+    frequency_display = serializers.CharField(source="override.get_frequency_display", read_only=True)
+    par_level = serializers.DecimalField(max_digits=9, decimal_places=2, source="override.par_level", read_only=True)
+    order_point = serializers.DecimalField(max_digits=9, decimal_places=2, source="override.order_point", read_only=True)
+    storage_location = serializers.CharField(source="override.storage_location", read_only=True)
+    min_order_qty = serializers.DecimalField(max_digits=9, decimal_places=2, source="override.min_order_qty", read_only=True)
+    highlight_display = serializers.CharField(source="get_highlight_state_display", read_only=True)
 
     class Meta:
         model = CountEntry
@@ -91,6 +70,7 @@ class CountEntrySerializer(serializers.ModelSerializer):
             "id",
             "sheet_id",
             "location_id",
+            "location",           # YE ADD KIYA
             "item",
             "par_level",
             "order_point",
@@ -111,6 +91,7 @@ class CountEntrySerializer(serializers.ModelSerializer):
             "id",
             "sheet_id",
             "location_id",
+            "location",           # YE BHI ADD KIYA
             "item",
             "par_level",
             "order_point",
@@ -125,10 +106,6 @@ class CountEntrySerializer(serializers.ModelSerializer):
             "updated_at",
             "updated_by",
         )
-        extra_kwargs = {
-            "on_hand_quantity": {"required": False},
-            "notes": {"required": False},
-        }
 
     # -----------------------------------
     # :: Update Function

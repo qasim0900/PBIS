@@ -70,7 +70,7 @@ api.interceptors.response.use(
 
       // If refresh already happening, queue the request
       if (isRefreshing) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
           subscribeTokenRefresh((token) => {
             originalRequest.headers = originalRequest.headers ?? {};
             originalRequest.headers.Authorization = `Bearer ${token}`;
@@ -92,7 +92,7 @@ api.interceptors.response.use(
         _refreshListeners.forEach((cb) => {
           try {
             cb(response.data.access);
-          } catch (e) {
+          } catch {
             // ignore callback errors
           }
         });
@@ -128,11 +128,11 @@ export const authAPI = {
 
 // ---------------------- USERS ----------------------
 export const usersAPI = {
-  getAll: () => api.get('/users-list/'),
-  register: (data) => api.post('/users/register/', data),
-  getOne: (id) => api.get(`/users/${id}/`),
-  update: (id, data) => api.put(`/users/${id}/update/`, data),
-  assignLocations: (id, data) => api.post(`/users/${id}/assign-locations/`, data),
+  getAll: () => api.get('/auth/users-list/'),
+  register: (data) => api.post('/auth/register/', data),
+  getOne: (id) => api.get(`/auth/${id}/`),
+  update: (id, data) => api.put(`/auth/${id}/update/`, data),
+  assignLocations: (id, data) => api.post(`/auth/${id}/assign-locations/`, data),
 };
 
 // ---------------------- LOCATIONS ----------------------
@@ -178,9 +178,9 @@ export const countsAPI = {
   updateSheet: (id, data) => api.put(`/counts/sheets/${id}/`, data),
   ensureSheet: (locationId, date) => api.get('/counts/sheets/ensure_sheet/', { params: { location: locationId, date } }),
   submitSheet: (id) => api.post(`/counts/sheets/${id}/submit/`),
-  getEntries: (sheetId) => api.get('/counts/entries/', { params: { sheet: sheetId } }),
+  getEntries: (sheetId, page = 1, page_size = 10) => api.get('/counts/entries/', { params: { sheet: sheetId, page, page_size } }),
   updateEntry: (id, data) => api.patch(`/counts/entries/${id}/`, data),
-  getLowStock: () => api.get('/counts/entries/low_stock/'),
+  getLowStock: (includeNear = false) => api.get('/counts/entries/low-stock/', { params: { include_near: includeNear ? 1 : undefined } }),
 };
 
 // ---------------------- REPORTS ----------------------

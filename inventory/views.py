@@ -5,7 +5,7 @@ from rest_framework import filters, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
@@ -21,7 +21,7 @@ class CatalogItemViewSet(viewsets.ModelViewSet):
     search_fields = ("name", "category", "notes")
     ordering_fields = ("name", "category", "updated_at")
     ordering = ("name",)
-    parser_classes = (MultiPartParser, FormParser)
+    parser_classes = (FormParser,MultiPartParser, JSONParser)
 
     def get_queryset(self):
         queryset = CatalogItem.objects.all()

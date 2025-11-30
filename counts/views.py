@@ -5,6 +5,7 @@ from .models import CountEntry, CountSheet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import filters, status, viewsets
+from .pagination import TenPerPagePagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from users.permissions import ManagersOnly, StaffCanSubmitCounts, is_manager
@@ -139,6 +140,13 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
         count_date = params.get("count_date")
         if count_date:
             queryset = queryset.filter(count_date=count_date)
+        # Support date range filtering via start_date and end_date query params
+        start_date = params.get("start_date")
+        if start_date:
+            queryset = queryset.filter(count_date__gte=start_date)
+        end_date = params.get("end_date")
+        if end_date:
+            queryset = queryset.filter(count_date__lte=end_date)
         return queryset
 
     # -----------------------------------
@@ -302,6 +310,7 @@ class CountEntryViewSet(LocationScopedMixin, viewsets.ModelViewSet):
     ordering_fields = (
         "item__name", "override__display_order", "sheet__count_date")
     ordering = ("override__display_order",)
+    pagination_class = TenPerPagePagination
     queryset = CountEntry.objects.select_related(
         "sheet",
         "sheet__location",

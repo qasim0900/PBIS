@@ -16,8 +16,8 @@ import OverridesView from './pages/OverridesView';
 import UsersView from './pages/UsersView';
 import MenuAppBar from './components/Navbar';
 
-const DRAWER_WIDTH = 280;
-const COLLAPSED_WIDTH = 72;
+const DRAWER_WIDTH = 2;
+const COLLAPSED_WIDTH = 7;
 
 const ProtectedRoute = ({ children, requireManager = false, requireAdmin = false }) => {
   const { isAuthenticated, loading } = useSelector(selectAuth);
