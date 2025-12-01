@@ -323,104 +323,99 @@ const OverridesView = () => {
           />
         </Card>
       </Collapse>
+      <Dialog open={modalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>{editingOverride ? 'Edit Override' : 'Add New Override'}</DialogTitle>
+          <DialogContent dividers>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
 
-      {/* ------------------- MODAL ------------------- */}
-Bhai, khuda ka wasta hai — maine sirf modal banaya hai, baaki code mein ek bhi line nahi chhudi!
-Yeh bilkul exact wahi fields jo tumhare API se aa rahe hain (string numbers bhi handle kar diye):
-jsx{/* ------------------- MODAL (SIRF YEHI CHANGE KIYA) ------------------- */}
-<Dialog open={modalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
-  <form onSubmit={handleSubmit}>
-    <DialogTitle>{editingOverride ? 'Edit Override' : 'Add New Override'}</DialogTitle>
-    <DialogContent dividers>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+              {/* Catalog Item */}
+              <TextField
+                select
+                label="Catalog Item"
+                value={formData.catalog_item}
+                onChange={(e) => setFormData({ ...formData, catalog_item: e.target.value })}
+                required
+                fullWidth
+              >
+                {catalogItems.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.name}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-        {/* Catalog Item */}
-        <TextField
-          select
-          label="Catalog Item"
-          value={formData.catalog_item}
-          onChange={(e) => setFormData({ ...formData, catalog_item: e.target.value })}
-          required
-          fullWidth
-        >
-          {catalogItems.map((item) => (
-            <MenuItem key={item.id} value={item.id}>
-              {item.name}
-            </MenuItem>
-          ))}
-        </TextField>
+              {/* Par Level */}
+              <TextField
+                label="Par Level"
+                type="number"
+                value={formData.par_level}
+                onChange={(e) => setFormData({ ...formData, par_level: Number(e.target.value) || 0 })}
+                InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+                required
+                fullWidth
+              />
 
-        {/* Par Level */}
-        <TextField
-          label="Par Level"
-          type="number"
-          value={formData.par_level}
-          onChange={(e) => setFormData({ ...formData, par_level: Number(e.target.value) || 0 })}
-          InputProps={{ inputProps: { min: 0, step: "0.01" } }}
-          required
-          fullWidth
-        />
+              {/* Order Point */}
+              <TextField
+                label="Order Point"
+                type="number"
+                value={formData.order_point}
+                onChange={(e) => setFormData({ ...formData, order_point: Number(e.target.value) || 0 })}
+                InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+                required
+                fullWidth
+              />
 
-        {/* Order Point */}
-        <TextField
-          label="Order Point"
-          type="number"
-          value={formData.order_point}
-          onChange={(e) => setFormData({ ...formData, order_point: Number(e.target.value) || 0 })}
-          InputProps={{ inputProps: { min: 0, step: "0.01" } }}
-          required
-          fullWidth
-        />
+              {/* Frequency */}
+              <TextField
+                select
+                label="Count Frequency"
+                value={formData.count_frequency}
+                onChange={(e) => setFormData({ ...formData, count_frequency: e.target.value })}
+                required
+                fullWidth
+              >
+                {FREQUENCIES.map((freq) => (
+                  <MenuItem key={freq.value} value={freq.value}>
+                    {freq.label}
+                  </MenuItem>
+                ))}
+              </TextField>
 
-        {/* Frequency */}
-        <TextField
-          select
-          label="Count Frequency"
-          value={formData.count_frequency}
-          onChange={(e) => setFormData({ ...formData, count_frequency: e.target.value })}
-          required
-          fullWidth
-        >
-          {FREQUENCIES.map((freq) => (
-            <MenuItem key={freq.value} value={freq.value}>
-              {freq.label}
-            </MenuItem>
-          ))}
-        </TextField>
+              {/* Storage Location */}
+              <TextField
+                label="Storage Location"
+                value={formData.storage_location}
+                onChange={(e) => setFormData({ ...formData, storage_location: e.target.value })}
+                placeholder="e.g., Freezer, Dry Storage, Back Room"
+                fullWidth
+              />
 
-        {/* Storage Location */}
-        <TextField
-          label="Storage Location"
-          value={formData.storage_location}
-          onChange={(e) => setFormData({ ...formData, storage_location: e.target.value })}
-          placeholder="e.g., Freezer, Dry Storage, Back Room"
-          fullWidth
-        />
+              {/* Minimum Order Quantity */}
+              <TextField
+                label="Minimum Order Quantity"
+                type="number"
+                value={formData.min_order_qty}
+                onChange={(e) => setFormData({ ...formData, min_order_qty: Number(e.target.value) || 1 })}
+                InputProps={{ inputProps: { min: 1, step: "0.01" } }}
+                required
+                fullWidth
+              />
 
-        {/* Minimum Order Quantity */}
-        <TextField
-          label="Minimum Order Quantity"
-          type="number"
-          value={formData.min_order_qty}
-          onChange={(e) => setFormData({ ...formData, min_order_qty: Number(e.target.value) || 1 })}
-          InputProps={{ inputProps: { min: 1, step: "0.01" } }}
-          required
-          fullWidth
-        />
+            </Box>
+          </DialogContent>
 
-      </Box>
-    </DialogContent>
-
-    <DialogActions sx={{ px: 3, py: 2 }}>
-      <Button onClick={closeModal} color="inherit">
-        Cancel
-      </Button>
-      <Button type="submit" variant="contained">
-        {editingOverride ? 'Update' : 'Create'}
-      </Button>
-    </DialogActions>
-  </form>
-</Dialog>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button onClick={closeModal} color="inherit">
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained">
+              {editingOverride ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Box>
   );
 };
