@@ -35,10 +35,9 @@ class LocationViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if not user.is_authenticated:
             return queryset.none()
-        if user.is_superuser or getattr(user, "role", None) == UserRole.ADMIN:
+        if is_manager(user):  # superuser, admin, or manager
             return queryset
-        if getattr(user, "role", None) == UserRole.MANAGER:
-            return queryset
+        # For staff, only return locations assigned to them
         return queryset.filter(assigned_users=user)
 
 

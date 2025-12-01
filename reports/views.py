@@ -2,18 +2,17 @@ from rest_framework import filters, status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from users.models import UserRole
-from users.permissions import is_manager
-
+from django.http import HttpResponse
+import csv
 from locations.models import Location
 from .models import ReportArchive
 from .serializers import RecordExportSerializer, ReportArchiveSerializer
+from users.permissions import ManagersOnly, is_manager
 
 
 class ReportArchiveViewSet(viewsets.ModelViewSet):
     serializer_class = ReportArchiveSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated, ManagersOnly]  # ✅ Managers/Admins only
     http_method_names = ["get", "post", "head", "options"]
     filter_backends = (filters.OrderingFilter,)
     ordering_fields = ("count_date", "created_at", "location__name", "frequency")
@@ -27,15 +26,15 @@ class ReportArchiveViewSet(viewsets.ModelViewSet):
 
     def _restrict_queryset(self, queryset):
         user = self.request.user
-        if not user.is_authenticated:
-            return queryset.none()
-        if user.is_superuser or getattr(user, "role", None) == UserRole.ADMIN:
+        # Managers/admins see all records
+        if is_manager(user):
             return queryset
+        # Staff see only assigned locations
         assigned_ids = user.assigned_locations.values_list("id", flat=True)
         return queryset.filter(location_id__in=assigned_ids)
 
     def _validate_location_access(self, user, location: Location):
-        if user.is_superuser or getattr(user, "role", None) == UserRole.ADMIN:
+        if is_manager(user):
             return
         if user.assigned_locations.filter(pk=location.pk).exists():
             return
@@ -64,8 +63,6 @@ class ReportArchiveViewSet(viewsets.ModelViewSet):
         data = payload.validated_data
         location = data["location"]
         self._validate_location_access(request.user, location)
-        if not is_manager(request.user) and not request.user.assigned_locations.filter(pk=location.pk).exists():
-            raise PermissionDenied("Only assigned staff can record exports for this location.")
 
         sheet = data.get("sheet")
         export = ReportArchive.objects.create(
@@ -83,6 +80,42 @@ class ReportArchiveViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(export)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+
+def download_report_csv(request, archive_id):
+    try:
+        archive = ReportArchive.objects.get(id=archive_id)
+    except ReportArchive.DoesNotExist:
+        return HttpResponse("Report not found", status=404)
+
+    # Agar payload_snapshot mein actual data hai (recommended)
+    items = archive.payload_snapshot.get("items", [])
+
+    # Agar nahi hai to CountSheet se le lo
+    if not items and archive.sheet:
+        items = archive.sheet.entries.values(
+            'item__name', 'counted_quantity', 'quantity_to_order', 'storage_location'
+        )
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="PurpleBanana_{archive.location.name}_{archive.frequency}_{archive.count_date}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Item Name', 'Counted Qty', 'Par Level',
+                    'Qty to Order', 'Storage', 'Notes'])
+
+    for item in items:
+        writer.writerow([
+            item.get('item_name') or item.get('item__name'),
+            item.get('counted_quantity') or '',
+            item.get('par_level') or '',
+            item.get('quantity_to_order') or '',
+            item.get('storage_location') or '',
+            item.get('notes') or '',
+        ])
+
+    return response
 
 
 __all__ = ["ReportArchiveViewSet"]

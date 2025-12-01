@@ -8,63 +8,37 @@ import {
   TextField,
   MenuItem,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
   CircularProgress,
-  Alert,
-  IconButton,
   InputAdornment,
-  Skeleton,
-  Fade,
+  Collapse,
 } from '@mui/material';
-import {
-  Send,
-  Refresh,
-  CheckCircle,
-  Warning,
-  Error,
-  Inventory,
-  CalendarToday,
-  LocationOn,
-} from '@mui/icons-material';
+import { Send, LocationOn } from '@mui/icons-material';
 import Header from '../components/Header';
 import locationsAPI from '../services/locationsAPI';
 import countsAPI from '../services/countsAPI';
 import { showNotification } from '../store/slices/uiSlice';
+import Table from '../components/Table';
 
 const CountsView = () => {
   const dispatch = useDispatch();
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState('');
-  // Range support
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [rangeStart, setRangeStart] = useState('');
   const [rangeEnd, setRangeEnd] = useState('');
   const [sheetsInRange, setSheetsInRange] = useState([]);
   const [sheet, setSheet] = useState(null);
   const [entries, setEntries] = useState([]);
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
-  const [totalEntries, setTotalEntries] = useState(0);
-  const [hasNext, setHasNext] = useState(false);
-  const [hasPrev, setHasPrev] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  // Fetch Locations
   const fetchLocations = useCallback(async () => {
     try {
       const response = await locationsAPI.getAll();
       const locs = response.data.results || response.data || [];
       setLocations(locs);
-      if (locs.length > 0) {
-        setSelectedLocation(locs[0].id);
-      }
+      if (locs.length > 0) setSelectedLocation(locs[0].id);
     } catch (error) {
       console.error('Failed to fetch locations:', error);
       dispatch(showNotification({ message: 'Failed to fetch locations', type: 'error' }));
@@ -75,80 +49,57 @@ const CountsView = () => {
     fetchLocations();
   }, [fetchLocations]);
 
-  const fetchEntries = useCallback(async (sheetId, page = 1) => {
+  // Fetch Sheet & Entries
+  const fetchEntries = useCallback(async (sheetId) => {
     try {
-      const response = await countsAPI.getEntries(sheetId, page, pageSize);
+      const response = await countsAPI.getEntries(sheetId, 1, 1000);
       setEntries(response.data.results || response.data || []);
-      setTotalEntries(response.data.count || 0);
-      setHasNext(Boolean(response.data.next));
-      setHasPrev(Boolean(response.data.previous));
     } catch (error) {
       console.error('Failed to fetch entries:', error);
     }
   }, []);
 
-const fetchSheet = useCallback(async () => {
-  if (!selectedLocation || !selectedDate) return;
-  setLoading(true);
-  try {
-    const response = await countsAPI.ensureSheet(selectedLocation, selectedDate);
-    setSheet(response.data);
-      setPage(1);
-      fetchEntries(response.data.id, 1);
-  } catch (error) {
-    console.error('Failed to load sheet:', error);
-    dispatch(showNotification({
-      message: error.response?.data?.detail || 'Failed to load count sheet',
-      type: 'error'
-    }));
-    setSheet(null);
-    setEntries([]);
-  } finally {
-    setLoading(false);
-  }
+  const fetchSheet = useCallback(async () => {
+    if (!selectedLocation || !selectedDate) return;
+    setLoading(true);
+    try {
+      const response = await countsAPI.ensureSheet(selectedLocation, selectedDate);
+      setSheet(response.data);
+      fetchEntries(response.data.id);
+    } catch (error) {
+      console.error('Failed to load sheet:', error);
+      dispatch(showNotification({
+        message: error.response?.data?.detail || 'Failed to load count sheet',
+        type: 'error'
+      }));
+      setSheet(null);
+      setEntries([]);
+    } finally {
+      setLoading(false);
+    }
   }, [selectedLocation, selectedDate, dispatch, fetchEntries]);
 
   useEffect(() => {
     fetchSheet();
   }, [fetchSheet]);
 
-  useEffect(() => {
-    // whenever page changes, fetch entries for current sheet
-    if (sheet && sheet.id) {
-      fetchEntries(sheet.id, page);
-    }
-  }, [page, sheet, fetchEntries]);
-
-const fetchSheetsInRange = useCallback(async () => {
-  if (!selectedLocation || !rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
-  
-  setLoading(true);
-  try {
-    const response = await countsAPI.getSheetsInRange(selectedLocation, rangeStart, rangeEnd);
-    setSheetsInRange(response.data.results || []);
-  } catch (error) {
-    console.error('Failed to fetch sheets in range:', error);
-    dispatch(showNotification({ message: 'No sheets found in this range', type: 'info' }));
-    setSheetsInRange([]);
-  } finally {
-    setLoading(false);
-  }
-}, [selectedLocation, rangeStart, rangeEnd, dispatch]);
-
-
-
-  const handleUpdateEntry = async (entryId, field, value) => {
+  // Fetch Sheets in Range
+  const fetchSheetsInRange = useCallback(async () => {
+    if (!selectedLocation || !rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
+    setLoading(true);
     try {
-      await countsAPI.updateEntry(entryId, { [field]: value });
-      setEntries((prev) =>
-        prev.map((e) => (e.id === entryId ? { ...e, [field]: value } : e))
-      );
+      const response = await countsAPI.getSheetsInRange(selectedLocation, rangeStart, rangeEnd);
+      setSheetsInRange(response.data.results || []);
     } catch (error) {
-      console.error('Failed to update entry:', error);
-      dispatch(showNotification({ message: 'Failed to update entry', type: 'error' }));
+      console.error('Failed to fetch sheets in range:', error);
+      dispatch(showNotification({ message: 'No sheets found in this range', type: 'info' }));
+      setSheetsInRange([]);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [selectedLocation, rangeStart, rangeEnd, dispatch]);
 
+  // Submit Sheet
   const handleSubmit = async () => {
     if (!sheet) return;
     setSubmitting(true);
@@ -164,13 +115,30 @@ const fetchSheetsInRange = useCallback(async () => {
     }
   };
 
+  // Stock Status
   const getStockStatus = (onHand, par) => {
-    if (onHand === null || onHand === undefined) return null;
+    if (onHand === null || onHand === undefined) return { label: '-', color: 'gray' };
     const ratio = onHand / par;
-    if (ratio < 0.25) return { color: 'error', label: 'Critical', icon: <Error fontSize="small" /> };
-    if (ratio < 0.5) return { color: 'warning', label: 'Low', icon: <Warning fontSize="small" /> };
-    return { color: 'success', label: 'OK', icon: <CheckCircle fontSize="small" /> };
+    if (ratio < 0.25) return { label: 'Critical', color: 'red' };
+    if (ratio < 0.5) return { label: 'Low', color: 'orange' };
+    return { label: 'OK', color: 'green' };
   };
+
+  // Table Columns
+  const columns = [
+    { header: 'Item', accessor: 'item.name' },
+    { header: 'Category', accessor: 'item.category' },
+    { header: 'On Hand', accessor: 'on_hand_quantity' },
+    { header: 'Par Level', accessor: 'par_level' },
+    { header: 'To Order', accessor: 'calculated_qty_to_order' },
+    {
+      header: 'Status',
+      render: (row) => {
+        const status = getStockStatus(row.on_hand_quantity, row.par_level);
+        return <span className={`font-semibold`} style={{ color: status.color }}>{status.label}</span>;
+      },
+    },
+  ];
 
   return (
     <Box>
@@ -179,83 +147,145 @@ const fetchSheetsInRange = useCallback(async () => {
         subtitle="Track and manage your daily inventory counts"
         showRefresh
         onRefresh={fetchSheet}
+        sx={{
+          '& .MuiToolbar-root': {
+            flexDirection: 'column', // always stack main toolbar vertically
+            alignItems: 'stretch',
+            gap: 1,
+          }
+        }}
       >
-        <TextField
-          select
-          size="small"
-          value={selectedLocation}
-          onChange={(e) => setSelectedLocation(e.target.value)}
-          sx={{ minWidth: 200 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <LocationOn color="action" fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        >
-          {locations.map((loc) => (
-            <MenuItem key={loc.id} value={loc.id}>
-              {loc.name}
-            </MenuItem>
-          ))}
-        </TextField>
+        {/* Controls Container */}
+        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
 
-        <TextField
-          type="date"
-          size="small"
-          value={rangeStart}
-          onChange={(e) => setRangeStart(e.target.value)}
-          sx={{ minWidth: 200 }}
-        />
+          {/* Form Fields */}
+          <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row', md: 'row' },
+            gap: { xs: 1, sm: 1.5, md: 3 }, // more space on desktop
+            flexWrap: 'wrap',
+            alignItems: { xs: 'stretch', sm: 'center' },
+          }}>
 
-        {/* Range end */}
-        <TextField
-          type="date"
-          size="small"
-          value={rangeEnd}
-          onChange={(e) => setRangeEnd(e.target.value)}
-          sx={{ minWidth: 200 }}
-        />
+            {/* Location */}
+            <TextField
+              select
+              size="small"
+              value={selectedLocation || ''}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              SelectProps={{ displayEmpty: true }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <LocationOn fontSize="small" />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                width: {
+                  xs: '100%',
+                  sm: '25%',
+                  md: '25%', // slightly larger on desktop
+                },
+              }}
+            >
+              <MenuItem value="" disabled>Select Location</MenuItem>
+              {locations.map((loc) => (
+                <MenuItem key={loc.id} value={loc.id}>{loc.name}</MenuItem>
+              ))}
+            </TextField>
 
-        <Button sx={{ ml: 2 }} variant="outlined" onClick={fetchSheetsInRange} disabled={!rangeStart || !rangeEnd || !selectedLocation || rangeStart > rangeEnd}>Fetch Range</Button>
-        <Button sx={{ ml: 1 }} variant="text" onClick={() => { setRangeStart(''); setRangeEnd(''); setSheetsInRange([]); }}>Clear Range</Button>
+            {/* Start Date */}
+            <TextField
+              label="Start Date"
+              type="date"
+              size="small"
+              value={rangeStart}
+              onChange={(e) => setRangeStart(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                width: {
+                  xs: '100%',
+                  sm: 'calc(50% - 0.5rem)',
+                  md: '20%', // wider on desktop
+                }
+              }}
+            />
+
+            {/* End Date */}
+            <TextField
+              label="End Date"
+              type="date"
+              size="small"
+              value={rangeEnd}
+              onChange={(e) => setRangeEnd(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{
+                width: {
+                  xs: '100%',
+                  sm: 'calc(50% - 0.5rem)',
+                  md: '20%', // wider on desktop
+                }
+              }}
+            />
+
+            {/* Buttons */}
+            <Box sx={{
+              display: 'flex',
+              gap: { xs: 1, sm: 1.5, md: 2 }, // more space on desktop
+              width: { xs: '100%', sm: 'auto', md: 'auto' },
+            }}>
+              <Button
+                variant="contained"
+                onClick={fetchSheetsInRange}
+                disabled={!selectedLocation || !rangeStart || !rangeEnd || rangeStart > rangeEnd}
+                sx={{ py: 1.5, px: 3, fontSize: '1rem' }} // bigger buttons on desktop
+              >
+                Get
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  setRangeStart('');
+                  setRangeEnd('');
+                  setSheetsInRange([]);
+                }}
+                sx={{ py: 1.5, px: 3, fontSize: '1rem' }}
+              >
+                Clear
+              </Button>
+            </Box>
+
+          </Box>
+        </Box>
       </Header>
 
+
       {loading ? (
-        <Card>
-          <CardContent>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Skeleton key={i} variant="rectangular" height={60} sx={{ borderRadius: 2 }} />
-              ))}
-            </Box>
-          </CardContent>
+        <Card className="p-4">
+          <Typography>Loading...</Typography>
         </Card>
       ) : sheet ? (
-        <Fade in={true}>
+        <Collapse in={true}>
           <Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mb: 3 }}>
-              <Card sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: 'white' }}>
+            {/* Sheet Info */}
+            <Box className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+              <Card className="bg-purple-600 text-white">
                 <CardContent>
-                  <Typography variant="overline" sx={{ opacity: 0.8 }}>Status</Typography>
-                  <Typography variant="h5" fontWeight={600} sx={{ textTransform: 'capitalize' }}>
-                    {sheet.status}
-                  </Typography>
+                  <Typography variant="overline" className="opacity-80">Status</Typography>
+                  <Typography variant="h5" className="capitalize">{sheet.status}</Typography>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardContent>
                   <Typography variant="overline" color="text.secondary">Total Items</Typography>
-                  <Typography variant="h5" fontWeight={600} color="primary">
-                    {entries.length}
-                  </Typography>
+                  <Typography variant="h5" className="text-primary font-semibold">{entries.length}</Typography>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <CardContent className="flex justify-between items-center">
                   <Box>
                     <Typography variant="overline" color="text.secondary">Action</Typography>
                     <Typography variant="body2">
@@ -277,165 +307,42 @@ const fetchSheetsInRange = useCallback(async () => {
               </Card>
             </Box>
 
+            {/* Entries Table */}
             <Card>
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Item</TableCell>
-                      <TableCell>Pack Size</TableCell>
-                      <TableCell align="center">On Hand</TableCell>
-                      <TableCell align="center">Par Level</TableCell>
-                      <TableCell align="center">To Order</TableCell>
-                      <TableCell align="center">Status</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {entries.map((entry) => {
-                      const status = getStockStatus(entry.on_hand, entry.par_level || 10);
-                      return (
-                        <TableRow key={entry.id} hover>
-                          <TableCell>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                              <Box
-                                sx={{
-                                  width: 40,
-                                  height: 40,
-                                  borderRadius: 2,
-                                  backgroundColor: 'primary.light',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                }}
-                              >
-                                <Inventory sx={{ color: 'primary.main', fontSize: 20 }} />
-                              </Box>
-                              <Box>
-                                <Typography variant="subtitle2" fontWeight={600}>
-                                  {entry.item_name || entry.item?.name || 'Unknown Item'}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {entry.category || entry.item?.category || 'General'}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={entry.pack_size || entry.item?.pack_size || '1'}
-                              size="small"
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            <TextField
-                              type="number"
-                              size="small"
-                              value={entry.on_hand ?? ''}
-                              onChange={(e) => handleUpdateEntry(entry.id, 'on_hand', parseInt(e.target.value) || 0)}
-                              disabled={sheet.status === 'submitted'}
-                              sx={{ width: 80 }}
-                              inputProps={{ min: 0, style: { textAlign: 'center' } }}
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            <Typography variant="body2" fontWeight={500}>
-                              {entry.par_level || entry.item?.par_level || '-'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="center">
-                            <TextField
-                              type="number"
-                              size="small"
-                              value={entry.qty_to_order ?? ''}
-                              onChange={(e) => handleUpdateEntry(entry.id, 'qty_to_order', parseInt(e.target.value) || 0)}
-                              disabled={sheet.status === 'submitted'}
-                              sx={{ width: 80 }}
-                              inputProps={{ min: 0, style: { textAlign: 'center' } }}
-                            />
-                          </TableCell>
-                          <TableCell align="center">
-                            {status && (
-                              <Chip
-                                icon={status.icon}
-                                label={status.label}
-                                color={status.color}
-                                size="small"
-                                variant="outlined"
-                              />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                    {entries.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                          <Typography color="text.secondary">
-                            No items found for this location
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              {/* Pagination controls */}
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Showing {entries.length > 0 ? (page - 1) * pageSize + 1 : 0} - {Math.min(page * pageSize, totalEntries)} of {totalEntries}
-                </Typography>
-                <Box>
-                  <Button variant="outlined" size="small" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!hasPrev} sx={{ mr: 1 }}>
-                    Previous
-                  </Button>
-                  <Button variant="outlined" size="small" onClick={() => setPage((p) => p + 1)} disabled={!hasNext}>
-                    Next
-                  </Button>
-                </Box>
-              </Box>
+              <div className="p-4">
+                <Table
+                  columns={columns}
+                  data={entries}
+                  searchable={true}
+                />
+              </div>
             </Card>
 
-            {/* If user fetched a range, show sheets list */}
+            {/* Sheets in Range */}
             {sheetsInRange.length > 0 && (
-              <Card sx={{ mt: 3 }}>
+              <Card className="mt-3">
                 <CardContent>
-                  <Typography variant="h6" sx={{ mb: 2 }}>Sheets in Range ({sheetsInRange.length})</Typography>
-                  <TableContainer>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Date</TableCell>
-                          <TableCell>Status</TableCell>
-                          <TableCell align="center">Total Items</TableCell>
-                          <TableCell align="right">Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {sheetsInRange.map((s) => (
-                          <TableRow key={s.id} hover>
-                            <TableCell>{s.count_date || s.created_at || 'N/A'}</TableCell>
-                            <TableCell sx={{ textTransform: 'capitalize' }}>{s.status}</TableCell>
-                            <TableCell align="center">{s.entry_count || s.total_entries || (s.entries ? s.entries.length : '-')}</TableCell>
-                            <TableCell align="right">
-                              <Button size="small" onClick={() => { setSheet(s); fetchEntries(s.id); }}>
-                                View
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                  <Typography variant="h6" className="mb-2">Sheets in Range ({sheetsInRange.length})</Typography>
+                  <Table
+                    columns={[
+                      { header: 'Date', accessor: 'count_date' },
+                      { header: 'Status', accessor: 'status' },
+                      { header: 'Total Items', accessor: 'entry_count' },
+                    ]}
+                    data={sheetsInRange}
+                    searchable={false}
+                    actions={(row) => (
+                      <Button size="small" onClick={() => { setSheet(row); fetchEntries(row.id); }}>View</Button>
+                    )}
+                  />
                 </CardContent>
               </Card>
             )}
           </Box>
-        </Fade>
+        </Collapse>
       ) : (
         <Card>
-          <CardContent sx={{ textAlign: 'center', py: 8 }}>
-            <Inventory sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+          <CardContent className="text-center py-8">
             <Typography variant="h6" color="text.secondary">
               Select a location and date to view counts
             </Typography>

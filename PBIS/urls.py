@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/auth/', include('users.urls')),
     path('api/', include(router.urls)),
     path('api/reports/', include('reports.urls')),
+    path("api/counts/", include("counts.urls")),
 ]
 
 if not settings.DEBUG:

@@ -39,9 +39,13 @@ export default function MenuAppBar() {
 
   const getRoleColor = (role) => {
     switch (role) {
-      case 'admin': return 'error';
-      case 'manager': return 'primary';
-      default: return 'default';
+      case 'admin':
+        return 'error';        // Red
+      case 'manager':
+        return 'warning';      // Yellow
+      case 'staff':
+      default:
+        return 'success';      // Green
     }
   };
 

@@ -58,7 +58,7 @@ Provides an API endpoint that allows managers to create (register) new users.
 class RegisterUserView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
-    permission_classes = [ManagersOnly]
+    permission_classes = [IsAuthenticated]
 
 
 # ----------------------------------------------
@@ -73,7 +73,7 @@ Provides an API endpoint that allows managers to view a list of all users.
 class UsersListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [ManagersOnly]
+    permission_classes = [IsAuthenticated]
 
 
 # ----------------------------------------------
@@ -89,7 +89,7 @@ Provides an API endpoint that allows managers to retrieve, update, or delete a s
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [ManagersOnly]
+    permission_classes = [IsAuthenticated]
 
 
 # ----------------------------------------------
@@ -104,7 +104,7 @@ API endpoint that allows managers to assign multiple valid locations to a specif
 
 
 class AssignLocationsView(APIView):
-    permission_classes = [ManagersOnly]
+    permission_classes = [IsAuthenticated]
 
     # ----------------------------------------------
     # :: Post Function
@@ -161,7 +161,7 @@ Allows managers to partially update a user’s details, validate roles, and upda
 class UpdateUserView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [ManagersOnly]
+    permission_classes = [IsAuthenticated]
 
     # ----------------------------------------------
     # :: Patch Function
@@ -195,3 +195,6 @@ class UpdateUserView(generics.UpdateAPIView):
             },
             status=status.HTTP_200_OK,
         )
+    def get_serializer(self, *args, **kwargs):
+            kwargs['partial'] = True
+            return super().get_serializer(*args, **kwargs)

@@ -6,12 +6,6 @@ import {
   CardContent,
   Typography,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
   Chip,
   TextField,
@@ -21,14 +15,12 @@ import {
   DialogContent,
   DialogActions,
   Skeleton,
-  Fade,
+  Collapse,
   Tooltip,
   Avatar,
 } from '@mui/material';
 import {
   Add,
-  Edit,
-  Delete,
   LocationOn,
   Schedule,
   Code,
@@ -36,6 +28,7 @@ import {
 import Header from '../components/Header';
 import locationsAPI from '../services/locationsAPI';
 import { showNotification } from '../store/slices/uiSlice';
+import CustomTable from '../components/Table'; 
 
 const TIMEZONES = [
   { value: 'America/New_York', label: 'Eastern (ET)' },
@@ -49,9 +42,7 @@ const LocationsView = () => {
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
-  const [deletingLocation, setDeletingLocation] = useState(null);
   const [formData, setFormData] = useState({ name: '', code: '', timezone: 'America/New_York' });
 
   const fetchLocations = useCallback(async () => {
@@ -69,8 +60,6 @@ const LocationsView = () => {
   useEffect(() => {
     fetchLocations();
   }, [fetchLocations]);
-
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -96,25 +85,6 @@ const LocationsView = () => {
     setModalOpen(true);
   };
 
-  const handleDeleteClick = (location) => {
-    setDeletingLocation(location);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDelete = async () => {
-    try {
-      await locationsAPI.delete(deletingLocation.id);
-      dispatch(showNotification({ message: 'Location deleted successfully', type: 'success' }));
-      fetchLocations();
-    } catch (error) {
-      console.error('Failed to delete location:', error);
-      dispatch(showNotification({ message: 'Failed to delete location', type: 'error' }));
-    } finally {
-      setDeleteDialogOpen(false);
-      setDeletingLocation(null);
-    }
-  };
-
   const closeModal = () => {
     setModalOpen(false);
     setEditingLocation(null);
@@ -123,10 +93,44 @@ const LocationsView = () => {
 
   const getTimezoneLabel = (tz) => TIMEZONES.find(t => t.value === tz)?.label || tz;
 
+  const columns = [
+    {
+      header: 'Location',
+      accessor: 'name',
+      render: (row) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Avatar sx={{ bgcolor: 'primary.main' }}>
+            <LocationOn />
+          </Avatar>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {row.name}
+          </Typography>
+        </Box>
+      ),
+    },
+    {
+      header: 'Code',
+      accessor: 'code',
+      render: (row) => <Chip icon={<Code fontSize="small" />} label={row.code} size="small" variant="outlined" />,
+    },
+    {
+      header: 'Timezone',
+      accessor: 'timezone',
+      render: (row) => (
+        <Chip
+          icon={<Schedule fontSize="small" />}
+          label={getTimezoneLabel(row.timezone)}
+          size="small"
+          sx={{ backgroundColor: 'info.light', color: 'info.dark' }}
+        />
+      ),
+    },
+  ];
+
   return (
     <Box>
-      <Header 
-        title="Locations" 
+      <Header
+        title="Locations"
         subtitle={`Manage your store locations (${locations.length} total)`}
         showRefresh
         onRefresh={fetchLocations}
@@ -152,79 +156,23 @@ const LocationsView = () => {
           </CardContent>
         </Card>
       ) : (
-        <Fade in={true}>
-          <Card>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Location</TableCell>
-                    <TableCell>Code</TableCell>
-                    <TableCell>Timezone</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {locations.map((location) => (
-                    <TableRow key={location.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Avatar sx={{ bgcolor: 'primary.main' }}>
-                            <LocationOn />
-                          </Avatar>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            {location.name}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={<Code fontSize="small" />}
-                          label={location.code}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={<Schedule fontSize="small" />}
-                          label={getTimezoneLabel(location.timezone)}
-                          size="small"
-                          sx={{ backgroundColor: 'info.light', color: 'info.dark' }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="Edit">
-                          <IconButton size="small" onClick={() => handleEdit(location)} color="primary">
-                            <Edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton size="small" onClick={() => handleDeleteClick(location)} color="error">
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {locations.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
-                        <LocationOn sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                        <Typography variant="h6" color="text.secondary">
-                          No locations yet
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Add your first location to get started
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Card>
-        </Fade>
+        <Collapse in={true}>
+          <CustomTable
+            columns={columns}
+            data={locations}
+            actions={(row) => (
+              <Button
+                size="small"
+                variant="outlined"
+                color="primary"
+                onClick={() => handleEdit(row)}
+                sx={{ minWidth: 80 }}
+              >
+                Edit
+              </Button>
+            )}
+          />
+        </Collapse>
       )}
 
       <Dialog open={modalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
@@ -267,19 +215,6 @@ const LocationsView = () => {
             <Button type="submit" variant="contained">{editingLocation ? 'Update' : 'Create'}</Button>
           </DialogActions>
         </form>
-      </Dialog>
-
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to delete "{deletingLocation?.name}"? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">Cancel</Button>
-          <Button onClick={handleDelete} variant="contained" color="error">Delete</Button>
-        </DialogActions>
       </Dialog>
     </Box>
   );

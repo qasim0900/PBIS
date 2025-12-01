@@ -1,26 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-
 import {
-  Box, Card, CardContent, Typography, Button, Table, TableBody,
-  TableCell, TableContainer, TableHead, TableRow, IconButton,
-  Chip, Avatar, Skeleton, Fade, Tooltip, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, MenuItem
+  Box, Card, CardContent, Typography, Button, Chip, Avatar, Skeleton,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
+  Tooltip, IconButton
 } from '@mui/material';
-
-import {
-  Add, Edit, Person, AdminPanelSettings, SupervisedUserCircle,
-  PersonOff, CheckCircle
-} from '@mui/icons-material';
+import { Add, Edit, Person, AdminPanelSettings, SupervisedUserCircle, PersonOff, CheckCircle } from '@mui/icons-material';
 
 import Header from '../components/Header';
+import Table from '../components/Table';
 import { showNotification } from '../store/slices/uiSlice';
-import {
-  fetchUsers,
-  createUser,
-  updateUser
-} from '../store/slices/usersSlice';
-
+import { fetchUsers, createUser, updateUser } from '../store/slices/usersSlice';
 
 const ROLES = [
   { value: 'admin', label: 'Admin', color: 'error', icon: <AdminPanelSettings /> },
@@ -32,69 +22,168 @@ const UsersView = () => {
   const dispatch = useDispatch();
   const { users, loading } = useSelector((state) => state.users);
 
+  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Form state
   const [form, setForm] = useState({
     username: '',
     email: '',
     password: '',
-    role: 'staff',
+    role: 'staff'
   });
 
-  // -------- FETCH USERS ON LOAD --------
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  const getRoleInfo = (role) =>
-    ROLES.find((r) => r.value === role) || ROLES[2];
+  const getRoleInfo = (role) => ROLES.find(r => r.value === role) || ROLES[2];
+  const getInitials = (name) => name?.slice(0, 2).toUpperCase() || 'U';
 
-  const getInitials = (name) =>
-    name?.slice(0, 2).toUpperCase() || 'U';
-
-  // -------- TOGGLE ACTIVE STATUS --------
+  // Toggle user active status
   const toggleUserStatus = (user) => {
-    dispatch(updateUser({
-      id: user.id,
-      data: { is_active: !user.is_active }
+    dispatch(updateUser({ id: user.id, data: { is_active: !user.is_active } }))
+      .unwrap()
+      .then(() => dispatch(showNotification({ message: 'Status updated', type: 'success' })))
+      .catch(() => dispatch(showNotification({ message: 'Failed to update status', type: 'error' })));
+  };
+
+  // Open Add Modal
+  const openAddModal = () => {
+    setForm({ username: '', email: '', password: '', role: 'staff' });
+    setIsEditMode(false);
+    setModalOpen(true);
+  };
+
+  // Open Edit Modal
+  const openEditModal = (user) => {
+    setForm({
+      username: user.username,
+      email: user.email,
+      password: '', // password edit mein nahi bhejte
+      role: user.role
+    });
+    setCurrentUserId(user.id);
+    setIsEditMode(true);
+    setModalOpen(true);
+  };
+
+  // Close Modal
+  const closeModal = () => {
+    setModalOpen(false);
+    setIsEditMode(false);
+    setCurrentUserId(null);
+    setForm({ username: '', email: '', password: '', role: 'staff' });
+  };
+
+  // Handle Create
+  const handleCreate = () => {
+    if (!form.username || !form.email || !form.password) {
+      dispatch(showNotification({ message: 'All fields are required', type: 'error' }));
+      return;
+    }
+
+    dispatch(createUser({
+      username: form.username,
+      email: form.email,
+      password: form.password,
+      role: form.role
     }))
       .unwrap()
       .then(() => {
-        dispatch(showNotification({ message: 'User status updated', type: 'success' }));
+        dispatch(showNotification({ message: 'User created successfully', type: 'success' }));
+        closeModal();
       })
-      .catch(() => {
-        dispatch(showNotification({ message: 'Failed to update user', type: 'error' }));
-      });
+      .catch(() => dispatch(showNotification({ message: 'Failed to create user', type: 'error' })));
   };
 
-  // -------- CREATE USER --------
-  const handleCreateUser = () => {
-    dispatch(createUser(form))
+  // Handle Update
+  const handleUpdate = () => {
+    if (!form.username || !form.email) {
+      dispatch(showNotification({ message: 'Username and Email are required', type: 'error' }));
+      return;
+    }
+
+    dispatch(updateUser({
+      id: currentUserId,
+      data: {
+        username: form.username,
+        email: form.email,
+        role: form.role
+      }
+    }))
       .unwrap()
       .then(() => {
-        dispatch(showNotification({
-          message: 'User created successfully',
-          type: 'success'
-        }));
-        setModalOpen(false);
-        setForm({ username: '', email: '', password: '', role: 'staff' });
+        dispatch(showNotification({ message: 'User updated successfully', type: 'success' }));
+        closeModal();
       })
-      .catch(() => {
-        dispatch(showNotification({
-          message: 'Failed to create user',
-          type: 'error'
-        }));
-      });
+      .catch(() => dispatch(showNotification({ message: 'Failed to update user', type: 'error' })));
   };
 
-  // -------- USER STATS (Fixed) --------
   const safeUsers = Array.isArray(users) ? users : [];
-
   const stats = {
     total: safeUsers.length,
-    admins: safeUsers.filter((u) => u.role === 'admin').length,
-    managers: safeUsers.filter((u) => u.role === 'manager').length,
-    staff: safeUsers.filter((u) => u.role === 'staff').length,
+    admins: safeUsers.filter(u => u.role === 'admin').length,
+    managers: safeUsers.filter(u => u.role === 'manager').length,
+    staff: safeUsers.filter(u => u.role === 'staff').length,
   };
+
+  const columns = [
+    {
+      header: 'User',
+      render: (row) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, opacity: row.is_active ? 1 : 0.5 }}>
+          <Avatar
+            sx={{
+              bgcolor: `${getRoleInfo(row.role).color}.main`,
+              opacity: row.is_active ? 1 : 0.4
+            }}
+          >
+            {getInitials(row.username)}
+          </Avatar>
+          <Box>
+            <Typography
+              variant="subtitle2"
+              fontWeight={600}
+              sx={{ color: row.is_active ? 'text.primary' : 'text.disabled' }}
+            >
+              {row.username}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {row.email}
+            </Typography>
+          </Box>
+        </Box>
+      )
+    },
+    {
+      header: 'Role',
+      render: (row) => {
+        const roleInfo = getRoleInfo(row.role);
+        return <Chip icon={roleInfo.icon} label={roleInfo.label} size="small" color={roleInfo.color} variant="outlined" />;
+      }
+    },
+    {
+      header: 'Status',
+      render: (row) => (
+        <Chip
+          icon={row.is_active ? <CheckCircle /> : <PersonOff />}
+          label={row.is_active ? 'Active' : 'Inactive'}
+          size="small"
+          color={row.is_active ? 'success' : 'default'}
+          variant={row.is_active ? 'filled' : 'outlined'}
+          sx={{
+            opacity: row.is_active ? 1 : 0.6,           // disabled ko thoda fade kar do
+            '& .MuiChip-label': {
+              color: row.is_active ? 'inherit' : 'text.disabled'
+            }
+          }}
+        />
+      )
+    }
+  ];
 
   return (
     <Box>
@@ -102,144 +191,59 @@ const UsersView = () => {
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => setModalOpen(true)}
+          onClick={openAddModal}
           sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
         >
           Add User
         </Button>
       </Header>
 
-      {/* -------- STATS CARDS -------- */}
-      <Box sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
-        gap: 3,
-        mb: 4
-      }}>
+      {/* Stats Cards */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3, mb: 4 }}>
         <Card sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', color: 'white' }}>
           <CardContent>
             <Typography variant="overline" sx={{ opacity: 0.8 }}>Total Users</Typography>
             <Typography variant="h3" fontWeight={700}>{stats.total}</Typography>
           </CardContent>
         </Card>
-
-        <Card><CardContent>
-          <Typography variant="overline" color="text.secondary">Admins</Typography>
-          <Typography variant="h3" fontWeight={700} color="error.main">{stats.admins}</Typography>
-        </CardContent></Card>
-
-        <Card><CardContent>
-          <Typography variant="overline" color="text.secondary">Managers</Typography>
-          <Typography variant="h3" fontWeight={700} color="primary.main">{stats.managers}</Typography>
-        </CardContent></Card>
-
-        <Card><CardContent>
-          <Typography variant="overline" color="text.secondary">Staff</Typography>
-          <Typography variant="h3" fontWeight={700} color="text.secondary">{stats.staff}</Typography>
-        </CardContent></Card>
+        <Card><CardContent><Typography variant="overline" color="text.secondary">Admins</Typography><Typography variant="h3" fontWeight={700} color="error.main">{stats.admins}</Typography></CardContent></Card>
+        <Card><CardContent><Typography variant="overline" color="text.secondary">Managers</Typography><Typography variant="h3" fontWeight={700} color="primary.main">{stats.managers}</Typography></CardContent></Card>
+        <Card><CardContent><Typography variant="overline" color="text.secondary">Staff</Typography><Typography variant="h3" fontWeight={700} color="text.secondary">{stats.staff}</Typography></CardContent></Card>
       </Box>
 
-      {/* -------- USERS TABLE -------- */}
+      {/* Table */}
       {loading ? (
-        <Card>
-          <CardContent>
-            {[1, 2, 3, 4].map(i => (
-              <Skeleton key={i} variant="rectangular" height={60} sx={{ mb: 2, borderRadius: 2 }} />
-            ))}
-          </CardContent>
-        </Card>
+        <Card><CardContent>{[1, 2, 3, 4].map(i => <Skeleton key={i} height={65} sx={{ mb: 2, borderRadius: 2 }} />)}</CardContent></Card>
       ) : (
-        <Fade in={true}>
-          <Card>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>User</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Role</TableCell>
-                    <TableCell align="center">Status</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {safeUsers.map((user) => {
-                    const roleInfo = getRoleInfo(user.role);
-
-                    return (
-                      <TableRow key={user.id} hover>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <Avatar sx={{ bgcolor: `${roleInfo.color}.main` }}>
-                              {getInitials(user.username)}
-                            </Avatar>
-                            <Typography variant="subtitle2" fontWeight={600}>
-                              {user.username}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {user.email}
-                          </Typography>
-                        </TableCell>
-
-                        <TableCell>
-                          <Chip
-                            icon={roleInfo.icon}
-                            label={roleInfo.label}
-                            size="small"
-                            color={roleInfo.color}
-                            variant="outlined"
-                          />
-                        </TableCell>
-
-                        <TableCell align="center">
-                          <Chip
-                            icon={user.is_active ? <CheckCircle /> : <PersonOff />}
-                            label={user.is_active ? 'Active' : 'Inactive'}
-                            size="small"
-                            color={user.is_active ? 'success' : 'default'}
-                            variant={user.is_active ? 'filled' : 'outlined'}
-                          />
-                        </TableCell>
-
-                        <TableCell align="right">
-                          <Tooltip title="Edit User">
-                            <IconButton size="small" color="primary">
-                              <Edit fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-
-                          <Tooltip title={user.is_active ? 'Deactivate' : 'Activate'}>
-                            <IconButton
-                              size="small"
-                              color={user.is_active ? 'warning' : 'success'}
-                              onClick={() => toggleUserStatus(user)}
-                            >
-                              {user.is_active ? <PersonOff /> : <CheckCircle />}
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-
-              </Table>
-            </TableContainer>
-          </Card>
-        </Fade>
+        <Table
+          columns={columns}
+          data={safeUsers}
+          actions={(row) => (
+            <>
+              <Tooltip title="Edit User">
+                <IconButton size="small" color="primary" onClick={() => openEditModal(row)}>
+                  <Edit fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={row.is_active ? 'Deactivate' : 'Activate'}>
+                <IconButton
+                  size="small"
+                  color={row.is_active ? 'warning' : 'success'}
+                  onClick={() => toggleUserStatus(row)}
+                >
+                  {row.is_active ? <PersonOff /> : <CheckCircle />}
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+        />
       )}
 
-      {/* -------- ADD USER MODAL -------- */}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>Add New User</DialogTitle>
-
+      {/* SINGLE MODAL - ADD OR EDIT */}
+      <Dialog open={modalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
+        <DialogTitle>{isEditMode ? 'Edit User' : 'Add New User'}</DialogTitle>
         <DialogContent dividers>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
             <TextField
               label="Username"
               fullWidth
@@ -247,7 +251,6 @@ const UsersView = () => {
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
             />
-
             <TextField
               label="Email"
               type="email"
@@ -256,16 +259,16 @@ const UsersView = () => {
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
-
-            <TextField
-              label="Password"
-              type="password"
-              fullWidth
-              required
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-            />
-
+            {!isEditMode && (
+              <TextField
+                label="Password"
+                type="password"
+                fullWidth
+                required
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
+            )}
             <TextField
               select
               label="Role"
@@ -273,19 +276,19 @@ const UsersView = () => {
               value={form.role}
               onChange={(e) => setForm({ ...form, role: e.target.value })}
             >
-              {ROLES.map((role) => (
+              {ROLES.map(role => (
                 <MenuItem key={role.value} value={role.value}>{role.label}</MenuItem>
               ))}
             </TextField>
           </Box>
         </DialogContent>
-
         <DialogActions>
-          <Button onClick={() => setModalOpen(false)} color="inherit">Cancel</Button>
-          <Button variant="contained" onClick={handleCreateUser}>Create User</Button>
+          <Button onClick={closeModal} color="inherit">Cancel</Button>
+          <Button variant="contained" onClick={isEditMode ? handleUpdate : handleCreate}>
+            {isEditMode ? 'Update User' : 'Create User'}
+          </Button>
         </DialogActions>
       </Dialog>
-
     </Box>
   );
 };

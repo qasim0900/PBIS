@@ -30,9 +30,7 @@ Serializer for User with role display, flags, and assigned locations.
 
 
 class UserSerializer(serializers.ModelSerializer):
-
-    role_display = serializers.CharField(
-        source="get_role_display", read_only=True)
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
     assigned_locations = LocationSerializer(many=True, read_only=True)
     is_manager = serializers.SerializerMethodField()
     is_staff_user = serializers.SerializerMethodField()
@@ -40,18 +38,10 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            "id",
-            "username",
-            "first_name",
-            "last_name",
-            "email",
-            "role",
-            "role_display",
-            "is_manager",
-            "is_staff_user",
-            "assigned_locations",
+            "id", "username", "email", "first_name", "last_name",
+            "role", "role_display", "is_active","is_manager", "is_staff_user", "assigned_locations"
         )
-        read_only_fields = fields
+        read_only_fields = ("id", "role_display", "is_manager", "is_staff_user", "assigned_locations")
 
     # ---------------------------------
     # :: Get is Manager Function
