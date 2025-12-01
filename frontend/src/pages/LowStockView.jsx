@@ -158,7 +158,7 @@ const LowStockView = () => {
     },
   ];
 
-const handleExportExcel = () => {
+  const handleExportExcel = () => {
     const dataForExcel = items.map(item => ({
       'Item': item.item?.name || 'Unknown',
       'Category': item.item?.category || 'General',
@@ -171,15 +171,15 @@ const handleExportExcel = () => {
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(dataForExcel);
-    
+
     // Column width set karo
     ws['!cols'] = [
-      { wch: 25 }, { wch: 15 }, { wch: 15 }, 
+      { wch: 25 }, { wch: 15 }, { wch: 15 },
       { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 10 }
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, "Low Stock");
-    XLSX.writeFile(wb, `PurpleBanana_LowStock_${new Date().toISOString().slice(0,10)}.xlsx`);
+    XLSX.writeFile(wb, `PurpleBanana_LowStock_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
     dispatch(showNotification({ message: "Excel exported successfully!", type: "success" }));
   };
@@ -233,7 +233,7 @@ const handleExportExcel = () => {
     doc.setTextColor(150, 150, 150);
     doc.text("Purple Banana Inventory System © 2025", 20, doc.lastAutoTable.finalY + 15);
 
-    doc.save(`PurpleBanana_LowStock_${new Date().toISOString().slice(0,10)}.pdf`);
+    doc.save(`PurpleBanana_LowStock_${new Date().toISOString().slice(0, 10)}.pdf`);
     dispatch(showNotification({ message: "PDF exported successfully!", type: "success" }));
   };
 
@@ -310,30 +310,36 @@ const handleExportExcel = () => {
         showRefresh
         onRefresh={fetchLowStock}
       >
-        <Button
-          variant="outlined"
-          startIcon={<Print />}
-          onClick={handlePrint}
-          sx={{ mr: 1 }}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }} // mobile: column, tablet/desktop: row
+          spacing={1} // gap between buttons
         >
-          Print
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<Download />}
-          onClick={handleExportPDF}
-          sx={{ mr: 1, background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
-        >
-          Export PDF
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<Download />}
-          onClick={handleExportExcel}
-          sx={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-        >
-          Export Excel
-        </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Print />}
+            onClick={handlePrint}
+          >
+            Print
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportPDF}
+            sx={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}
+          >
+            Export PDF
+          </Button>
+
+          <Button
+            variant="contained"
+            startIcon={<Download />}
+            onClick={handleExportExcel}
+            sx={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+          >
+            Export Excel
+          </Button>
+        </Stack>
       </Header>
 
       {criticalCount > 0 && (
