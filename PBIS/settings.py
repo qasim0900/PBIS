@@ -67,17 +67,13 @@ Define allowed domains for the project
 """
 
 try:
-    ALLOWED_HOSTS = [host.strip() for host in os.getenv("ALLOWED_HOSTS", "localhost").split(",") if host.strip()]
+    ALLOWED_HOSTS = ['localhost','127.0.0.1']
 
-    CORS_ALLOWED_ORIGINS = []
-    for host in ALLOWED_HOSTS:
-        if host.startswith("http://") or host.startswith("https://"):
-            CORS_ALLOWED_ORIGINS.append(host)
-        else:
-            if host == "localhost":
-                CORS_ALLOWED_ORIGINS.append(f"http://{host}:5000")
-            else:
-                CORS_ALLOWED_ORIGINS.append(f"http://{host}")
+    # CORS_ALLOWED_ORIGINS = []
+    CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+]
 
     CORS_ALLOW_ALL_ORIGINS = False
 

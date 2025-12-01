@@ -1,34 +1,19 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
-import { Provider } from 'react-redux';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { store } from './store';
-import { addAuthRefreshListener } from './services/api';
-import { fetchCurrentUser } from './store/slices/authSlice';
-import theme from './theme';
-import './index.css';
+// src/main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { store, persistor } from './store'; // ← yeh line bilkul sahi honi chahiye
+import { CssBaseline } from '@mui/material';
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
+      <PersistGate loading={null} persistor={persistor}>
         <CssBaseline />
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </ThemeProvider>
+        <App />
+      </PersistGate>
     </Provider>
-  </StrictMode>
+  </React.StrictMode>
 );
-
-
-addAuthRefreshListener(() => {
-  try {
-    store.dispatch(fetchCurrentUser());
-  } catch (err) {
-    console.error(err);
-  }
-});

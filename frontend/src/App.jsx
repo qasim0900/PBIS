@@ -1,11 +1,20 @@
+// App.jsx
 import { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
+import { Provider, useSelector, useDispatch } from 'react-redux';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CircularProgress, Typography, useMediaQuery, useTheme } from '@mui/material';
-import { selectAuth, selectIsManager, selectIsAdmin, fetchCurrentUser } from './store/slices/authSlice';
+
+import store from './store';
+import {
+  selectAuth,
+  selectIsManager,
+  selectIsAdmin,
+  fetchCurrentUser,
+} from './store/slices/authSlice';
 import { selectSidebarCollapsed } from './store/slices/uiSlice';
+
 import Sidebar from './components/Sidebar';
-import Notification from './components/Notification';
+import MenuAppBar from './components/Navbar';
 import Login from './pages/Login';
 import CountsView from './pages/CountsView';
 import LowStockView from './pages/LowStockView';
@@ -14,11 +23,11 @@ import LocationsView from './pages/LocationsView';
 import CatalogView from './pages/CatalogView';
 import OverridesView from './pages/OverridesView';
 import UsersView from './pages/UsersView';
-import MenuAppBar from './components/Navbar';
 
-const DRAWER_WIDTH = 2;
-const COLLAPSED_WIDTH = 7;
+const DRAWER_WIDTH = 2; // px
+const COLLAPSED_WIDTH = 7; // px
 
+// Protected Route Component
 const ProtectedRoute = ({ children, requireManager = false, requireAdmin = false }) => {
   const { isAuthenticated, loading } = useSelector(selectAuth);
   const isManager = useSelector(selectIsManager);
@@ -44,31 +53,22 @@ const ProtectedRoute = ({ children, requireManager = false, requireAdmin = false
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  if (requireAdmin && !isAdmin) {
-    return <Navigate to="/counts" />;
-  }
-
-  if (requireManager && !isManager) {
-    return <Navigate to="/counts" />;
-  }
+  if (requireAdmin && !isAdmin) return <Navigate to="/counts" replace />;
+  if (requireManager && !isManager) return <Navigate to="/counts" replace />;
 
   return children;
 };
 
+// Layout Component
 const Layout = ({ children }) => {
   const collapsed = useSelector(selectSidebarCollapsed);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const getSidebarWidth = () => {
-    if (isMobile) return 0;
-    return collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
-  };
+  const sidebarWidth = isMobile ? 0 : collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -79,13 +79,13 @@ const Layout = ({ children }) => {
           component="main"
           sx={{
             flex: 1,
-            ml: isMobile ? 0 : `${getSidebarWidth()}px`,
+            ml: isMobile ? 0 : `${sidebarWidth}px`,
             mt: '64px',
             transition: 'margin 0.3s ease',
             p: isSmallMobile ? 1 : isMobile ? 2 : 3,
             backgroundColor: '#f5f5f5',
             minHeight: 'calc(100vh - 64px)',
-            width: isMobile ? '100%' : `calc(100% - ${getSidebarWidth()}px)`,
+            width: isMobile ? '100%' : `calc(100% - ${sidebarWidth}px)`,
           }}
         >
           {children}
@@ -95,7 +95,8 @@ const Layout = ({ children }) => {
   );
 };
 
-function AppRoutes() {
+// Routes Component
+const AppRoutes = () => {
   const { isAuthenticated, token } = useSelector(selectAuth);
   const dispatch = useDispatch();
 
@@ -107,8 +108,10 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Public */}
       <Route path="/login" element={isAuthenticated ? <Navigate to="/counts" /> : <Login />} />
 
+      {/* Protected Routes */}
       <Route
         path="/counts"
         element={
@@ -186,19 +189,20 @@ function AppRoutes() {
         }
       />
 
+      {/* Default & 404 */}
       <Route path="/" element={<Navigate to="/counts" />} />
       <Route path="*" element={<Navigate to="/counts" />} />
     </Routes>
   );
-}
+};
 
-function App() {
-  return (
-    <>
+// Main App
+const App = () => (
+  <Provider store={store}>
+    <Router>
       <AppRoutes />
-      <Notification />
-    </>
-  );
-}
+    </Router>
+  </Provider>
+);
 
 export default App;

@@ -27,8 +27,10 @@ import {
   People,
   Close,
 } from '@mui/icons-material';
-import { selectIsManager, selectIsAdmin } from '../store/slices/authSlice';
+
 import { selectSidebarCollapsed, setSidebarCollapsed } from '../store/slices/uiSlice';
+import { selectIsManager, selectIsAdmin } from '../store/slices/authSlice';
+
 
 const DRAWER_WIDTH = 280;
 const COLLAPSED_WIDTH = 72;
