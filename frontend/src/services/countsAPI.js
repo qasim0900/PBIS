@@ -1,65 +1,39 @@
 // services/countsAPI.js
-
-import api from './api';       // your axios instance
-import axios from 'axios';     // needed for absolute calls (if api is baseURL)
+import api from './api';
 
 const countsAPI = {
-
-  /** -------------------------------------------
-   * 1. ENSURE SHEET (CREATE OR GET)
-   * POST /counts/sheets/
-   * ------------------------------------------- */
-  ensureSheet: async (locationId, date, frequency = 'weekly') => {
+  // 1. Ensure sheet (create today's draft or get existing)
+  ensureSheet: async (locationId, frequency = null) => {
     return await api.post('/counts/sheets/', {
       location_id: Number(locationId),
-      frequency,
-      count_date: date,
-      include_entries: true, // always include entries
+      frequency,                    // snake_case: null, "weekly", "mon_wed", etc.
+      include_entries: true,
     });
   },
 
-  /** -------------------------------------------
-   * 2. LOW STOCK ITEMS
-   * GET /counts/low-stock/
-   * ------------------------------------------- */
-  getLowStock: () => api.get('/counts/entries/low-stock/'),
-
-  /** -------------------------------------------
-   * 3. GET SHEETS IN DATE RANGE
-   * GET /counts/sheets/?location=&count_date__gte=&count_date__lte=
-   * ------------------------------------------- */
-  getSheetsInRange: (locationId, startDate, endDate) => {
-    return api.get('/counts/sheets/', {
+  // 2. Get sheets by frequency (historical)
+  getSheetsByFrequency: async (locationId, frequency) => {
+    return await api.get('/counts/sheets/', {
       params: {
         location: locationId,
-        count_date__gte: startDate,
-        count_date__lte: endDate,
+        frequency,                  // e.g., "weekly", "mon_wed"
         ordering: '-count_date',
       },
     });
   },
 
-  /** -------------------------------------------
-   * 4. ENTRIES (Paginated)
-   * GET /counts/entries/?sheet=id
-   * ------------------------------------------- */
-  getEntries: (sheetId, page = 1, page_size = 10) =>
+  // 3. Get entries for a sheet
+  getEntries: (sheetId, page = 1, page_size = 1000) =>
     api.get('/counts/entries/', {
       params: { sheet: sheetId, page, page_size },
     }),
+getAllSheets: (params = {}) => api.get('/counts/sheets/', { params }),
+  // 4. Submit sheet
+  submitSheet: (sheetId) =>
+    api.post(`/counts/sheets/${sheetId}/submit/`),
 
-  /** -------------------------------------------
-   * 5. UPDATE ENTRY
-   * PATCH /counts/entries/<id>/
-   * ------------------------------------------- */
-  updateEntry: (id, data) => api.patch(`/counts/entries/${id}/`, data),
-
-  /** -------------------------------------------
-   * 6. SUBMIT SHEET
-   * POST /counts/sheets/<id>/submit/
-   * ------------------------------------------- */
-  submitSheet: (id, note = '') =>
-    api.post(`/counts/sheets/${id}/submit/`, { note }),
+  // 5. Low stock (optional)
+  getLowStock: () => api.get('/counts/entries/low-stock/'),
 };
 
 export default countsAPI;

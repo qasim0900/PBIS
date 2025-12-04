@@ -1,8 +1,28 @@
 # Ignore node_modules inside frontend
 frontend/node_modules/
 
-# Ignore frontend env file
+# Ignore frontend environment file
 frontend/.env
 
-# Ignore root env file
+# Ignore root environment file
 .env
+
+# Python cache files
+PBIS/__pycache__/
+counts/__pycache__/
+inventory/__pycache__/
+locations/__pycache__/
+locations/management/__pycache__/
+locations/management/commands/__pycache__/
+reports/__pycache__/
+users/__pycache__/
+
+# Django migration folders
+counts/migrations/
+inventory/migrations/
+locations/migrations/
+reports/migrations/
+users/migrations/
+
+# Node lock file
+package-lock.json

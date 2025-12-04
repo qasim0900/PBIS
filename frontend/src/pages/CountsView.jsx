@@ -9,10 +9,8 @@ import {
   MenuItem,
   Button,
   CircularProgress,
-  InputAdornment,
-  Collapse,
 } from '@mui/material';
-import { Send, LocationOn } from '@mui/icons-material';
+import { Send } from '@mui/icons-material';
 import Header from '../components/Header';
 import locationsAPI from '../services/locationsAPI';
 import countsAPI from '../services/countsAPI';
@@ -23,329 +21,276 @@ const CountsView = () => {
   const dispatch = useDispatch();
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [rangeStart, setRangeStart] = useState('');
-  const [rangeEnd, setRangeEnd] = useState('');
-  const [sheetsInRange, setSheetsInRange] = useState([]);
-  const [sheet, setSheet] = useState(null);
+  const [selectedFrequency, setSelectedFrequency] = useState('');
+  const [allSheets, setAllSheets] = useState([]);     // For overview / location-wide
+  const [filteredSheets, setFilteredSheets] = useState([]); // For specific frequency
+  const [selectedSheet, setSelectedSheet] = useState(null);
   const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch Locations
+  const frequencyOptions = [
+    { label: 'Mon/Wed', value: 'mon_wed' },
+    { label: 'Weekly', value: 'weekly' },
+    { label: 'Bi-Weekly', value: 'bi_weekly' },
+    { label: 'Monthly', value: 'monthly' },
+    { label: 'Semi-Annual', value: 'semi_annual' },
+    { label: 'Annual', value: 'annual' },
+  ];
+
+  // Fetch all locations
   const fetchLocations = useCallback(async () => {
     try {
-      const response = await locationsAPI.getAll();
-      const locs = response.data.results || response.data || [];
+      const res = await locationsAPI.getAll();
+      const locs = res.data.results || res.data || [];
       setLocations(locs);
       if (locs.length > 0) setSelectedLocation(locs[0].id);
-    } catch (error) {
-      console.error('Failed to fetch locations:', error);
-      dispatch(showNotification({ message: 'Failed to fetch locations', type: 'error' }));
+    } catch (err) {
+      dispatch(showNotification({ message: 'Failed to load locations', type: 'error' }));
     }
   }, [dispatch]);
 
-  useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
-
-  // Fetch Sheet & Entries
-  const fetchEntries = useCallback(async (sheetId) => {
+  // Fetch entries for a sheet
+  const fetchEntries = async (sheetId) => {
     try {
-      const response = await countsAPI.getEntries(sheetId, 1, 1000);
-      setEntries(response.data.results || response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch entries:', error);
-    }
-  }, []);
-
-  const fetchSheet = useCallback(async () => {
-    if (!selectedLocation || !selectedDate) return;
-    setLoading(true);
-    try {
-      const response = await countsAPI.ensureSheet(selectedLocation, selectedDate);
-      setSheet(response.data);
-      fetchEntries(response.data.id);
-    } catch (error) {
-      console.error('Failed to load sheet:', error);
-      dispatch(showNotification({
-        message: error.response?.data?.detail || 'Failed to load count sheet',
-        type: 'error'
-      }));
-      setSheet(null);
+      const res = await countsAPI.getEntries(sheetId);
+      setEntries(res.data.results || res.data || []);
+    } catch (err) {
       setEntries([]);
-    } finally {
-      setLoading(false);
     }
-  }, [selectedLocation, selectedDate, dispatch, fetchEntries]);
+  };
 
-  useEffect(() => {
-    fetchSheet();
-  }, [fetchSheet]);
+  // Load sheet and entries when one is selected
+  const viewSheet = async (sheet) => {
+    setSelectedSheet(sheet);
+    setLoading(true);
+    await fetchEntries(sheet.id);
+    setLoading(false);
+  };
 
-  // Fetch Sheets in Range
-  const fetchSheetsInRange = useCallback(async () => {
-    if (!selectedLocation || !rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
+  // 1. Load ALL latest sheets (overview)
+  const loadAllLatestSheets = async () => {
     setLoading(true);
     try {
-      const response = await countsAPI.getSheetsInRange(selectedLocation, rangeStart, rangeEnd);
-      setSheetsInRange(response.data.results || []);
-    } catch (error) {
-      console.error('Failed to fetch sheets in range:', error);
-      dispatch(showNotification({ message: 'No sheets found in this range', type: 'info' }));
-      setSheetsInRange([]);
+      const res = await countsAPI.getSheetsByFrequency(); // No params = get latest of all
+      const sheets = res.data.results || [];
+      setAllSheets(sheets);
+      setFilteredSheets([]);
+      setSelectedSheet(null);
+      setEntries([]);
+    } catch (err) {
+      dispatch(showNotification({ message: 'Failed to load sheets', type: 'error' }));
     } finally {
       setLoading(false);
     }
-  }, [selectedLocation, rangeStart, rangeEnd, dispatch]);
+  };
 
-  // Submit Sheet
+  // 2. Load sheets for a location (all frequencies)
+  const loadSheetsForLocation = async (locationId) => {
+    if (!locationId) return;
+    setLoading(true);
+    try {
+      const res = await api.get('/counts/sheets/', {
+        params: { location: locationId, ordering: '-count_date' }
+      });
+      const sheets = res.data.results || [];
+      setAllSheets(sheets);
+      setFilteredSheets([]);
+      setSelectedSheet(null);
+      setEntries([]);
+    } catch (err) {
+      dispatch(showNotification({ message: 'No sheets found', type: 'info' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Load sheets for location + frequency
+  const loadSheetsByLocationAndFrequency = async () => {
+    if (!selectedLocation || !selectedFrequency) return;
+    setLoading(true);
+    try {
+      const res = await countsAPI.getSheetsByFrequency(selectedLocation, selectedFrequency);
+      const sheets = res.data.results || [];
+      setFilteredSheets(sheets);
+      setAllSheets([]);
+      setSelectedSheet(null);
+      setEntries([]);
+    } catch (err) {
+      dispatch(showNotification({ message: 'No sheets found for this frequency', type: 'info' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit selected sheet
   const handleSubmit = async () => {
-    if (!sheet) return;
+    if (!selectedSheet?.id || selectedSheet.status !== 'draft') return;
     setSubmitting(true);
     try {
-      await countsAPI.submitSheet(sheet.id);
-      dispatch(showNotification({ message: 'Count sheet submitted successfully!', type: 'success' }));
-      fetchSheet();
-    } catch (error) {
-      console.error('Failed to submit count sheet:', error);
-      dispatch(showNotification({ message: 'Failed to submit count sheet', type: 'error' }));
+      await countsAPI.submitSheet(selectedSheet.id);
+      dispatch(showNotification({ message: 'Sheet submitted!', type: 'success' }));
+      // Refresh current view
+      if (selectedFrequency) {
+        loadSheetsByLocationAndFrequency();
+      } else if (selectedLocation) {
+        loadSheetsForLocation(selectedLocation);
+      } else {
+        loadAllLatestSheets();
+      }
+    } catch (err) {
+      dispatch(showNotification({ message: 'Submit failed', type: 'error' }));
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Stock Status
-  const getStockStatus = (onHand, par) => {
-    if (onHand === null || onHand === undefined) return { label: '-', color: 'gray' };
-    const ratio = onHand / par;
-    if (ratio < 0.25) return { label: 'Critical', color: 'red' };
-    if (ratio < 0.5) return { label: 'Low', color: 'orange' };
-    return { label: 'OK', color: 'green' };
-  };
+  // Initial load
+  useEffect(() => {
+    fetchLocations();
+    loadAllLatestSheets();
+  }, []);
 
-  // Table Columns
+  // When location changes (but no frequency)
+  useEffect(() => {
+    if (selectedLocation && !selectedFrequency) {
+      loadSheetsForLocation(selectedLocation);
+    }
+  }, [selectedLocation]);
+
+  const currentSheets = filteredSheets.length > 0 ? filteredSheets : allSheets;
+
   const columns = [
-    { header: 'Item', accessor: 'item.name' },
-    { header: 'Category', accessor: 'item.category' },
-    { header: 'On Hand', accessor: 'on_hand_quantity' },
-    { header: 'Par Level', accessor: 'par_level' },
-    { header: 'To Order', accessor: 'calculated_qty_to_order' },
+    { header: 'Location', accessor: 'location.name' },
+    { header: 'Frequency', accessor: 'frequency_display', fallback: 'frequency' },
+    { header: 'Date', accessor: 'count_date' },
+    { header: 'Status', accessor: 'status', render: (row) => (
+      <span className={`px-2 py-1 rounded text-xs font-medium ${row.status === 'submitted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+        {row.status_display || row.status}
+      </span>
+    )},
+    { header: 'Items', accessor: 'entry_count' },
     {
-      header: 'Status',
-      render: (row) => {
-        const status = getStockStatus(row.on_hand_quantity, row.par_level);
-        return <span className={`font-semibold`} style={{ color: status.color }}>{status.label}</span>;
-      },
-    },
+      header: 'Action',
+      render: (row) => (
+        <Button size="small" variant="outlined" onClick={() => viewSheet(row)}>
+          View
+        </Button>
+      )
+    }
   ];
 
   return (
     <Box>
-      <Header
-        title="Inventory Counts"
-        subtitle="Track and manage your daily inventory counts"
-        showRefresh
-        onRefresh={fetchSheet}
-        sx={{
-          '& .MuiToolbar-root': {
-            flexDirection: 'column', // always stack main toolbar vertically
-            alignItems: 'stretch',
-            gap: 1,
-          }
-        }}
-      >
-        {/* Controls Container */}
-        <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Header title="Inventory Counts Overview" subtitle="View all count sheets across locations and frequencies">
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+          <TextField
+            select
+            label="Location"
+            size="small"
+            value={selectedLocation}
+            onChange={(e) => {
+              setSelectedLocation(e.target.value);
+              setSelectedFrequency(''); // Reset frequency
+            }}
+            sx={{ minWidth: 220 }}
+          >
+            <MenuItem value="">All Locations</MenuItem>
+            {locations.map(loc => (
+              <MenuItem key={loc.id} value={loc.id}>{loc.name}</MenuItem>
+            ))}
+          </TextField>
 
-          {/* Form Fields */}
-          <Box sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row', md: 'row' },
-            gap: { xs: 1, sm: 1.5, md: 3 }, // more space on desktop
-            flexWrap: 'wrap',
-            alignItems: { xs: 'stretch', sm: 'center' },
-          }}>
+          <TextField
+            select
+            label="Frequency"
+            size="small"
+            value={selectedFrequency}
+            onChange={(e) => setSelectedFrequency(e.target.value)}
+            sx={{ minWidth: 200 }}
+          >
+            <MenuItem value="">All Frequencies</MenuItem>
+            {frequencyOptions.map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </TextField>
 
-            {/* Location */}
-            <TextField
-              select
-              size="small"
-              value={selectedLocation || ''}
-              onChange={(e) => setSelectedLocation(e.target.value)}
-              SelectProps={{ displayEmpty: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LocationOn fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: {
-                  xs: '100%',
-                  sm: '25%',
-                  md: '25%', // slightly larger on desktop
-                },
-              }}
-            >
-              <MenuItem value="" disabled>Select Location</MenuItem>
-              {locations.map((loc) => (
-                <MenuItem key={loc.id} value={loc.id}>{loc.name}</MenuItem>
-              ))}
-            </TextField>
+          <Button
+            variant="contained"
+            onClick={loadSheetsByLocationAndFrequency}
+            disabled={!selectedLocation || !selectedFrequency}
+          >
+            Filter
+          </Button>
 
-            {/* Start Date */}
-            <TextField
-              label="Start Date"
-              type="date"
-              size="small"
-              value={rangeStart}
-              onChange={(e) => setRangeStart(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{
-                width: {
-                  xs: '100%',
-                  sm: 'calc(50% - 0.5rem)',
-                  md: '20%', // wider on desktop
-                }
-              }}
-            />
-
-            {/* End Date */}
-            <TextField
-              label="End Date"
-              type="date"
-              size="small"
-              value={rangeEnd}
-              onChange={(e) => setRangeEnd(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{
-                width: {
-                  xs: '100%',
-                  sm: 'calc(50% - 0.5rem)',
-                  md: '20%', // wider on desktop
-                }
-              }}
-            />
-
-            {/* Buttons */}
-            <Box sx={{
-              display: 'flex',
-              gap: { xs: 1, sm: 1.5, md: 2 }, // more space on desktop
-              width: { xs: '100%', sm: 'auto', md: 'auto' },
-            }}>
-              <Button
-                variant="contained"
-                onClick={fetchSheetsInRange}
-                disabled={!selectedLocation || !rangeStart || !rangeEnd || rangeStart > rangeEnd}
-                sx={{ py: 1.5, px: 3, fontSize: '1rem' }} // bigger buttons on desktop
-              >
-                Get
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => {
-                  setRangeStart('');
-                  setRangeEnd('');
-                  setSheetsInRange([]);
-                }}
-                sx={{ py: 1.5, px: 3, fontSize: '1rem' }}
-              >
-                Clear
-              </Button>
-            </Box>
-
-          </Box>
+          <Button variant="outlined" onClick={loadAllLatestSheets}>
+            Show All Latest
+          </Button>
         </Box>
       </Header>
 
-
       {loading ? (
-        <Card className="p-4">
-          <Typography>Loading...</Typography>
+        <Card sx={{ p: 8, textAlign: 'center' }}>
+          <CircularProgress />
         </Card>
-      ) : sheet ? (
-        <Collapse in={true}>
-          <Box>
-            {/* Sheet Info */}
-            <Box className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-              <Card className="bg-purple-600 text-white">
-                <CardContent>
-                  <Typography variant="overline" className="opacity-80">Status</Typography>
-                  <Typography variant="h5" className="capitalize">{sheet.status}</Typography>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent>
-                  <Typography variant="overline" color="text.secondary">Total Items</Typography>
-                  <Typography variant="h5" className="text-primary font-semibold">{entries.length}</Typography>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="flex justify-between items-center">
-                  <Box>
-                    <Typography variant="overline" color="text.secondary">Action</Typography>
-                    <Typography variant="body2">
-                      {sheet.status === 'submitted' ? 'Already Submitted' : 'Ready to Submit'}
-                    </Typography>
-                  </Box>
-                  {sheet.status === 'draft' && (
-                    <Button
-                      variant="contained"
-                      color="success"
-                      startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
-                      onClick={handleSubmit}
-                      disabled={submitting}
-                    >
-                      Submit
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </Box>
-
-            {/* Entries Table */}
-            <Card>
-              <div className="p-4">
-                <Table
-                  columns={columns}
-                  data={entries}
-                  searchable={true}
-                />
-              </div>
-            </Card>
-
-            {/* Sheets in Range */}
-            {sheetsInRange.length > 0 && (
-              <Card className="mt-3">
-                <CardContent>
-                  <Typography variant="h6" className="mb-2">Sheets in Range ({sheetsInRange.length})</Typography>
-                  <Table
-                    columns={[
-                      { header: 'Date', accessor: 'count_date' },
-                      { header: 'Status', accessor: 'status' },
-                      { header: 'Total Items', accessor: 'entry_count' },
-                    ]}
-                    data={sheetsInRange}
-                    searchable={false}
-                    actions={(row) => (
-                      <Button size="small" onClick={() => { setSheet(row); fetchEntries(row.id); }}>View</Button>
-                    )}
-                  />
-                </CardContent>
-              </Card>
+      ) : selectedSheet ? (
+        // Detailed View of One Sheet
+        <Box>
+          <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">
+              {selectedSheet.location.name} • {selectedSheet.frequency_display} • {selectedSheet.count_date}
+            </Typography>
+            {selectedSheet.status === 'draft' && (
+              <Button
+                variant="contained"
+                color="success"
+                startIcon={submitting ? <CircularProgress size={20} /> : <Send />}
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                Submit Sheet
+              </Button>
             )}
           </Box>
-        </Collapse>
+
+          <Card>
+            <Box sx={{ p: 2 }}>
+              <Table
+                columns={[
+                  { header: 'Item', accessor: 'item.name' },
+                  { header: 'On Hand', accessor: 'on_hand_quantity' },
+                  { header: 'Par', accessor: 'par_level' },
+                  { header: 'To Order', accessor: 'calculated_qty_to_order' },
+                  { header: 'Status', accessor: 'highlight_display' },
+                ]}
+                data={entries}
+                searchable
+              />
+            </Box>
+          </Card>
+
+          <Button sx={{ mt: 2 }} variant="text" onClick={() => setSelectedSheet(null)}>
+            ← Back to List
+          </Button>
+        </Box>
       ) : (
+        // Summary Table
         <Card>
-          <CardContent className="text-center py-8">
-            <Typography variant="h6" color="text.secondary">
-              Select a location and date to view counts
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              {filteredSheets.length > 0
+                ? `Sheets for ${locations.find(l => l.id == selectedLocation)?.name} - ${frequencyOptions.find(f => f.value === selectedFrequency)?.label}`
+                : selectedLocation
+                  ? `All Sheets for ${locations.find(l => l.id == selectedLocation)?.name}`
+                  : 'Latest Sheets Across All Locations'}
+              {' '}({currentSheets.length})
             </Typography>
+
+            <Table
+              columns={columns}
+              data={currentSheets}
+              searchable
+            />
           </CardContent>
         </Card>
       )}

@@ -1,5 +1,6 @@
 from datetime import date
 from users.models import UserRole
+from datetime import timedelta
 from locations.models import Location
 from .models import CountEntry, CountSheet
 from rest_framework.decorators import action
@@ -77,30 +78,68 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
         if action in {"retrieve", "submit"} or (
             include_entries and include_entries.lower() in {"1", "true"}
         ):
-            queryset = queryset.prefetch_related("entries__item", "entries__override")
+            queryset = queryset.prefetch_related(
+                "entries__item", "entries__override")
         return self._restrict_queryset(queryset)
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
         params = self.request.query_params
+
+        # location filter
         location = params.get("location")
         if location:
             queryset = queryset.filter(location_id=location)
+
+        # frequency filter
         frequency = params.get("frequency")
         if frequency:
             queryset = queryset.filter(frequency=frequency)
+
+            # ---- Frequency Based Date Ranges ----
+            today = date.today()
+
+            if frequency.lower() == "mon/wed":
+                # Only Monday and Wednesday entries (current week)
+                start_of_week = today - timedelta(days=today.weekday())
+                end_of_week = start_of_week + timedelta(days=6)
+                queryset = queryset.filter(
+                    count_date__range=(start_of_week, end_of_week)
+                ).filter(count_date__week_day__in=[2, 4])  # Monday=2, Wednesday=4
+
+            elif frequency.lower() == "weekly":
+                queryset = queryset.filter(
+                    count_date__gte=today - timedelta(days=7)
+                )
+
+            elif frequency.lower() == "bi-weekly":
+                queryset = queryset.filter(
+                    count_date__gte=today - timedelta(days=14)
+                )
+
+            elif frequency.lower() == "monthly":
+                first_day = today.replace(day=1)
+                queryset = queryset.filter(
+                    count_date__gte=first_day
+                )
+
+            elif frequency.lower() == "semi-annual":
+                six_months_ago = today - timedelta(days=180)
+                queryset = queryset.filter(
+                    count_date__gte=six_months_ago
+                )
+
+        # status filter
         status_param = params.get("status")
         if status_param:
             queryset = queryset.filter(status=status_param)
+
+        # ❌ IGNORE start_date & end_date (as requested)
+        # count_date filter (optional)
         count_date = params.get("count_date")
         if count_date:
             queryset = queryset.filter(count_date=count_date)
-        start_date = params.get("start_date")
-        if start_date:
-            queryset = queryset.filter(count_date__gte=start_date)
-        end_date = params.get("end_date")
-        if end_date:
-            queryset = queryset.filter(count_date__lte=end_date)
+
         return queryset
 
     def get_serializer_class(self):
@@ -127,11 +166,14 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
         )
         response_serializer = self.get_serializer(sheet)
         response_data = response_serializer.data
-        include_entries = serializer.validated_data.get("include_entries", True)
+        include_entries = serializer.validated_data.get(
+            "include_entries", True)
         if not include_entries:
-            response_data = {k: v for k, v in response_data.items() if k != "entries"}
+            response_data = {k: v for k,
+                             v in response_data.items() if k != "entries"}
         status_code = (
-            status.HTTP_201_CREATED if getattr(sheet, "_was_created", False) else status.HTTP_200_OK
+            status.HTTP_201_CREATED if getattr(
+                sheet, "_was_created", False) else status.HTTP_200_OK
         )
         return Response(response_data, status=status_code)
 
@@ -239,7 +281,8 @@ class CountEntryViewSet(LocationScopedMixin, viewsets.ModelViewSet):
             queryset = queryset.filter(sheet__status=status_param)
         include_inactive = params.get("include_inactive")
         if not include_inactive or include_inactive.lower() not in {"1", "true"}:
-            queryset = queryset.filter(override__is_active=True, item__is_active=True)
+            queryset = queryset.filter(
+                override__is_active=True, item__is_active=True)
         return queryset
 
     def perform_update(self, serializer):
