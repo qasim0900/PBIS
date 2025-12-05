@@ -19,9 +19,9 @@ import {
 } from '@mui/material';
 import { Add, Inventory, Close } from '@mui/icons-material';
 import Header from '../components/Header';
+import Table from '../components/Table';
 import catalogAPI from '../services/catalogAPI';
 import { showNotification } from '../store/slices/uiSlice';
-import Table from '../components/Table';
 
 const CATEGORIES = [
   { value: 'fruit', label: 'Fruit', color: '#10b981' },
@@ -33,6 +33,15 @@ const CATEGORIES = [
 
 const UNITS = ['bags', 'cans', 'boxes', 'pcs', 'kg', 'liters', 'cases', 'packs'];
 
+const DEFAULT_FORM = {
+  name: '',
+  category: 'fruit',
+  count_unit: 'bags',
+  order_unit: 'case',
+  pack_size: 1,
+  is_active: true,
+};
+
 const CatalogView = () => {
   const dispatch = useDispatch();
   const [items, setItems] = useState([]);
@@ -42,22 +51,15 @@ const CatalogView = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState(DEFAULT_FORM);
 
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'fruit',
-    count_unit: 'bags',
-    order_unit: 'case',
-    pack_size: 1,
-    is_active: true,
-  });
-
+  // Fetch all catalog items
   const fetchItems = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await catalogAPI.getAll();
-      setItems(response.data.results || response.data || []);
-    } catch (error) {
+      const { data } = await catalogAPI.getAll();
+      setItems(data.results || data || []);
+    } catch (err) {
       dispatch(showNotification({ message: 'Failed to load items', type: 'error' }));
     } finally {
       setLoading(false);
@@ -68,36 +70,24 @@ const CatalogView = () => {
     fetchItems();
   }, [fetchItems]);
 
-  const openAddModal = () => {
-    setEditingItem(null);
-    setFormData({
-      name: '',
-      category: 'fruit',
-      count_unit: 'bags',
-      order_unit: 'case',
-      pack_size: 1,
-      is_active: true,
-    });
-    setModalOpen(true);
-  };
-
-  const openEditModal = (item) => {
+  // Modal open handlers
+  const openModal = (item = null) => {
     setEditingItem(item);
-    setFormData({
+    setFormData(item ? {
       name: item.name,
       category: item.category,
       count_unit: item.count_unit,
       order_unit: item.order_unit,
       pack_size: item.pack_size || 1,
       is_active: item.is_active,
-    });
+    } : DEFAULT_FORM);
     setModalOpen(true);
   };
 
+  // Save item (create or update)
   const handleSave = async () => {
     if (!formData.name.trim()) {
-      dispatch(showNotification({ message: 'Item name is required!', type: 'error' }));
-      return;
+      return dispatch(showNotification({ message: 'Item name is required!', type: 'error' }));
     }
 
     setSaving(true);
@@ -111,8 +101,8 @@ const CatalogView = () => {
       }
       setModalOpen(false);
       fetchItems();
-    } catch (error) {
-      const msg = error.response?.data?.name?.[0] || 'Failed to save item';
+    } catch (err) {
+      const msg = err.response?.data?.name?.[0] || 'Failed to save item';
       dispatch(showNotification({ message: msg, type: 'error' }));
     } finally {
       setSaving(false);
@@ -126,11 +116,17 @@ const CatalogView = () => {
       header: 'Item Name',
       render: (row) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box sx={{
-            width: 44, height: 44, borderRadius: 2,
-            bgcolor: `${getCategoryColor(row.category)}20`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2,
+              bgcolor: `${getCategoryColor(row.category)}20`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
             <Inventory sx={{ color: getCategoryColor(row.category) }} />
           </Box>
           <Box>
@@ -140,7 +136,7 @@ const CatalogView = () => {
             </Typography>
           </Box>
         </Box>
-      )
+      ),
     },
     { header: 'Count Unit', accessor: 'count_unit' },
     { header: 'Order Unit', accessor: 'order_unit' },
@@ -148,27 +144,21 @@ const CatalogView = () => {
     {
       header: 'Status',
       render: (row) => (
-        < Chip
+        <Chip
           label={row.is_active ? 'Active' : 'Inactive'}
           size="small"
           color={row.is_active ? 'success' : 'default'}
           variant="outlined"
         />
-      )
+      ),
     },
     {
       header: 'Action',
       render: (row) => (
-        <Button
-          size="small"
-          variant="outlined"
-          color="primary"
-          onClick={() => openEditModal(row)}
-          sx={{ minWidth: 80 }}
-        >
+        <Button size="small" variant="outlined" color="primary" onClick={() => openModal(row)}>
           Edit
         </Button>
-      )
+      ),
     },
   ];
 
@@ -180,7 +170,7 @@ const CatalogView = () => {
         showRefresh
         onRefresh={fetchItems}
       >
-        <Button variant="contained" startIcon={<Add />} onClick={openAddModal}>
+        <Button variant="contained" startIcon={<Add />} onClick={() => openModal()}>
           Add Item
         </Button>
       </Header>
@@ -201,10 +191,7 @@ const CatalogView = () => {
       <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           {editingItem ? 'Edit Item' : 'Add New Item'}
-          <Button
-            onClick={() => setModalOpen(false)}
-            sx={{ position: 'absolute', right: 8, top: 8 }}
-          >
+          <Button onClick={() => setModalOpen(false)} sx={{ position: 'absolute', right: 8, top: 8 }}>
             <Close />
           </Button>
         </DialogTitle>
@@ -213,7 +200,7 @@ const CatalogView = () => {
             <TextField
               label="Item Name *"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               fullWidth
               autoFocus
             />
@@ -221,19 +208,20 @@ const CatalogView = () => {
               select
               label="Category"
               value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
               fullWidth
             >
               {CATEGORIES.map(cat => (
                 <MenuItem key={cat.value} value={cat.value}>{cat.label}</MenuItem>
               ))}
             </TextField>
+
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
               <TextField
                 select
                 label="Count Unit"
                 value={formData.count_unit}
-                onChange={(e) => setFormData({ ...formData, count_unit: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, count_unit: e.target.value }))}
                 fullWidth
               >
                 {UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
@@ -242,31 +230,36 @@ const CatalogView = () => {
                 select
                 label="Order Unit"
                 value={formData.order_unit}
-                onChange={(e) => setFormData({ ...formData, order_unit: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, order_unit: e.target.value }))}
                 fullWidth
               >
                 {UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
               </TextField>
             </Box>
+
             <TextField
-              label="Pack Size (e.g. 6 bags per case)"
+              label="Pack Size"
               type="number"
               value={formData.pack_size}
-              onChange={(e) => setFormData({ ...formData, pack_size: Math.max(1, parseInt(e.target.value) || 1) })}
+              onChange={(e) =>
+                setFormData(prev => ({ ...prev, pack_size: Math.max(1, parseInt(e.target.value) || 1) }))
+              }
               InputProps={{ inputProps: { min: 1 } }}
               fullWidth
             />
+
             <FormControlLabel
               control={
                 <Switch
                   checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
                 />
               }
               label="Item is Active"
             />
           </Box>
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setModalOpen(false)}>Cancel</Button>
           <Button
@@ -274,7 +267,7 @@ const CatalogView = () => {
             onClick={handleSave}
             disabled={saving || !formData.name.trim()}
           >
-            {saving ? <CircularProgress size={20} /> : (editingItem ? 'Update Item' : 'Add Item')}
+            {saving ? <CircularProgress size={20} /> : editingItem ? 'Update Item' : 'Add Item'}
           </Button>
         </DialogActions>
       </Dialog>

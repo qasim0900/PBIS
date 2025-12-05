@@ -1,7 +1,8 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createSelector } from '@reduxjs/toolkit';
 import authAPI from '../../services/authAPI';
 import api from '../../services/api';
 
+// Async Thunks
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ username, password }, { rejectWithValue }) => {
@@ -13,7 +14,6 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem('refresh_token', refresh);
       api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
-      // Fetch user after login
       const userResponse = await authAPI.getMe();
       return userResponse.data;
     } catch (err) {
@@ -37,6 +37,7 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+// Initial State
 const initialState = {
   user: null,
   token: localStorage.getItem('access_token'),
@@ -44,6 +45,7 @@ const initialState = {
   error: null,
 };
 
+// Slice
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -61,7 +63,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -75,8 +76,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload || 'Login failed';
       })
-
-      // Fetch User
       .addCase(fetchCurrentUser.pending, (state) => {
         state.loading = true;
       })
@@ -92,20 +91,30 @@ const authSlice = createSlice({
   },
 });
 
+// Actions
 export const { logoutUser, clearError } = authSlice.actions;
 
-export const selectAuth = (state) => ({
-  isAuthenticated: !!state.auth.token && !!state.auth.user,
-  user: state.auth.user,
-  token: state.auth.token,
-  loading: state.auth.loading,
-  error: state.auth.error,
-});
-export const selectUser = (state) => state.auth.user;
-export const selectIsAdmin = (state) =>
-  state.auth.user?.role === 'admin' || state.auth.user?.is_superuser;
+// Memoized Selectors
+const authState = (state) => state.auth;
 
-export const selectIsManager = (state) =>
-  state.auth.user?.role === 'manager' || selectIsAdmin(state);
+export const selectAuth = createSelector(authState, (auth) => ({
+  isAuthenticated: !!auth.token && !!auth.user,
+  user: auth.user,
+  token: auth.token,
+  loading: auth.loading,
+  error: auth.error,
+}));
+
+export const selectUser = createSelector(authState, (auth) => auth.user);
+
+export const selectIsAdmin = createSelector(authState, (auth) =>
+  auth.user?.role === 'admin' || auth.user?.is_superuser
+);
+
+export const selectIsManager = createSelector(
+  authState,
+  selectIsAdmin,
+  (auth, isAdmin) => auth.user?.role === 'manager' || isAdmin
+);
 
 export default authSlice.reducer;

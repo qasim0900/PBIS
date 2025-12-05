@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Box, Card, CardContent, Typography, Button, Chip, Avatar, Skeleton,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem,
   Tooltip, IconButton
 } from '@mui/material';
 import { Add, Edit, Person, AdminPanelSettings, SupervisedUserCircle, PersonOff, CheckCircle } from '@mui/icons-material';
 
 import Header from '../components/Header';
 import Table from '../components/Table';
+import Modal from '../components/Modal'; 
 import { showNotification } from '../store/slices/uiSlice';
 import { fetchUsers, createUser, updateUser } from '../store/slices/usersSlice';
 
@@ -20,149 +20,84 @@ const ROLES = [
 
 const UsersView = () => {
   const dispatch = useDispatch();
-  const { users, loading } = useSelector((state) => state.users);
+  const { users = [], loading } = useSelector((state) => state.users);
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(null);
+  // Modal & Form State
+  const [modalState, setModalState] = useState({ open: false, isEdit: false, user: null });
 
-  // Form state
-  const [form, setForm] = useState({
-    username: '',
-    email: '',
-    password: '',
-    role: 'staff'
-  });
+  const openModal = (user = null) => {
+    setModalState({
+      open: true,
+      isEdit: Boolean(user),
+      user,
+    });
+  };
+
+  const closeModal = () => setModalState({ open: false, isEdit: false, user: null });
+
+  const handleFormSubmit = async (formData) => {
+    try {
+      if (modalState.isEdit) {
+        await dispatch(updateUser({ id: modalState.user.id, data: formData })).unwrap();
+        dispatch(showNotification({ message: 'User updated successfully', type: 'success' }));
+      } else {
+        await dispatch(createUser(formData)).unwrap();
+        dispatch(showNotification({ message: 'User created successfully', type: 'success' }));
+      }
+      closeModal();
+    } catch {
+      dispatch(showNotification({ message: 'Operation failed', type: 'error' }));
+    }
+  };
+
+  const toggleUserStatus = useCallback(async (user) => {
+    try {
+      await dispatch(updateUser({ id: user.id, data: { is_active: !user.is_active } })).unwrap();
+      dispatch(showNotification({ message: 'Status updated', type: 'success' }));
+    } catch {
+      dispatch(showNotification({ message: 'Failed to update status', type: 'error' }));
+    }
+  }, [dispatch]);
 
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
 
-  const getRoleInfo = (role) => ROLES.find(r => r.value === role) || ROLES[2];
-  const getInitials = (name) => name?.slice(0, 2).toUpperCase() || 'U';
+  // Memoized stats
+  const stats = useMemo(() => ({
+    total: users.length,
+    admins: users.filter(u => u.role === 'admin').length,
+    managers: users.filter(u => u.role === 'manager').length,
+    staff: users.filter(u => u.role === 'staff').length,
+  }), [users]);
 
-  // Toggle user active status
-  const toggleUserStatus = (user) => {
-    dispatch(updateUser({ id: user.id, data: { is_active: !user.is_active } }))
-      .unwrap()
-      .then(() => dispatch(showNotification({ message: 'Status updated', type: 'success' })))
-      .catch(() => dispatch(showNotification({ message: 'Failed to update status', type: 'error' })));
-  };
+  // Utility Functions
+  const getRoleInfo = useCallback(role => ROLES.find(r => r.value === role) || ROLES[2], []);
+  const getInitials = useCallback(name => name?.slice(0, 2).toUpperCase() || 'U', []);
 
-  // Open Add Modal
-  const openAddModal = () => {
-    setForm({ username: '', email: '', password: '', role: 'staff' });
-    setIsEditMode(false);
-    setModalOpen(true);
-  };
-
-  // Open Edit Modal
-  const openEditModal = (user) => {
-    setForm({
-      username: user.username,
-      email: user.email,
-      password: '', // password edit mein nahi bhejte
-      role: user.role
-    });
-    setCurrentUserId(user.id);
-    setIsEditMode(true);
-    setModalOpen(true);
-  };
-
-  // Close Modal
-  const closeModal = () => {
-    setModalOpen(false);
-    setIsEditMode(false);
-    setCurrentUserId(null);
-    setForm({ username: '', email: '', password: '', role: 'staff' });
-  };
-
-  // Handle Create
-  const handleCreate = () => {
-    if (!form.username || !form.email || !form.password) {
-      dispatch(showNotification({ message: 'All fields are required', type: 'error' }));
-      return;
-    }
-
-    dispatch(createUser({
-      username: form.username,
-      email: form.email,
-      password: form.password,
-      role: form.role
-    }))
-      .unwrap()
-      .then(() => {
-        dispatch(showNotification({ message: 'User created successfully', type: 'success' }));
-        closeModal();
-      })
-      .catch(() => dispatch(showNotification({ message: 'Failed to create user', type: 'error' })));
-  };
-
-  // Handle Update
-  const handleUpdate = () => {
-    if (!form.username || !form.email) {
-      dispatch(showNotification({ message: 'Username and Email are required', type: 'error' }));
-      return;
-    }
-
-    dispatch(updateUser({
-      id: currentUserId,
-      data: {
-        username: form.username,
-        email: form.email,
-        role: form.role
-      }
-    }))
-      .unwrap()
-      .then(() => {
-        dispatch(showNotification({ message: 'User updated successfully', type: 'success' }));
-        closeModal();
-      })
-      .catch(() => dispatch(showNotification({ message: 'Failed to update user', type: 'error' })));
-  };
-
-  const safeUsers = Array.isArray(users) ? users : [];
-  const stats = {
-    total: safeUsers.length,
-    admins: safeUsers.filter(u => u.role === 'admin').length,
-    managers: safeUsers.filter(u => u.role === 'manager').length,
-    staff: safeUsers.filter(u => u.role === 'staff').length,
-  };
-
-  const columns = [
+  // Table Columns
+  const columns = useMemo(() => [
     {
       header: 'User',
       render: (row) => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, opacity: row.is_active ? 1 : 0.5 }}>
-          <Avatar
-            sx={{
-              bgcolor: `${getRoleInfo(row.role).color}.main`,
-              opacity: row.is_active ? 1 : 0.4
-            }}
-          >
+          <Avatar sx={{ bgcolor: `${getRoleInfo(row.role).color}.main`, opacity: row.is_active ? 1 : 0.4 }}>
             {getInitials(row.username)}
           </Avatar>
           <Box>
-            <Typography
-              variant="subtitle2"
-              fontWeight={600}
-              sx={{ color: row.is_active ? 'text.primary' : 'text.disabled' }}
-            >
+            <Typography variant="subtitle2" fontWeight={600} sx={{ color: row.is_active ? 'text.primary' : 'text.disabled' }}>
               {row.username}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {row.email}
-            </Typography>
+            <Typography variant="body2" color="text.secondary">{row.email}</Typography>
           </Box>
         </Box>
-      )
+      ),
     },
     {
       header: 'Role',
       render: (row) => {
-        const roleInfo = getRoleInfo(row.role);
-        return <Chip icon={roleInfo.icon} label={roleInfo.label} size="small" color={roleInfo.color} variant="outlined" />;
+        const role = getRoleInfo(row.role);
+        return <Chip icon={role.icon} label={role.label} size="small" color={role.color} variant="outlined" />;
       }
     },
     {
@@ -174,16 +109,11 @@ const UsersView = () => {
           size="small"
           color={row.is_active ? 'success' : 'default'}
           variant={row.is_active ? 'filled' : 'outlined'}
-          sx={{
-            opacity: row.is_active ? 1 : 0.6,           // disabled ko thoda fade kar do
-            '& .MuiChip-label': {
-              color: row.is_active ? 'inherit' : 'text.disabled'
-            }
-          }}
+          sx={{ opacity: row.is_active ? 1 : 0.6, '& .MuiChip-label': { color: row.is_active ? 'inherit' : 'text.disabled' } }}
         />
       )
     }
-  ];
+  ], [getRoleInfo, getInitials]);
 
   return (
     <Box>
@@ -191,7 +121,7 @@ const UsersView = () => {
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={openAddModal}
+          onClick={() => openModal()}
           sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
         >
           Add User
@@ -213,24 +143,22 @@ const UsersView = () => {
 
       {/* Table */}
       {loading ? (
-        <Card><CardContent>{[1, 2, 3, 4].map(i => <Skeleton key={i} height={65} sx={{ mb: 2, borderRadius: 2 }} />)}</CardContent></Card>
+        <Card>
+          <CardContent>{[1, 2, 3, 4].map(i => <Skeleton key={i} height={65} sx={{ mb: 2, borderRadius: 2 }} />)}</CardContent>
+        </Card>
       ) : (
         <Table
           columns={columns}
-          data={safeUsers}
+          data={users}
           actions={(row) => (
             <>
               <Tooltip title="Edit User">
-                <IconButton size="small" color="primary" onClick={() => openEditModal(row)}>
+                <IconButton size="small" color="primary" onClick={() => openModal(row)}>
                   <Edit fontSize="small" />
                 </IconButton>
               </Tooltip>
               <Tooltip title={row.is_active ? 'Deactivate' : 'Activate'}>
-                <IconButton
-                  size="small"
-                  color={row.is_active ? 'warning' : 'success'}
-                  onClick={() => toggleUserStatus(row)}
-                >
+                <IconButton size="small" color={row.is_active ? 'warning' : 'success'} onClick={() => toggleUserStatus(row)}>
                   {row.is_active ? <PersonOff /> : <CheckCircle />}
                 </IconButton>
               </Tooltip>
@@ -239,56 +167,14 @@ const UsersView = () => {
         />
       )}
 
-      {/* SINGLE MODAL - ADD OR EDIT */}
-      <Dialog open={modalOpen} onClose={closeModal} maxWidth="sm" fullWidth>
-        <DialogTitle>{isEditMode ? 'Edit User' : 'Add New User'}</DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
-            <TextField
-              label="Username"
-              fullWidth
-              required
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-            />
-            <TextField
-              label="Email"
-              type="email"
-              fullWidth
-              required
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-            {!isEditMode && (
-              <TextField
-                label="Password"
-                type="password"
-                fullWidth
-                required
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-              />
-            )}
-            <TextField
-              select
-              label="Role"
-              fullWidth
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-            >
-              {ROLES.map(role => (
-                <MenuItem key={role.value} value={role.value}>{role.label}</MenuItem>
-              ))}
-            </TextField>
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeModal} color="inherit">Cancel</Button>
-          <Button variant="contained" onClick={isEditMode ? handleUpdate : handleCreate}>
-            {isEditMode ? 'Update User' : 'Create User'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Modal */}
+      <Modal
+        open={modalState.open}
+        isEdit={modalState.isEdit}
+        user={modalState.user}
+        onClose={closeModal}
+        onSubmit={handleFormSubmit}
+      />
     </Box>
   );
 };

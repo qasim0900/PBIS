@@ -1,23 +1,22 @@
-from datetime import date
-from users.models import UserRole
-from datetime import timedelta
-from locations.models import Location
-from .models import CountEntry, CountSheet
+from datetime import date, timedelta
+from django.db.models import Prefetch
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import filters, status, viewsets
-from .pagination import TenPerPagePagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from users.permissions import ManagersOnly, StaffCanSubmitCounts, is_manager
+from locations.models import Location
+from .models import CountSheet, CountEntry
 from .serializers import (
-    CountEntryAuditSerializer,
-    CountEntrySerializer,
     CountSheetSerializer,
     CountSheetSummarySerializer,
     EnsureCountSheetSerializer,
     SubmitCountSheetSerializer,
+    CountEntrySerializer,
+    CountEntryAuditSerializer,
 )
+from .pagination import TenPerPagePagination
 
 
 # --------------------------------------
@@ -25,37 +24,25 @@ from .serializers import (
 # --------------------------------------
 class LocationScopedMixin:
     """
-    Mixin to restrict querysets and validate user access based on location assignments.
+    Restrict querysets and validate user access based on assigned locations.
     Managers, admins, and superusers get full access.
     """
 
-    def _restrict_queryset(self, queryset):
-        """Restricts a queryset to only include locations the current user can access."""
-        user = self.request.user
-        if not user.is_authenticated:
-            return queryset.none()
-        if is_manager(user):  # superuser, admin, or manager
-            return queryset
-        assigned_ids = user.assigned_locations.values_list("id", flat=True)
-        return queryset.filter(location_id__in=assigned_ids)
-
-    def _restrict_entry_queryset(self, queryset):
-        """Limits a CountEntry queryset to entries in locations assigned to the current user."""
+    def restrict_queryset_by_location(self, queryset, field_name="location_id"):
         user = self.request.user
         if not user.is_authenticated:
             return queryset.none()
         if is_manager(user):
             return queryset
         assigned_ids = user.assigned_locations.values_list("id", flat=True)
-        return queryset.filter(sheet__location_id__in=assigned_ids)
+        return queryset.filter(**{f"{field_name}__in": assigned_ids})
 
-    def _validate_location_access(self, user, location):
-        """Checks if a user has access to a location and raises a PermissionDenied otherwise."""
-        if is_manager(user):
-            return
-        if user.assigned_locations.filter(pk=location.pk).exists():
-            return
-        raise PermissionDenied("You are not assigned to this location.")
+    def restrict_entry_queryset(self, queryset):
+        return self.restrict_queryset_by_location(queryset, "sheet__location_id")
+
+    def validate_location_access(self, user, location):
+        if not is_manager(user) and not user.assigned_locations.filter(pk=location.pk).exists():
+            raise PermissionDenied("You are not assigned to this location.")
 
 
 # --------------------------------------
@@ -63,153 +50,120 @@ class LocationScopedMixin:
 # --------------------------------------
 class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
     serializer_class = CountSheetSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "head", "options"]
-    filter_backends = (filters.OrderingFilter,)
-    ordering_fields = ("count_date", "location__name", "frequency")
-    ordering = ("-count_date",)
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ["count_date", "location__name", "frequency"]
+    ordering = ["-count_date"]
 
     def get_queryset(self):
         queryset = CountSheet.objects.select_related(
             "location", "created_by", "submitted_by"
         )
         include_entries = self.request.query_params.get("include_entries")
-        action = getattr(self, "action", None)
-        if action in {"retrieve", "submit"} or (
-            include_entries and include_entries.lower() in {"1", "true"}
-        ):
+        if self.action in {"retrieve", "submit"} or (include_entries and include_entries.lower() in {"1", "true"}):
             queryset = queryset.prefetch_related(
-                "entries__item", "entries__override")
-        return self._restrict_queryset(queryset)
+                Prefetch("entries", queryset=CountEntry.objects.select_related(
+                    "item", "override"))
+            )
+        return self.restrict_queryset_by_location(queryset)
 
     def filter_queryset(self, queryset):
-        queryset = super().filter_queryset(queryset)
         params = self.request.query_params
 
-        # location filter
-        location = params.get("location")
-        if location:
-            queryset = queryset.filter(location_id=location)
+        # Dynamic filters
+        filters_map = {
+            "location": "location_id",
+            "frequency": "frequency",
+            "status": "status",
+            "count_date": "count_date",
+        }
 
-        # frequency filter
+        for param, field in filters_map.items():
+            if value := params.get(param):
+                queryset = queryset.filter(**{field: value})
+
+        # Frequency-specific ranges
         frequency = params.get("frequency")
         if frequency:
-            queryset = queryset.filter(frequency=frequency)
-
-            # ---- Frequency Based Date Ranges ----
             today = date.today()
-
-            if frequency.lower() == "mon/wed":
-                # Only Monday and Wednesday entries (current week)
-                start_of_week = today - timedelta(days=today.weekday())
-                end_of_week = start_of_week + timedelta(days=6)
-                queryset = queryset.filter(
-                    count_date__range=(start_of_week, end_of_week)
-                ).filter(count_date__week_day__in=[2, 4])  # Monday=2, Wednesday=4
-
-            elif frequency.lower() == "weekly":
-                queryset = queryset.filter(
-                    count_date__gte=today - timedelta(days=7)
-                )
-
-            elif frequency.lower() == "bi-weekly":
-                queryset = queryset.filter(
-                    count_date__gte=today - timedelta(days=14)
-                )
-
-            elif frequency.lower() == "monthly":
-                first_day = today.replace(day=1)
-                queryset = queryset.filter(
-                    count_date__gte=first_day
-                )
-
-            elif frequency.lower() == "semi-annual":
-                six_months_ago = today - timedelta(days=180)
-                queryset = queryset.filter(
-                    count_date__gte=six_months_ago
-                )
-
-        # status filter
-        status_param = params.get("status")
-        if status_param:
-            queryset = queryset.filter(status=status_param)
-
-        # ❌ IGNORE start_date & end_date (as requested)
-        # count_date filter (optional)
-        count_date = params.get("count_date")
-        if count_date:
-            queryset = queryset.filter(count_date=count_date)
+            freq_map = {
+                "mon/wed": lambda qs: qs.filter(
+                    count_date__range=(
+                        today - timedelta(days=today.weekday()), today + timedelta(days=6)),
+                    count_date__week_day__in=[2, 4],
+                ),
+                "weekly": lambda qs: qs.filter(count_date__gte=today - timedelta(days=7)),
+                "bi-weekly": lambda qs: qs.filter(count_date__gte=today - timedelta(days=14)),
+                "monthly": lambda qs: qs.filter(count_date__gte=today.replace(day=1)),
+                "semi-annual": lambda qs: qs.filter(count_date__gte=today - timedelta(days=180)),
+            }
+            queryset = freq_map.get(frequency.lower(), lambda qs: qs)(queryset)
 
         return queryset
 
     def get_serializer_class(self):
         include_entries = self.request.query_params.get("include_entries")
-        if self.action == "list" and not (
-            include_entries and include_entries.lower() in {"1", "true"}
-        ):
+        if self.action == "list" and not (include_entries and include_entries.lower() in {"1", "true"}):
             return CountSheetSummarySerializer
         return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
         serializer = EnsureCountSheetSerializer(
-            data=request.data, context={"request": request}
-        )
+            data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+
         location = serializer.validated_data["location"]
-        self._validate_location_access(request.user, location)
-        count_date = serializer.validated_data.get("count_date")
+        self.validate_location_access(request.user, location)
+
         sheet = CountSheet.objects.ensure_daily_sheet(
             location=location,
             frequency=serializer.validated_data["frequency"],
-            target_date=count_date,
+            target_date=serializer.validated_data.get("count_date"),
             created_by=request.user,
         )
+
         response_serializer = self.get_serializer(sheet)
-        response_data = response_serializer.data
-        include_entries = serializer.validated_data.get(
-            "include_entries", True)
-        if not include_entries:
-            response_data = {k: v for k,
-                             v in response_data.items() if k != "entries"}
-        status_code = (
-            status.HTTP_201_CREATED if getattr(
-                sheet, "_was_created", False) else status.HTTP_200_OK
-        )
-        return Response(response_data, status=status_code)
+        data = response_serializer.data
+
+        if not serializer.validated_data.get("include_entries", True):
+            data.pop("entries", None)
+
+        status_code = status.HTTP_201_CREATED if getattr(
+            sheet, "_was_created", False) else status.HTTP_200_OK
+        return Response(data, status=status_code)
 
     @action(detail=True, methods=["post"], permission_classes=[StaffCanSubmitCounts])
     def submit(self, request, pk=None):
         sheet = self.get_object()
-        serializer = SubmitCountSheetSerializer(
-            data=request.data, context={"request": request}
-        )
-        serializer.is_valid(raise_exception=True)
         if sheet.locked:
             raise ValidationError("Sheet is already locked.")
+        serializer = SubmitCountSheetSerializer(
+            data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
         sheet.submit(request.user)
-        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+        return Response(self.get_serializer(sheet).data)
 
     @action(detail=True, methods=["post"], permission_classes=[ManagersOnly])
     def reset(self, request, pk=None):
         sheet = self.get_object()
         sheet.reset()
-        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+        return Response(self.get_serializer(sheet).data)
 
     @action(detail=True, methods=["post"], permission_classes=[ManagersOnly])
     def lock(self, request, pk=None):
         sheet = self.get_object()
-        if sheet.locked:
-            return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
-        sheet.locked = True
-        sheet.save(update_fields=["locked", "updated_at"])
-        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+        if not sheet.locked:
+            sheet.locked = True
+            sheet.save(update_fields=["locked", "updated_at"])
+        return Response(self.get_serializer(sheet).data)
 
     @action(detail=True, methods=["post"], permission_classes=[ManagersOnly])
     def unlock(self, request, pk=None):
         sheet = self.get_object()
         sheet.locked = False
         sheet.save(update_fields=["locked", "updated_at"])
-        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+        return Response(self.get_serializer(sheet).data)
 
     @action(detail=False, methods=["get"])
     def today(self, request):
@@ -217,13 +171,14 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
         frequency = request.query_params.get("frequency")
         if not location_id or not frequency:
             raise ValidationError(
-                "location and frequency query parameters are required."
-            )
-        try:
-            location = Location.objects.get(pk=location_id, is_active=True)
-        except Location.DoesNotExist:
+                "Both 'location' and 'frequency' query parameters are required.")
+
+        location = Location.objects.filter(
+            pk=location_id, is_active=True).first()
+        if not location:
             raise ValidationError("Invalid location.")
-        self._validate_location_access(request.user, location)
+
+        self.validate_location_access(request.user, location)
 
         sheet = CountSheet.objects.ensure_daily_sheet(
             location=location,
@@ -231,8 +186,7 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
             target_date=date.today(),
             created_by=request.user,
         )
-        serializer = self.get_serializer(sheet)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(self.get_serializer(sheet).data)
 
 
 # --------------------------------------
@@ -240,78 +194,59 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
 # --------------------------------------
 class CountEntryViewSet(LocationScopedMixin, viewsets.ModelViewSet):
     serializer_class = CountEntrySerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = [IsAuthenticated]
     http_method_names = ["get", "patch", "head", "options"]
-    filter_backends = (filters.OrderingFilter,)
-    ordering_fields = (
-        "item__name",
-        "override__display_order",
-        "sheet__count_date",
-    )
-    ordering = ("override__display_order",)
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ["item__name",
+                       "override__display_order", "sheet__count_date"]
+    ordering = ["override__display_order"]
     pagination_class = TenPerPagePagination
+
     queryset = CountEntry.objects.select_related(
-        "sheet",
-        "sheet__location",
-        "item",
-        "override",
-        "override__location",
+        "sheet", "sheet__location", "item", "override", "override__location"
     ).all()
 
     def get_queryset(self):
-        return self._restrict_entry_queryset(self.queryset)
+        return self.restrict_entry_queryset(self.queryset)
 
     def filter_queryset(self, queryset):
-        queryset = super().filter_queryset(queryset)
         params = self.request.query_params
-        sheet_id = params.get("sheet")
-        if sheet_id:
-            queryset = queryset.filter(sheet_id=sheet_id)
-        location_id = params.get("location")
-        if location_id:
-            queryset = queryset.filter(sheet__location_id=location_id)
-        frequency = params.get("frequency")
-        if frequency:
-            queryset = queryset.filter(sheet__frequency=frequency)
-        highlight_state = params.get("highlight")
-        if highlight_state:
-            queryset = queryset.filter(highlight_state=highlight_state)
-        status_param = params.get("status")
-        if status_param:
-            queryset = queryset.filter(sheet__status=status_param)
-        include_inactive = params.get("include_inactive")
-        if not include_inactive or include_inactive.lower() not in {"1", "true"}:
+        filters_map = {
+            "sheet": "sheet_id",
+            "location": "sheet__location_id",
+            "frequency": "sheet__frequency",
+            "highlight": "highlight_state",
+            "status": "sheet__status",
+        }
+
+        for param, field in filters_map.items():
+            if value := params.get(param):
+                queryset = queryset.filter(**{field: value})
+
+        if not params.get("include_inactive", "").lower() in {"1", "true"}:
             queryset = queryset.filter(
-                override__is_active=True, item__is_active=True)
+                item__is_active=True, override__is_active=True)
+
         return queryset
 
     def perform_update(self, serializer):
-        entry = serializer.instance
-        if entry.sheet.locked and not is_manager(self.request.user):
+        if serializer.instance.sheet.locked and not is_manager(self.request.user):
             raise PermissionDenied(
-                "Sheet is locked. Contact a manager to make changes."
-            )
+                "Sheet is locked. Contact a manager to make changes.")
         serializer.save(updated_by=self.request.user)
 
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
     def history(self, request, pk=None):
         entry = self.get_object()
-        audit_qs = entry.audit_log.all().order_by("-changed_at")
-        serializer = CountEntryAuditSerializer(audit_qs, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = CountEntryAuditSerializer(
+            entry.audit_log.order_by("-changed_at"), many=True)
+        return Response(serializer.data)
 
-    @action(
-        detail=False,
-        methods=["get"],
-        permission_classes=[IsAuthenticated],
-        url_path="low-stock",
-    )
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated], url_path="low-stock")
     def low_stock(self, request):
         queryset = self.filter_queryset(self.get_queryset())
-        include_near = request.query_params.get("include_near")
         highlights = ["low"]
-        if include_near and include_near.lower() in {"1", "true"}:
+        if request.query_params.get("include_near", "").lower() in {"1", "true"}:
             highlights.append("near")
         queryset = queryset.filter(highlight_state__in=highlights)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(self.get_serializer(queryset, many=True).data)

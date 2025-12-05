@@ -1,6 +1,7 @@
 import { useSelector } from 'react-redux';
 import { selectAuth, selectIsAdmin, selectIsManager } from '../store/slices/authSlice';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { Navigate } from 'react-router-dom';
 
 const ProtectedRoute = ({ children, requireAdmin = false, requireManager = false }) => {
   const { isAuthenticated, loading } = useSelector(selectAuth);

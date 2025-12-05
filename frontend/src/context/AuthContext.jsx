@@ -1,9 +1,8 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import authAPI from '../services/authAPI';
 import api, { addAuthRefreshListener } from '../services/api';
-import { setLogin, logout as reduxLogout } from '../store/slices/authSlice';
+import { setLogin, logoutUser } from '../store/slices/authSlice';
 
 const AuthContext = createContext(null);
 
@@ -18,13 +17,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
 
-  // Fetch current user
   const fetchUser = useCallback(async () => {
     try {
       const response = await authAPI.getMe();
       setUser(response.data);
-
-      // Sync with Redux
       dispatch(setLogin({
         user: response.data,
         token: localStorage.getItem('access_token')
@@ -36,7 +32,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [dispatch]);
 
-  // On mount, check token and fetch user
   useEffect(() => {
     const token = localStorage.getItem('access_token') || localStorage.getItem('token');
     if (token) {
@@ -54,7 +49,6 @@ export const AuthProvider = ({ children }) => {
     return () => unregister();
   }, [fetchUser]);
 
-  // Login
   const login = async (username, password) => {
     const response = await authAPI.login(username, password);
     localStorage.setItem('access_token', response.data.access);
@@ -64,16 +58,14 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
-  // Logout
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    dispatch(reduxLogout());
+    dispatch(logoutUser());
   };
 
-  // Role checks
   const isAdmin = user?.role === 'admin' || user?.is_superuser;
   const isManager = user?.role === 'manager' || isAdmin;
   const isStaff = user?.role === 'staff' || isManager;

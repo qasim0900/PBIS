@@ -1,12 +1,10 @@
-from .views import LocationViewSet, LocationOverrideViewSet
 from rest_framework.routers import DefaultRouter
+from .views import LocationViewSet, LocationOverrideViewSet
+
 # -----------------------------------
-# :: URL Patterns
+# :: DRF Router Setup
 # -----------------------------------
 
-"""
-Define URL routing for the count/location app.
-"""
 
 router = DefaultRouter()
 router.register(r'locations', LocationViewSet, basename='location')

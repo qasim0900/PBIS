@@ -1,3 +1,4 @@
+import React, { useCallback } from 'react';
 import {
   AppBar,
   Box,
@@ -16,7 +17,10 @@ import { toggleSidebarCollapse, setSidebarCollapsed } from '../store/slices/uiSl
 import { logoutUser, selectUser } from '../store/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
 
-export default function MenuAppBar() {
+/**
+ * MenuAppBar - Application top navigation bar
+ */
+const MenuAppBar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const user = useSelector(selectUser);
@@ -24,29 +28,37 @@ export default function MenuAppBar() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     dispatch(logoutUser());
     navigate('/login');
-  };
+  }, [dispatch, navigate]);
 
-  const handleMenuClick = () => {
-    if (isMobile) {
-      dispatch(setSidebarCollapsed(false));
-    } else {
-      dispatch(toggleSidebarCollapse());
-    }
-  };
+  const handleMenuClick = useCallback(() => {
+    isMobile ? dispatch(setSidebarCollapsed(false)) : dispatch(toggleSidebarCollapse());
+  }, [dispatch, isMobile]);
 
-  const getRoleColor = (role) => {
+  const getRoleColor = useCallback((role) => {
     switch (role) {
       case 'admin':
-        return 'error';        // Red
+        return 'error';
       case 'manager':
-        return 'warning';      // Yellow
+        return 'warning';
       case 'staff':
       default:
-        return 'success';      // Green
+        return 'success';
     }
+  }, []);
+
+  const buttonStyles = {
+    color: 'white',
+    borderRadius: 0,
+    fontSize: isMobile ? '0.8rem' : '0.875rem',
+    borderColor: 'rgba(255,255,255,0.7)',
+    '&:hover': {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      color: '#FFFDD0',
+      borderColor: 'rgba(255,255,255,0.7)',
+    },
   };
 
   return (
@@ -60,67 +72,56 @@ export default function MenuAppBar() {
         borderRadius: 0,
       }}
     >
-      <Toolbar sx={{ borderRadius: 0, px: isSmallMobile ? 1 : 2 }}>
+      <Toolbar sx={{ px: isSmallMobile ? 1 : 2 }}>
+        {/* Sidebar toggle */}
         <IconButton
           size={isSmallMobile ? 'medium' : 'large'}
           edge="start"
           color="inherit"
-          aria-label="menu"
+          aria-label="toggle menu"
           onClick={handleMenuClick}
-          sx={{ mr: isSmallMobile ? 1 : 2, borderRadius: 0, '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 0 } }}
+          sx={{
+            mr: isSmallMobile ? 1 : 2,
+            borderRadius: 0,
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              borderRadius: 0,
+            },
+          }}
         >
           <MenuIcon />
         </IconButton>
 
-        <Typography 
-          variant={isSmallMobile ? 'h5' : 'h4'} 
-          component="div" 
+        {/* App title */}
+        <Typography
+          variant={isSmallMobile ? 'h5' : 'h4'}
+          component="div"
           sx={{ flexGrow: 1, fontWeight: 700 }}
         >
           PBIS
         </Typography>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: isSmallMobile ? 0.5 : 1, borderRadius: 0 }}>
-          <Chip
-            label={user?.role || 'Staff'}
-            size="small"
-            color={getRoleColor(user?.role)}
-            sx={{ 
-              height: 20, 
-              fontSize: isSmallMobile ? '0.6rem' : '0.65rem', 
-              borderRadius: 0,
-              display: isSmallMobile ? 'none' : 'flex',
-            }}
-          />
-          {isSmallMobile ? (
-            <IconButton
-              onClick={handleLogout}
+        {/* Right-side actions */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: isSmallMobile ? 0.5 : 1 }}>
+          {!isSmallMobile && (
+            <Chip
+              label={user?.role || 'Staff'}
+              size="small"
+              color={getRoleColor(user?.role)}
               sx={{
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                },
+                height: 20,
+                fontSize: '0.65rem',
+                borderRadius: 0,
               }}
-            >
+            />
+          )}
+
+          {isSmallMobile ? (
+            <IconButton onClick={handleLogout} sx={{ color: 'white', '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.2)' } }} aria-label="Logout">
               <Logout />
             </IconButton>
           ) : (
-            <Button
-              onClick={handleLogout}
-              startIcon={<Logout />}
-              sx={{
-                color: 'white',
-                borderColor: 'rgba(255,255,255,0.7)',
-                borderRadius: 0,
-                fontSize: isMobile ? '0.8rem' : '0.875rem',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  color: '#FFFDD0',
-                  borderColor: 'rgba(255,255,255,0.7)',
-                  borderRadius: 0,
-                },
-              }}
-            >
+            <Button onClick={handleLogout} startIcon={<Logout />} sx={buttonStyles}>
               Logout
             </Button>
           )}
@@ -128,4 +129,6 @@ export default function MenuAppBar() {
       </Toolbar>
     </AppBar>
   );
-}
+};
+
+export default React.memo(MenuAppBar);
