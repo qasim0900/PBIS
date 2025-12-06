@@ -14,6 +14,7 @@ const initialState = {
     global: false,
     components: {},
   },
+  reportsRefreshTrigger: 0,
 };
 
 const uiSlice = createSlice({
@@ -66,6 +67,9 @@ const uiSlice = createSlice({
     setComponentLoading: (state, action) => {
       state.loading.components[action.payload.component] = action.payload.loading;
     },
+    setReportsRefresh: (state) => {
+      state.reportsRefreshTrigger = Date.now();
+    },
   },
 });
 
@@ -81,6 +85,7 @@ export const {
   closeModal,
   setGlobalLoading,
   setComponentLoading,
+  setReportsRefresh,
 } = uiSlice.actions;
 
 export const selectSidebarOpen = (state) => state.ui.sidebarOpen;

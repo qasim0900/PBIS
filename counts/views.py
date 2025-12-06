@@ -138,10 +138,32 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
         sheet = self.get_object()
         if sheet.locked:
             raise ValidationError("Sheet is already locked.")
+        
         serializer = SubmitCountSheetSerializer(
             data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        
+        # 1. Submit the sheet
         sheet.submit(request.user)
+
+        # 2. AUTO CREATE REPORT ARCHIVE (Yahi missing tha!)
+        from reports.models import ReportArchive, ExportFormat
+        ReportArchive.objects.create(
+            sheet=sheet,
+            location=sheet.location,
+            frequency=sheet.frequency,
+            count_date=sheet.count_date,
+            exported_by=request.user,
+            submitted_by=request.user,
+            submitted_at=sheet.submitted_at,
+            export_format=ExportFormat.CSV,  # ya PDF
+            payload_snapshot={
+                "low_stock": sheet.entries.filter(highlight_state="low").count(),
+                "total_items": sheet.entries.count(),
+            },
+            export_notes=serializer.validated_data.get("note", ""),
+        )
+
         return Response(self.get_serializer(sheet).data)
 
     @action(detail=True, methods=["post"], permission_classes=[ManagersOnly])
