@@ -93,8 +93,6 @@ class ReportArchiveViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(location_id=location)
         if frequency := params.get("frequency"):
             queryset = queryset.filter(frequency=frequency)
-        if count_date := params.get("count_date"):
-            queryset = queryset.filter(count_date=count_date)
 
         return queryset
 
@@ -103,12 +101,6 @@ class ReportArchiveViewSet(viewsets.ModelViewSet):
     # -----------------------------------
 
     def create(self, request, *args, **kwargs):
-        """
-        Create a new ReportArchive instance.
-
-        Uses RecordExportSerializer for input validation.
-        Performs access check and smart defaults for sheet info.
-        """
         serializer = RecordExportSerializer(
             data=request.data, context={"request": request}
         )
@@ -123,7 +115,6 @@ class ReportArchiveViewSet(viewsets.ModelViewSet):
             sheet=sheet,
             location=location,
             frequency=data["frequency"],
-            count_date=data["count_date"],
             export_format=data["export_format"],
             export_url=data.get("export_url", ""),
             payload_snapshot=data.get("payload_snapshot") or {},
