@@ -67,12 +67,10 @@ Define allowed domains for the project
 """
 
 try:
-    ALLOWED_HOSTS = ['localhost','127.0.0.1']
+    ALLOWED_HOSTS = ['72.60.66.213']
 
     # CORS_ALLOWED_ORIGINS = []
-    CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5000",
-    "http://127.0.0.1:5000",
+    CORS_ALLOWED_ORIGINS = ['http://72.60.66.213'
 ]
 
     CORS_ALLOW_ALL_ORIGINS = False
