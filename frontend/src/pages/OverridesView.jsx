@@ -1,4 +1,3 @@
-import Modal from '../components/Modal';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import {
@@ -7,11 +6,20 @@ import {
   Button,
   Chip,
   TextField,
-  Collapse,
   MenuItem,
   InputAdornment,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  Collapse,
 } from '@mui/material';
-import { Add, Schedule, Inventory, LocationOn } from '@mui/icons-material';
+import { Add, Schedule, Inventory, LocationOn, Close } from '@mui/icons-material';
+
 import Header from '../components/Header';
 import Table from '../components/Table';
 import overridesAPI from '../services/overridesAPI';
@@ -19,7 +27,6 @@ import locationsAPI from '../services/locationsAPI';
 import catalogAPI from '../services/catalogAPI';
 import { showNotification } from '../store/slices/uiSlice';
 
-// Config / Constants
 const FREQUENCIES = [
   { value: 'mon_wed', label: 'Mon/Wed' },
   { value: 'weekly', label: 'Weekly' },
@@ -31,14 +38,16 @@ const FREQUENCIES = [
 const OverridesView = () => {
   const dispatch = useDispatch();
 
-  // State
   const [overrides, setOverrides] = useState([]);
   const [locations, setLocations] = useState([]);
   const [catalogItems, setCatalogItems] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState('');
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
+
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editingOverride, setEditingOverride] = useState(null);
+
   const [formData, setFormData] = useState({
     catalog_item: '',
     location_id: '',
@@ -56,9 +65,10 @@ const OverridesView = () => {
       const { data } = await locationsAPI.getAll();
       const locs = data?.results ?? [];
       setLocations(locs);
-      if (!selectedLocation && locs.length) setSelectedLocation(locs[0]?.id ?? '');
+      if (!selectedLocation && locs.length > 0) {
+        setSelectedLocation(locs[0].id);
+      }
     } catch (error) {
-      console.error(error);
       dispatch(showNotification({ message: 'Failed to fetch locations', type: 'error' }));
     }
   }, [dispatch, selectedLocation]);
@@ -68,7 +78,6 @@ const OverridesView = () => {
       const { data } = await catalogAPI.getAll();
       setCatalogItems(data?.results ?? []);
     } catch (error) {
-      console.error(error);
       dispatch(showNotification({ message: 'Failed to fetch catalog items', type: 'error' }));
     }
   }, [dispatch]);
@@ -80,7 +89,6 @@ const OverridesView = () => {
       const { data } = await overridesAPI.getAll(selectedLocation);
       setOverrides(data?.results ?? []);
     } catch (error) {
-      console.error(error);
       dispatch(showNotification({ message: 'Failed to fetch overrides', type: 'error' }));
     } finally {
       setLoading(false);
@@ -96,8 +104,38 @@ const OverridesView = () => {
     fetchOverrides();
   }, [selectedLocation, fetchOverrides]);
 
-  // ----------------- Form Handlers -----------------
-  const resetForm = () => {
+  // ----------------- Dialog Handlers -----------------
+  const openDialog = (override = null) => {
+    if (override) {
+      setEditingOverride(override);
+      setFormData({
+        catalog_item: override.item?.id ?? override.item ?? '',
+        location_id: override.location_id,
+        par_level: override.par_level ?? 10,
+        order_point: override.order_point ?? 5,
+        count_frequency: override.frequency ?? override.count_frequency ?? 'weekly',
+        storage_location: override.storage_location ?? '',
+        min_order_qty: override.min_order_qty ?? 1,
+        is_active: override.is_active ?? true,
+      });
+    } else {
+      setEditingOverride(null);
+      setFormData({
+        catalog_item: '',
+        location_id: selectedLocation,
+        par_level: 10,
+        order_point: 5,
+        count_frequency: 'weekly',
+        storage_location: '',
+        min_order_qty: 1,
+        is_active: true,
+      });
+    }
+    setDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setDialogOpen(false);
     setEditingOverride(null);
     setFormData({
       catalog_item: '',
@@ -109,22 +147,6 @@ const OverridesView = () => {
       min_order_qty: 1,
       is_active: true,
     });
-    setModalOpen(false);
-  };
-
-  const handleEdit = (override) => {
-    setEditingOverride(override);
-    setFormData({
-      catalog_item: override.item?.id ?? override.item ?? '',
-      location_id: override.location_id,
-      par_level: override.par_level ?? 10,
-      order_point: override.order_point ?? 5,
-      count_frequency: override.frequency ?? override.count_frequency ?? 'weekly',
-      storage_location: override.storage_location ?? '',
-      min_order_qty: override.min_order_qty ?? 1,
-      is_active: override.is_active ?? true,
-    });
-    setModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
@@ -132,7 +154,7 @@ const OverridesView = () => {
     try {
       const payload = {
         location_id: Number(formData.location_id),
-        item_id: formData.catalog_item,
+        item_id: Number(formData.catalog_item),
         par_level: Number(formData.par_level),
         order_point: Number(formData.order_point),
         frequency: formData.count_frequency,
@@ -145,77 +167,65 @@ const OverridesView = () => {
         await overridesAPI.update(editingOverride.id, payload);
         dispatch(showNotification({ message: 'Override updated successfully', type: 'success' }));
       } else {
-        const exists = overrides.some((o) => (o.item?.id ?? o.item) === Number(formData.catalog_item));
+        const exists = overrides.some(o => (o.item?.id ?? o.item) === Number(formData.catalog_item));
         if (exists) {
-          handleEdit(overrides.find((o) => (o.item?.id ?? o.item) === Number(formData.catalog_item)));
-          dispatch(showNotification({ message: 'Override exists. Editing...', type: 'info' }));
+          const existing = overrides.find(o => (o.item?.id ?? o.item) === Number(formData.catalog_item));
+          openDialog(existing);
+          dispatch(showNotification({ message: 'Override already exists. Opening for edit...', type: 'info' }));
           return;
         }
         await overridesAPI.create(payload);
         dispatch(showNotification({ message: 'Override created successfully', type: 'success' }));
       }
+
       fetchOverrides();
-      resetForm();
+      closeDialog();
     } catch (error) {
       console.error(error);
       dispatch(showNotification({ message: 'Failed to save override', type: 'error' }));
     }
   };
 
-  const getFrequencyLabel = useCallback((freq) => FREQUENCIES.find(f => f.value === freq)?.label ?? freq, []);
+  const getFrequencyLabel = useCallback((freq) => {
+    return FREQUENCIES.find(f => f.value === freq)?.label || freq;
+  }, []);
 
-  // ----------------- Table Columns -----------------
   const columns = useMemo(() => [
     {
       header: 'Item',
-      accessor: 'item_name',
       render: (row) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box sx={{
             width: 40,
             height: 40,
             borderRadius: 2,
-            backgroundColor: 'primary.light',
+            bgcolor: 'primary.light',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
-            <Inventory sx={{ color: 'primary.main', fontSize: 20 }} />
+            <Inventory sx={{ color: 'primary.main' }} />
           </Box>
-          {row.item_name ?? 'Unknown'}
+          <Typography variant="subtitle2">{row.item_name ?? 'Unknown Item'}</Typography>
         </Box>
       ),
     },
-    {
-      header: 'Par Level',
-      accessor: 'par_level',
-      render: (row) => <Chip label={row.par_level} size="small" color="primary" variant="outlined" />,
-    },
-    {
-      header: 'Order Point',
-      accessor: 'order_point',
-      render: (row) => <Chip label={row.order_point} size="small" color="warning" variant="outlined" />,
-    },
+    { header: 'Par Level', render: (row) => <Chip label={row.par_level} size="small" color="primary" variant="outlined" /> },
+    { header: 'Order Point', render: (row) => <Chip label={row.order_point} size="small" color="warning" variant="outlined" /> },
     {
       header: 'Frequency',
-      accessor: 'frequency',
       render: (row) => (
         <Chip
+          icon={<Schedule fontSize="small" />}
           label={getFrequencyLabel(row.frequency ?? row.count_frequency)}
           size="small"
           variant="outlined"
-          icon={<Schedule fontSize="small" />}
         />
       ),
     },
-    {
-      header: 'Storage',
-      accessor: 'storage_location',
-      render: (row) => row.storage_location ?? '-',
-    },
+    { header: 'Storage', render: (row) => row.storage_location || '-' },
     {
       header: 'Status',
-      accessor: 'is_active',
       render: (row) => (
         <Chip
           label={row.is_active ? 'Active' : 'Inactive'}
@@ -227,7 +237,6 @@ const OverridesView = () => {
     },
   ], [getFrequencyLabel]);
 
-  // ----------------- Render -----------------
   return (
     <Box>
       <Header
@@ -236,29 +245,34 @@ const OverridesView = () => {
         showRefresh
         onRefresh={fetchOverrides}
       >
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 1 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <TextField
             select
             size="small"
             value={selectedLocation}
-            onChange={(e) => setSelectedLocation(Number(e.target.value))}
-            sx={{ minWidth: 200 }}
+            onChange={(e) => setSelectedLocation(e.target.value)}
+            sx={{ minWidth: 220 }}
+            SelectProps={{ native: false }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <LocationOn color="action" fontSize="small" />
+                  <LocationOn color="action" />
                 </InputAdornment>
               ),
             }}
           >
-            {locations.map(loc => (
-              <MenuItem key={loc.id} value={loc.id}>{loc.name}</MenuItem>
+            {locations.map((loc) => (
+              <MenuItem key={loc.id} value={loc.id}>
+                {loc.name}
+              </MenuItem>
             ))}
           </TextField>
+
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => setModalOpen(true)}
+            onClick={() => openDialog()}
+            sx={{ bgcolor: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
           >
             Add Override
           </Button>
@@ -266,85 +280,114 @@ const OverridesView = () => {
       </Header>
 
       <Collapse in>
-        <Card sx={{ mt: 2, p: 2 }}>
+        <Card sx={{ mt: 3 }}>
           <Table
             columns={columns}
             data={overrides}
-            actions={(row) => (
-              <Button size="small" variant="outlined" color="primary" onClick={() => handleEdit(row)}>Edit</Button>
-            )}
             loading={loading}
+            actions={(row) => (
+              <Button size="small" variant="outlined" onClick={() => openDialog(row)}>
+                Edit
+              </Button>
+            )}
           />
         </Card>
       </Collapse>
 
-      {/* Custom Modal */}
-      <Modal open={modalOpen} onClose={resetForm} title={editingOverride ? 'Edit Override' : 'Add New Override'}>
+      {/* MUI Dialog - Custom Modal Replaced */}
+      <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ pb: 1 }}>
+          {editingOverride ? 'Edit Override' : 'Add New Override'}
+          <IconButton
+            onClick={closeDialog}
+            sx={{ position: 'absolute', right: 8, top: 8, color: 'grey.500' }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+
         <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
-            <TextField
-              select
-              label="Catalog Item"
-              value={formData.catalog_item}
-              onChange={e => setFormData({ ...formData, catalog_item: e.target.value })}
-              required
-              fullWidth
-            >
-              {catalogItems.map(item => <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>)}
-            </TextField>
+          <DialogContent dividers>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-            <TextField
-              label="Par Level"
-              type="number"
-              value={formData.par_level}
-              onChange={e => setFormData({ ...formData, par_level: Number(e.target.value) || 0 })}
-              required
-              fullWidth
-            />
+              <FormControl fullWidth>
+                <InputLabel>Catalog Item *</InputLabel>
+                <Select
+                  value={formData.catalog_item}
+                  label="Catalog Item *"
+                  onChange={(e) => setFormData({ ...formData, catalog_item: e.target.value })}
+                  required
+                >
+                  {catalogItems.map((item) => (
+                    <MenuItem key={item.id} value={item.id}>
+                      {item.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-            <TextField
-              label="Order Point"
-              type="number"
-              value={formData.order_point}
-              onChange={e => setFormData({ ...formData, order_point: Number(e.target.value) || 0 })}
-              required
-              fullWidth
-            />
+              <TextField
+                label="Par Level"
+                type="number"
+                value={formData.par_level}
+                onChange={(e) => setFormData({ ...formData, par_level: Number(e.target.value) || 0 })}
+                required
+                fullWidth
+                inputProps={{ min: 0 }}
+              />
 
-            <TextField
-              select
-              label="Count Frequency"
-              value={formData.count_frequency}
-              onChange={e => setFormData({ ...formData, count_frequency: e.target.value })}
-              required
-              fullWidth
-            >
-              {FREQUENCIES.map(f => <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>)}
-            </TextField>
+              <TextField
+                label="Order Point"
+                type="number"
+                value={formData.order_point}
+                onChange={(e) => setFormData({ ...formData, order_point: Number(e.target.value) || 0 })}
+                required
+                fullWidth
+                inputProps={{ min: 0 }}
+              />
 
-            <TextField
-              label="Storage Location"
-              value={formData.storage_location}
-              onChange={e => setFormData({ ...formData, storage_location: e.target.value })}
-              fullWidth
-            />
+              <FormControl fullWidth>
+                <InputLabel>Count Frequency</InputLabel>
+                <Select
+                  value={formData.count_frequency}
+                  label="Count Frequency"
+                  onChange={(e) => setFormData({ ...formData, count_frequency: e.target.value })}
+                >
+                  {FREQUENCIES.map((f) => (
+                    <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-            <TextField
-              label="Minimum Order Quantity"
-              type="number"
-              value={formData.min_order_qty}
-              onChange={e => setFormData({ ...formData, min_order_qty: Number(e.target.value) || 1 })}
-              required
-              fullWidth
-            />
-          </Box>
+              <TextField
+                label="Storage Location (Optional)"
+                value={formData.storage_location}
+                onChange={(e) => setFormData({ ...formData, storage_location: e.target.value })}
+                fullWidth
+              />
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 3 }}>
-            <Button onClick={resetForm} color="inherit">Cancel</Button>
-            <Button type="submit" variant="contained">{editingOverride ? 'Update' : 'Create'}</Button>
-          </Box>
+              <TextField
+                label="Minimum Order Quantity"
+                type="number"
+                value={formData.min_order_qty}
+                onChange={(e) => setFormData({ ...formData, min_order_qty: Number(e.target.value) || 1 })}
+                required
+                fullWidth
+                inputProps={{ min: 1 }}
+              />
+            </Box>
+          </DialogContent>
+
+          <DialogActions>
+            <Button onClick={closeDialog} color="inherit">
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained">
+              {editingOverride ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
         </form>
-      </Modal>
+      </Dialog>
     </Box>
   );
 };

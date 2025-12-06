@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CircularProgress, Typography, useMediaQuery, useTheme } from '@mui/material';
-
+import Notification from './components/Notification';
 import store from './store';
 import {
   selectAuth,
@@ -202,6 +202,7 @@ const App = () => (
     <Router>
       <AppRoutes />
     </Router>
+    <Notification />
   </Provider>
 );
 

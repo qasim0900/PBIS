@@ -12,12 +12,16 @@ import {
   Skeleton,
   Collapse,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from '@mui/material';
-import { Add, LocationOn, Schedule, Code } from '@mui/icons-material';
+import { Add, LocationOn, Schedule, Code, Close } from '@mui/icons-material';
 
 import Header from '../components/Header';
 import CustomTable from '../components/Table';
-import Modal from '../components/Modal'; 
 import locationsAPI from '../services/locationsAPI';
 import { showNotification } from '../store/slices/uiSlice';
 
@@ -59,18 +63,23 @@ const LocationsView = () => {
   const dispatch = useDispatch();
   const { locations, loading, fetchLocations } = useLocations();
 
-  const [modalOpen, setModalOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [formData, setFormData] = useState({ name: '', code: '', timezone: 'America/New_York' });
 
-  const openModalForEdit = (location) => {
-    setEditingLocation(location);
-    setFormData({ name: location.name, code: location.code, timezone: location.timezone });
-    setModalOpen(true);
+  const handleOpen = (location = null) => {
+    if (location) {
+      setEditingLocation(location);
+      setFormData({ name: location.name, code: location.code, timezone: location.timezone });
+    } else {
+      setEditingLocation(null);
+      setFormData({ name: '', code: '', timezone: 'America/New_York' });
+    }
+    setOpen(true);
   };
 
-  const closeModal = () => {
-    setModalOpen(false);
+  const handleClose = () => {
+    setOpen(false);
     setEditingLocation(null);
     setFormData({ name: '', code: '', timezone: 'America/New_York' });
   };
@@ -86,7 +95,7 @@ const LocationsView = () => {
         dispatch(showNotification({ message: 'Location created successfully', type: 'success' }));
       }
       await fetchLocations();
-      closeModal();
+      handleClose();
     } catch (error) {
       console.error(error);
       dispatch(showNotification({ message: 'Failed to save location', type: 'error' }));
@@ -136,7 +145,7 @@ const LocationsView = () => {
         <Button
           variant="contained"
           startIcon={<Add />}
-          onClick={() => setModalOpen(true)}
+          onClick={() => handleOpen()}
           sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
         >
           Add Location
@@ -163,7 +172,7 @@ const LocationsView = () => {
                 size="small"
                 variant="outlined"
                 color="primary"
-                onClick={() => openModalForEdit(row)}
+                onClick={() => handleOpen(row)}
                 sx={{ minWidth: 80 }}
               >
                 Edit
@@ -173,46 +182,64 @@ const LocationsView = () => {
         </Collapse>
       )}
 
-      {/* Use Custom Modal */}
-      <Modal isOpen={modalOpen} onClose={closeModal} title={editingLocation ? 'Edit Location' : 'Add New Location'}>
-        <form onSubmit={handleSubmit}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            <TextField
-              label="Location Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              fullWidth
-              placeholder="e.g., Syracuse Store"
-            />
-            <TextField
-              label="Location Code"
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-              required
-              fullWidth
-              placeholder="e.g., SYR"
-              inputProps={{ maxLength: 10 }}
-            />
-            <TextField
-              select
-              label="Timezone"
-              value={formData.timezone}
-              onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-              fullWidth
-            >
-              {TIMEZONES.map(({ value, label }) => (
-                <MenuItem key={value} value={value}>{label}</MenuItem>
-              ))}
-            </TextField>
-          </Box>
+      {/* MUI Dialog - Custom Modal replaced */}
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {editingLocation ? 'Edit Location' : 'Add New Location'}
+          <IconButton
+            aria-label="close"
+            onClick={handleClose}
+            sx={{ position: 'absolute', right: 8, top: 8, color: (theme) => theme.palette.grey[500] }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
-            <Button onClick={closeModal} color="inherit">Cancel</Button>
-            <Button type="submit" variant="contained">{editingLocation ? 'Update' : 'Create'}</Button>
-          </Box>
+        <form onSubmit={handleSubmit}>
+          <DialogContent dividers>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              <TextField
+                label="Location Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                fullWidth
+                placeholder="e.g., Syracuse Store"
+                autoFocus
+              />
+              <TextField
+                label="Location Code"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                required
+                fullWidth
+                placeholder="e.g., SYR"
+                inputProps={{ maxLength: 10 }}
+              />
+              <TextField
+                select
+                label="Timezone"
+                value={formData.timezone}
+                onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
+                fullWidth
+              >
+                {TIMEZONES.map(({ value, label }) => (
+                  <MenuItem key={value} value={value}>{label}</MenuItem>
+                ))}
+              </TextField>
+            </Box>
+          </DialogContent>
+
+          <DialogActions>
+            <Button onClick={handleClose} color="inherit">
+              Cancel
+            </Button>
+            <Button type="submit" variant="contained">
+              {editingLocation ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
         </form>
-      </Modal>
+      </Dialog>
     </Box>
   );
 };
