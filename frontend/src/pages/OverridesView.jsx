@@ -15,6 +15,7 @@ import {
   IconButton,
   FormControl,
   InputLabel,
+  Typography,
   Select,
   Collapse,
 } from '@mui/material';
@@ -86,7 +87,7 @@ const OverridesView = () => {
     if (!selectedLocation) return;
     setLoading(true);
     try {
-      const { data } = await overridesAPI.getAll(selectedLocation);
+      const data = await overridesAPI.getAll(selectedLocation);
       setOverrides(data?.results ?? []);
     } catch (error) {
       dispatch(showNotification({ message: 'Failed to fetch overrides', type: 'error' }));

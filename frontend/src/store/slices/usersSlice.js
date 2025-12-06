@@ -13,7 +13,7 @@ export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await usersAPI.fetchAll();
+      const response = await usersAPI.getAll(); // <-- correct method
       return response.data.results || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.detail || 'Failed to fetch users');

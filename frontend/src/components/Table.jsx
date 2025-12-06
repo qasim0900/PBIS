@@ -67,9 +67,9 @@ const Table = ({ columns, data = [], searchable = true, actions }) => {
         <TableMUI stickyHeader aria-label="custom table">
           <TableHead>
             <TableRow>
-              {columns.map(({ header, accessor, align = 'left', minWidth }) => (
+              {columns.map(({ header, accessor, align = 'left', minWidth }, colIdx) => (
                 <TableCell
-                  key={accessor || header}
+                  key={accessor || colIdx}
                   align={align}
                   sx={{ ...headerCellStyle, minWidth: minWidth || headerCellStyle.minWidth }}
                 >
@@ -85,9 +85,15 @@ const Table = ({ columns, data = [], searchable = true, actions }) => {
               filteredData
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, idx) => (
-                  <TableRow hover key={row.id ?? idx} sx={{ backgroundColor: 'white' }}>
-                    {columns.map(({ accessor, render }) => (
-                      <TableCell key={accessor}>{render ? render(row) : getNestedValue(row, accessor)}</TableCell>
+                  <TableRow
+                    hover
+                    key={row.id ?? `row-${page * rowsPerPage + idx}`} // unique key
+                    sx={{ backgroundColor: 'white' }}
+                  >
+                    {columns.map(({ accessor, render }, colIdx) => (
+                      <TableCell key={accessor || colIdx}>
+                        {render ? render(row) : getNestedValue(row, accessor)}
+                      </TableCell>
                     ))}
                     {actions && <TableCell>{actions(row)}</TableCell>}
                   </TableRow>
