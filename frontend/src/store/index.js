@@ -1,15 +1,14 @@
-// src/store/index.js
-
-import { configureStore } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
-
+// store/index.js
+import uiReducer from './slices/uiSlice';
 import authReducer from './slices/authSlice';
+import usersReducer from './slices/usersSlice';
+import storage from 'redux-persist/lib/storage';
+import countsReducer from './slices/countsSlice';
+import { configureStore } from '@reduxjs/toolkit';
 import inventoryReducer from './slices/inventorySlice';
 import locationsReducer from './slices/locationsSlice';
-import countsReducer from './slices/countsSlice';
-import usersReducer from './slices/usersSlice';
-import uiReducer from './slices/uiSlice';
+import { persistStore, persistReducer } from 'redux-persist';
+
 
 const persistConfig = {
   key: 'root',
@@ -19,7 +18,6 @@ const persistConfig = {
 
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
-// STORE BANAYA
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
@@ -30,13 +28,9 @@ export const store = configureStore({
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
+    getDefaultMiddleware({ serializableCheck: false }),
 });
 
-// PERSISTER BANAYA
 export const persistor = persistStore(store);
 
-// YE LINE SABSE ZAROORI – default export
 export default store;

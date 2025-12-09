@@ -8,12 +8,10 @@ import {
   TextField,
   Button,
   Typography,
-  Alert,
   CircularProgress,
   InputAdornment,
   IconButton,
   Link,
-  Divider,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -32,14 +30,16 @@ import {
   LinkedIn,
 } from '@mui/icons-material';
 import { loginUser, selectAuth, clearError } from '../store/slices/authSlice';
-
+import { showNotification } from '../store/slices/uiSlice';
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { loading, error, isAuthenticated } = useSelector(selectAuth);
+  const authState = useSelector(selectAuth);
+  const loading = authState?.loading || false;
+  const isAuthenticated = authState?.isAuthenticated || !!authState?.token;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -57,12 +57,16 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await dispatch(loginUser({ username, password }));
-    if (loginUser.fulfilled.match(result)) {
-      navigate('/counts');
+
+    try {
+      await dispatch(loginUser({ username, password })).unwrap();
+      dispatch(showNotification({ message: 'Login successful!', type: 'success' }));
+      console.log("Auth state:", isAuthenticated);
+      navigate('/counts', { replace: true });
+    } catch (err) {
+      dispatch(showNotification({ message: err?.message || 'Invalid credentials', type: 'error' }));
     }
   };
-
   return (
     <Box
       sx={{
@@ -144,17 +148,6 @@ const Login = () => {
                 Inventory Management System
               </Typography>
             </Box>
-
-            {error && (
-              <Alert
-                severity="error"
-                sx={{ mb: 2, borderRadius: 2 }}
-                onClose={() => dispatch(clearError())}
-              >
-                {error}
-              </Alert>
-            )}
-
             <form onSubmit={handleSubmit}>
               <TextField
                 fullWidth

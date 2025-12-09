@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { selectAuth, selectIsManager, selectIsAdmin, fetchCurrentUser } from './store/slices/authSlice';
+import { selectAuth, fetchCurrentUser } from './store/slices/authSlice';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';

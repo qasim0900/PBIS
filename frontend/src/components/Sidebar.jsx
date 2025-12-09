@@ -163,6 +163,11 @@ const Sidebar = () => {
         open={!collapsed}
         onClose={handleClose}
         onOpen={handleOpen}
+        disableEnforceFocus={true}
+        ModalProps={{
+          keepMounted: true,
+          disableEnforceFocus: true,
+        }}
         sx={{
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
@@ -182,6 +187,10 @@ const Sidebar = () => {
   return (
     <Drawer
       variant="permanent"
+      ModalProps={{
+        keepMounted: true,
+        disableEnforceFocus: true,
+      }}
       sx={{
         width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
         flexShrink: 0,

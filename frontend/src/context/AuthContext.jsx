@@ -1,77 +1,86 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
-import authAPI from '../services/authAPI';
+import { createContext, useContext, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import api, { addAuthRefreshListener } from '../services/api';
-import { setLogin, logoutUser } from '../store/slices/authSlice';
+
+import { 
+  loginUser, 
+  fetchCurrentUser, 
+  logoutUser, 
+  selectAuth, 
+  selectIsAdmin, 
+  selectIsManager 
+} from '../store/slices/authSlice';
 
 const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
   const dispatch = useDispatch();
 
-  const fetchUser = useCallback(async () => {
-    try {
-      const response = await authAPI.getMe();
-      setUser(response.data);
-      dispatch(setLogin({
-        user: response.data,
-        token: localStorage.getItem('access_token')
-      }));
-    } catch {
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  }, [dispatch]);
+  // ---- FIX: This will NEVER be undefined now ----
+  const { user, token, loading } = useSelector(selectAuth);
 
+  const isAdmin = useSelector(selectIsAdmin);
+  const isManager = useSelector(selectIsManager);
+
+  // Restore user when token is already in localStorage
   useEffect(() => {
-    const token = localStorage.getItem('access_token') || localStorage.getItem('token');
     if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      fetchUser();
-    } else {
-      setLoading(false);
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      if (!user) dispatch(fetchCurrentUser());
     }
+  }, [token, user, dispatch]);
 
+  // Token refresh → update user
+  useEffect(() => {
     const unregister = addAuthRefreshListener((newAccessToken) => {
-      api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
-      fetchUser();
+      api.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
+      dispatch(fetchCurrentUser());
     });
 
     return () => unregister();
-  }, [fetchUser]);
+  }, [dispatch]);
 
+  // LOGIN FUNCTION
   const login = async (username, password) => {
-    const response = await authAPI.login(username, password);
-    localStorage.setItem('access_token', response.data.access);
-    localStorage.setItem('refresh_token', response.data.refresh);
-    api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
-    await fetchUser();
-    return response.data;
+    try {
+      const result = await dispatch(loginUser({ username, password })).unwrap();
+
+      // Save new token for all next requests
+      api.defaults.headers.common["Authorization"] = `Bearer ${result.tokens.access}`;
+
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err };
+    }
   };
 
+  // LOGOUT FUNCTION
   const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    delete api.defaults.headers.common['Authorization'];
-    setUser(null);
     dispatch(logoutUser());
+    delete api.defaults.headers.common["Authorization"];
   };
 
-  const isAdmin = user?.role === 'admin' || user?.is_superuser;
-  const isManager = user?.role === 'manager' || isAdmin;
-  const isStaff = user?.role === 'staff' || isManager;
+  const isStaff = user?.role === "staff" || isManager;
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, isAdmin, isManager, isStaff }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        loading,
+        isAdmin,
+        isManager,
+        isStaff,
+        token,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

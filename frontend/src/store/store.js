@@ -1,23 +1,31 @@
-// src/store/index.js   (ya store.js)
-
+// store.js
 import { configureStore } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
+import { persistStore, persistReducer } from 'redux-persist';
+
+// Reducers
+import uiReducer from './slices/uiSlice';
 import authReducer from './slices/authSlice';
+import usersReducer from './slices/usersSlice';
+import countsReducer from './slices/countsSlice';
 import inventoryReducer from './slices/inventorySlice';
 import locationsReducer from './slices/locationsSlice';
-import countsReducer from './slices/countsSlice';
-import usersReducer from './slices/usersSlice';
-import uiReducer from './slices/uiSlice';
 
-const persistConfig = {
-  key: 'root',
+// --------------------
+// Persist Config (AUTH ONLY)
+// --------------------
+const authPersistConfig = {
+  key: 'auth',
   storage,
-  whitelist: ['auth'], // sirf auth persist karo
+  whitelist: ['token', 'isAuthenticated', 'user'],
 };
 
-const persistedAuthReducer = persistReducer(persistConfig, authReducer);
+// Wrap only auth reducer
+const persistedAuthReducer = persistReducer(authPersistConfig, authReducer);
 
+// --------------------
+// Store
+// --------------------
 const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
@@ -33,8 +41,9 @@ const store = configureStore({
     }),
 });
 
-// YE LINE ADD KARNA MAT BHULNA
+// --------------------
+// Persistor
+// --------------------
 export const persistor = persistStore(store);
+
 export default store;
-// Optional: agar aap chahein toh ek saath export bhi kar sakte ho
-// export { store, persistor };

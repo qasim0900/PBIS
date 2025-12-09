@@ -1,18 +1,10 @@
 // App.jsx
+import store from './store';
 import { useEffect } from 'react';
+import Notification from './components/Notification';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Box, CircularProgress, Typography, useMediaQuery, useTheme } from '@mui/material';
-import Notification from './components/Notification';
-import store from './store';
-import {
-  selectAuth,
-  selectIsManager,
-  selectIsAdmin,
-  fetchCurrentUser,
-} from './store/slices/authSlice';
-import { selectSidebarCollapsed } from './store/slices/uiSlice';
-
 import Sidebar from './components/Sidebar';
 import MenuAppBar from './components/Navbar';
 import Login from './pages/Login';
@@ -23,11 +15,18 @@ import LocationsView from './pages/LocationsView';
 import CatalogView from './pages/CatalogView';
 import OverridesView from './pages/OverridesView';
 import UsersView from './pages/UsersView';
+import {
+  selectAuth,
+  selectIsManager,
+  selectIsAdmin,
+  fetchCurrentUser,
+} from './store/slices/authSlice';
+import { selectSidebarCollapsed } from './store/slices/uiSlice';
 
-const DRAWER_WIDTH = 2; // px
-const COLLAPSED_WIDTH = 7; // px
 
-// Protected Route Component
+const DRAWER_WIDTH = 2;
+const COLLAPSED_WIDTH = 7;
+
 const ProtectedRoute = ({ children, requireManager = false, requireAdmin = false }) => {
   const { isAuthenticated, loading } = useSelector(selectAuth);
   const isManager = useSelector(selectIsManager);
@@ -42,11 +41,10 @@ const ProtectedRoute = ({ children, requireManager = false, requireAdmin = false
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: 'background.default',
         }}
       >
         <CircularProgress size={48} />
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 2 }}>
+        <Typography variant="body1" sx={{ mt: 2 }}>
           Loading...
         </Typography>
       </Box>
@@ -54,14 +52,13 @@ const ProtectedRoute = ({ children, requireManager = false, requireAdmin = false
   }
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-
   if (requireAdmin && !isAdmin) return <Navigate to="/counts" replace />;
   if (requireManager && !isManager) return <Navigate to="/counts" replace />;
 
   return children;
 };
 
-// Layout Component
+
 const Layout = ({ children }) => {
   const collapsed = useSelector(selectSidebarCollapsed);
   const theme = useTheme();
@@ -95,11 +92,10 @@ const Layout = ({ children }) => {
   );
 };
 
-// Routes Component
-const AppRoutes = () => {
-  const { isAuthenticated, token } = useSelector(selectAuth);
-  const dispatch = useDispatch();
 
+const AppRoutes = () => {
+  const { token, isAuthenticated } = useSelector(selectAuth);
+  const dispatch = useDispatch();
   useEffect(() => {
     if (token && !isAuthenticated) {
       dispatch(fetchCurrentUser());
@@ -108,10 +104,7 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Public */}
       <Route path="/login" element={isAuthenticated ? <Navigate to="/counts" /> : <Login />} />
-
-      {/* Protected Routes */}
       <Route
         path="/counts"
         element={
@@ -122,7 +115,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/low-stock"
         element={
@@ -133,7 +125,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/reports"
         element={
@@ -144,7 +135,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/locations"
         element={
@@ -155,7 +145,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/catalog"
         element={
@@ -166,7 +155,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/overrides"
         element={
@@ -177,7 +165,6 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
       <Route
         path="/users"
         element={
@@ -188,21 +175,18 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-      {/* Default & 404 */}
       <Route path="/" element={<Navigate to="/counts" />} />
       <Route path="*" element={<Navigate to="/counts" />} />
     </Routes>
   );
 };
 
-// Main App
 const App = () => (
   <Provider store={store}>
     <Router>
       <AppRoutes />
+      <Notification />
     </Router>
-    <Notification />
   </Provider>
 );
 

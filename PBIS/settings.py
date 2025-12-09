@@ -67,13 +67,10 @@ Define allowed domains for the project
 """
 
 try:
-    ALLOWED_HOSTS = ['72.60.66.213']
+    ALLOWED_HOSTS = ['*']
 
     # CORS_ALLOWED_ORIGINS = []
-    CORS_ALLOWED_ORIGINS = ['http://72.60.66.213'
-]
-
-    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOW_ALL_ORIGINS = True
 
 except Exception as e:
     logging.error(f"ALLOWED_HOSTS initialization failed: {e}")
