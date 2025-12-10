@@ -20,7 +20,7 @@ import { Add, Inventory, Close } from '@mui/icons-material';
 import Header from '../components/Header';
 import { showNotification } from '../store/slices/uiSlice';
 import Table from '../components/Table';
-import { fetchAllItems, createItem, updateItem, clearCurrentItem } from '../store/slices/catalogSlice';
+import { fetchAllItems, createItem, updateItem, clearCurrentItem, setCurrentItem } from '../store/slices/catalogSlice';
 
 const CATEGORIES = [
   { value: 'fruit', label: 'Fruit', color: '#10b981' },
@@ -66,6 +66,7 @@ const CatalogView = () => {
   };
 
   const openEditModal = (item) => {
+    dispatch(setCurrentItem(item));
     setFormData({
       name: item.name,
       category: item.category,

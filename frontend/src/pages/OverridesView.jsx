@@ -337,12 +337,6 @@ const OverridesView = () => {
           >
             Add Override
           </Button>
-
-          <Box sx={{ ml: 2 }}>
-            <Typography variant="subtitle2">
-              Total Count: {overrides.count ?? 0}
-            </Typography>
-          </Box>
         </Box>
       </Header>
 

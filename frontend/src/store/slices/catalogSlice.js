@@ -77,6 +77,9 @@ const catalogSlice = createSlice({
     clearCurrentItem: (state) => {
       state.currentItem = null;
     },
+    setCurrentItem: (state, action) => {
+      state.currentItem = action.payload;
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -158,6 +161,6 @@ const catalogSlice = createSlice({
   },
 });
 
-export const { clearCurrentItem, clearError } = catalogSlice.actions;
+export const { clearCurrentItem, setCurrentItem, clearError } = catalogSlice.actions;
 
 export default catalogSlice.reducer;

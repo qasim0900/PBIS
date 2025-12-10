@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useDispatch } from 'react-redux';
+import { useState, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
   Card,
@@ -22,7 +22,12 @@ import { Add, LocationOn, Schedule, Code, Close } from '@mui/icons-material';
 
 import Header from '../components/Header';
 import CustomTable from '../components/Table';
-import locationsAPI from '../services/locationsAPI';
+import {
+  fetchLocations,
+  createLocation,
+  updateLocation,
+  deleteLocation
+} from '../store/slices/locationsSlice';
 import { showNotification } from '../store/slices/uiSlice';
 
 const TIMEZONES = [
@@ -32,40 +37,21 @@ const TIMEZONES = [
   { value: 'America/Los_Angeles', label: 'Pacific (PT)' },
 ];
 
-const useLocations = () => {
-  const dispatch = useDispatch();
-  const [locations, setLocations] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchLocations = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await locationsAPI.getAll();
-      setLocations(response.data.results || response.data || []);
-    } catch (error) {
-      console.error(error);
-      dispatch(showNotification({ message: 'Failed to fetch locations', type: 'error' }));
-    } finally {
-      setLoading(false);
-    }
-  }, [dispatch]);
-
-  useEffect(() => {
-    fetchLocations();
-  }, [fetchLocations]);
-
-  return { locations, loading, fetchLocations };
-};
-
 const getTimezoneLabel = (tz) => TIMEZONES.find((t) => t.value === tz)?.label || tz;
 
 const LocationsView = () => {
   const dispatch = useDispatch();
-  const { locations, loading, fetchLocations } = useLocations();
+
+  // Redux state
+  const { locations, loading } = useSelector((state) => state.locations);
 
   const [open, setOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [formData, setFormData] = useState({ name: '', code: '', timezone: 'America/New_York' });
+
+  useEffect(() => {
+    dispatch(fetchLocations());
+  }, [dispatch]);
 
   const handleOpen = (location = null) => {
     if (location) {
@@ -88,13 +74,13 @@ const LocationsView = () => {
     e.preventDefault();
     try {
       if (editingLocation) {
-        await locationsAPI.update(editingLocation.id, formData);
+        await dispatch(updateLocation({ id: editingLocation.id, data: formData })).unwrap();
         dispatch(showNotification({ message: 'Location updated successfully', type: 'success' }));
       } else {
-        await locationsAPI.create(formData);
+        await dispatch(createLocation(formData)).unwrap();
         dispatch(showNotification({ message: 'Location created successfully', type: 'success' }));
       }
-      await fetchLocations();
+      dispatch(fetchLocations());
       handleClose();
     } catch (error) {
       console.error(error);
@@ -140,7 +126,7 @@ const LocationsView = () => {
         title="Locations"
         subtitle={`Manage your store locations (${locations.length})`}
         showRefresh
-        onRefresh={fetchLocations}
+        onRefresh={() => dispatch(fetchLocations())}
       >
         <Button
           variant="contained"
@@ -182,7 +168,6 @@ const LocationsView = () => {
         </Collapse>
       )}
 
-      {/* MUI Dialog - Custom Modal replaced */}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           {editingLocation ? 'Edit Location' : 'Add New Location'}

@@ -10,7 +10,7 @@ import { Add, Edit, Person, AdminPanelSettings, SupervisedUserCircle, PersonOff,
 import Header from '../components/Header';
 import Table from '../components/Table';
 import { showNotification } from '../store/slices/uiSlice';
-import { fetchUsers, createUser, updateUser } from '../store/slices/usersSlice';
+import { fetchUsers, createUser, updateUser, setSelectedUser } from '../store/slices/usersSlice';
 
 const ROLES = [
   { value: 'admin', label: 'Admin', color: 'error', icon: <AdminPanelSettings /> },
@@ -20,11 +20,10 @@ const ROLES = [
 
 const UsersView = () => {
   const dispatch = useDispatch();
-  const { users = [], loading } = useSelector((state) => state.users);
+  const { users = [], loading, selectedUser } = useSelector((state) => state.users);
+  const { user: currentUser } = useSelector((state) => state.auth); // logged-in user
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
-  const [editingUserId, setEditingUserId] = useState(null); // <-- track editing user
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -35,8 +34,7 @@ const UsersView = () => {
 
   const openDialog = (user = null) => {
     if (user) {
-      setIsEdit(true);
-      setEditingUserId(user.id);
+      dispatch(setSelectedUser(user));
       setFormData({
         username: user.username,
         email: user.email,
@@ -45,8 +43,7 @@ const UsersView = () => {
         confirmPassword: ''
       });
     } else {
-      setIsEdit(false);
-      setEditingUserId(null);
+      dispatch(setSelectedUser(null));
       setFormData({
         username: '',
         email: '',
@@ -60,8 +57,7 @@ const UsersView = () => {
 
   const closeDialog = () => {
     setDialogOpen(false);
-    setIsEdit(false);
-    setEditingUserId(null);
+    dispatch(setSelectedUser(null));
     setFormData({
       username: '',
       email: '',
@@ -73,8 +69,7 @@ const UsersView = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!isEdit && formData.password !== formData.confirmPassword) {
+    if (!selectedUser && formData.password !== formData.confirmPassword) {
       dispatch(showNotification({ message: 'Passwords do not match', type: 'error' }));
       return;
     }
@@ -83,12 +78,12 @@ const UsersView = () => {
       username: formData.username,
       email: formData.email,
       role: formData.role,
-      ...(isEdit ? {} : { password: formData.password })
+      ...(selectedUser ? {} : { password: formData.password })
     };
 
     try {
-      if (isEdit) {
-        await dispatch(updateUser({ id: editingUserId, data: payload })).unwrap();
+      if (selectedUser) {
+        await dispatch(updateUser({ id: selectedUser.id, data: payload })).unwrap();
         dispatch(showNotification({ message: 'User updated successfully', type: 'success' }));
       } else {
         await dispatch(createUser(payload)).unwrap();
@@ -203,10 +198,18 @@ const UsersView = () => {
                   <Edit fontSize="small" />
                 </IconButton>
               </Tooltip>
+
               <Tooltip title={row.is_active ? 'Deactivate' : 'Activate'}>
-                <IconButton size="small" color={row.is_active ? 'warning' : 'success'} onClick={() => toggleUserStatus(row)}>
-                  {row.is_active ? <PersonOff /> : <CheckCircle />}
-                </IconButton>
+                <span>
+                  <IconButton
+                    size="small"
+                    color={row.is_active ? 'warning' : 'success'}
+                    onClick={() => toggleUserStatus(row)}
+                    disabled={row.id === currentUser.id} // <-- prevent self deactivate
+                  >
+                    {row.is_active ? <PersonOff /> : <CheckCircle />}
+                  </IconButton>
+                </span>
               </Tooltip>
             </>
           )}
@@ -216,7 +219,7 @@ const UsersView = () => {
       {/* Dialog */}
       <Dialog open={dialogOpen} onClose={closeDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {isEdit ? 'Edit User' : 'Add New User'}
+          {selectedUser ? 'Edit User' : 'Add New User'}
           <IconButton
             aria-label="close"
             onClick={closeDialog}
@@ -261,7 +264,7 @@ const UsersView = () => {
                 </Select>
               </FormControl>
 
-              {!isEdit && (
+              {!selectedUser && (
                 <>
                   <TextField
                     label="Password"
@@ -286,7 +289,7 @@ const UsersView = () => {
 
           <DialogActions>
             <Button onClick={closeDialog} color="inherit">Cancel</Button>
-            <Button type="submit" variant="contained">{isEdit ? 'Update' : 'Create'} User</Button>
+            <Button type="submit" variant="contained">{selectedUser ? 'Update' : 'Create'} User</Button>
           </DialogActions>
         </form>
       </Dialog>
