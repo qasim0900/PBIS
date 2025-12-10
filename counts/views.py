@@ -328,7 +328,9 @@ class CountEntryViewSet(LocationScopedMixin, viewsets.ModelViewSet):
     """
 
     def get_queryset(self):
-        return self._restrict_entry_queryset(self.queryset)
+        return self._restrict_entry_queryset(
+            self.queryset.select_related("override", "override__location", "item")
+        )
 
     # -----------------------------------
     # :: Filter QuerySet Function

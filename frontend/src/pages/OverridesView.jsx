@@ -205,6 +205,9 @@ const OverridesView = () => {
         await dispatch(updateOverride({ id: editingOverride.id, payload }));
       }
 
+      // 👉 Force refresh GET API after Add or Edit
+      await dispatch(fetchOverrides(selectedLocation));
+
       closeDialog();
     } catch (error) {
       console.error(error);
@@ -243,7 +246,7 @@ const OverridesView = () => {
               <Inventory sx={{ color: 'primary.main' }} />
             </Box>
             <Typography variant="subtitle2">
-              {row.item_name ?? 'Unknown Item'}
+              {row.item_name ?? row.name}
             </Typography>
           </Box>
         ),
