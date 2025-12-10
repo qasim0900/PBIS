@@ -49,8 +49,8 @@ const Sidebar = () => {
   const menuItems = useMemo(
     () => [
       { text: 'Counts', icon: <Calculate />, path: '/counts', roles: ['all'] },
-      { text: 'Low Stock', icon: <TrendingDown />, path: '/low-stock', roles: ['manager'], badge: 'Manager' },
-      { text: 'Reports', icon: <Assessment />, path: '/reports', roles: ['manager'], badge: 'Manager' },
+      { text: 'Low Stock', icon: <TrendingDown />, path: '/low-stock', roles: ['manager','admin'], badge: 'Manager' },
+      { text: 'Reports', icon: <Assessment />, path: '/reports', roles: ['manager','admin'], badge: 'Manager' },
       { text: 'Locations', icon: <LocationOn />, path: '/locations', roles: ['admin'], badge: 'Admin' },
       { text: 'Catalog', icon: <Category />, path: '/catalog', roles: ['admin'], badge: 'Admin' },
       { text: 'Overrides', icon: <Tune />, path: '/overrides', roles: ['admin'], badge: 'Admin' },
@@ -163,11 +163,6 @@ const Sidebar = () => {
         open={!collapsed}
         onClose={handleClose}
         onOpen={handleOpen}
-        disableEnforceFocus={true}
-        ModalProps={{
-          keepMounted: true,
-          disableEnforceFocus: true,
-        }}
         sx={{
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
@@ -187,10 +182,6 @@ const Sidebar = () => {
   return (
     <Drawer
       variant="permanent"
-      ModalProps={{
-        keepMounted: true,
-        disableEnforceFocus: true,
-      }}
       sx={{
         width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
         flexShrink: 0,

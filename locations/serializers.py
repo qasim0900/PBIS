@@ -65,6 +65,7 @@ class LocationOverrideSerializer(serializers.ModelSerializer):
             "frequency",
             "storage_location",
             "min_order_qty",
+            "count",  
             "is_active",
         ]
 

@@ -1,106 +1,161 @@
-from datetime import date, timedelta
-from django.db.models import Prefetch
-from rest_framework import filters, status, viewsets
+from datetime import date
+from users.models import UserRole
+from locations.models import Location
+from .models import CountEntry, CountSheet
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework import filters, status, viewsets
+from .pagination import TenPerPagePagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from users.permissions import ManagersOnly, StaffCanSubmitCounts, is_manager
-from locations.models import Location
-from .models import CountSheet, CountEntry
 from .serializers import (
+    CountEntryAuditSerializer,
+    CountEntrySerializer,
     CountSheetSerializer,
     CountSheetSummarySerializer,
     EnsureCountSheetSerializer,
     SubmitCountSheetSerializer,
-    CountEntrySerializer,
-    CountEntryAuditSerializer,
 )
-from .pagination import TenPerPagePagination
 
 
 # --------------------------------------
-# :: LocationScopedMixin
+# :: Create Count Entry Audit Function
 # --------------------------------------
+"""
+Creates an audit record for a CountEntry after it's saved, logging initial or changed on_hand_quantity values.
+"""
+
+
 class LocationScopedMixin:
+
+    # -----------------------------------
+    # :: Restrict Query Set Function
+    # -----------------------------------
+
     """
-    Restrict querysets and validate user access based on assigned locations.
-    Managers, admins, and superusers get full access.
+    Restricts a queryset to only include locations the current user can access, allowing full access for admins and superusers.
     """
 
-    def restrict_queryset_by_location(self, queryset, field_name="location_id"):
+    def _restrict_queryset(self, queryset):
         user = self.request.user
         if not user.is_authenticated:
             return queryset.none()
-        if is_manager(user):
+        if user.is_superuser or getattr(user, "role", None) == UserRole.ADMIN:
             return queryset
         assigned_ids = user.assigned_locations.values_list("id", flat=True)
-        return queryset.filter(**{f"{field_name}__in": assigned_ids})
+        return queryset.filter(location_id__in=assigned_ids)
 
-    def restrict_entry_queryset(self, queryset):
-        return self.restrict_queryset_by_location(queryset, "sheet__location_id")
+    # --------------------------------------
+    # :: Restrict Entry Query Set Function
+    # --------------------------------------
 
-    def validate_location_access(self, user, location):
-        if not is_manager(user) and not user.assigned_locations.filter(pk=location.pk).exists():
-            raise PermissionDenied("You are not assigned to this location.")
+    """
+    Limits a CountEntry queryset to entries in locations assigned to the current user, granting full access to admins and superusers.
+    """
+
+    def _restrict_entry_queryset(self, queryset):
+        user = self.request.user
+        if not user.is_authenticated:
+            return queryset.none()
+        if user.is_superuser or getattr(user, "role", None) == UserRole.ADMIN:
+            return queryset
+        assigned_ids = user.assigned_locations.values_list("id", flat=True)
+        return queryset.filter(sheet__location_id__in=assigned_ids)
+
+    # --------------------------------------
+    # :: Validate Location Access Function
+    # --------------------------------------
+
+    """
+    Checks if a user has access to a location and raises a permission error if they are not assigned or an admin.
+    """
+
+    def _validate_location_access(self, user, location):
+        if user.is_superuser or getattr(user, "role", None) == UserRole.ADMIN:
+            return
+        if user.assigned_locations.filter(pk=location.pk).exists():
+            return
+        raise PermissionDenied("You are not assigned to this location.")
 
 
 # --------------------------------------
-# :: CountSheetViewSet
+# :: Count Sheet View Set Class
 # --------------------------------------
+
+
+"""
+Provides a full API for CountSheet, supporting listing, creating, filtering, retrieving, submitting, locking/unlocking, resetting, and fetching today's
+sheet, with user access restrictions and conditional serialization for summary or detailed views.
+"""
+
+
 class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
     serializer_class = CountSheetSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     http_method_names = ["get", "post", "head", "options"]
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ["count_date", "location__name", "frequency"]
-    ordering = ["-count_date"]
+    filter_backends = (filters.OrderingFilter,)
+    ordering_fields = ("count_date", "location__name", "frequency")
+    ordering = ("-count_date",)
+
+    # -----------------------------------
+    # :: Get QuerySet Function
+    # -----------------------------------
+
+    """
+    Returns a queryset of CountSheet objects, optionally prefetching related entries for 
+    detailed views, and restricts it based on the current user's access.
+    """
 
     def get_queryset(self):
         queryset = CountSheet.objects.select_related(
-            "location", "created_by", "submitted_by"
-        )
+            "location", "created_by", "submitted_by")
         include_entries = self.request.query_params.get("include_entries")
-        if self.action in {"retrieve", "submit"} or (include_entries and include_entries.lower() in {"1", "true"}):
+        action = getattr(self, "action", None)
+        if action in {"retrieve", "submit"} or (include_entries and include_entries.lower() in {"1", "true"}):
             queryset = queryset.prefetch_related(
-                Prefetch("entries", queryset=CountEntry.objects.select_related(
-                    "item", "override"))
-            )
-        return self.restrict_queryset_by_location(queryset)
+                "entries__item", "entries__override")
+        return self._restrict_queryset(queryset)
+
+    # -----------------------------------
+    # :: Filter QuerySet Function
+    # -----------------------------------
+
+    """
+    Filters a CountSheet queryset based on query parameters for location, frequency, status, and count date.
+    """
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         params = self.request.query_params
-
-        # Dynamic filters
-        filters_map = {
-            "location": "location_id",
-            "frequency": "frequency",
-            "status": "status",
-            "count_date": "count_date",
-        }
-
-        for param, field in filters_map.items():
-            if value := params.get(param):
-                queryset = queryset.filter(**{field: value})
-
-        # Frequency-specific ranges
+        location = params.get("location")
+        if location:
+            queryset = queryset.filter(location_id=location)
         frequency = params.get("frequency")
         if frequency:
-            today = date.today()
-            freq_map = {
-                "mon/wed": lambda qs: qs.filter(
-                    count_date__range=(
-                        today - timedelta(days=today.weekday()), today + timedelta(days=6)),
-                    count_date__week_day__in=[2, 4],
-                ),
-                "weekly": lambda qs: qs.filter(count_date__gte=today - timedelta(days=7)),
-                "bi-weekly": lambda qs: qs.filter(count_date__gte=today - timedelta(days=14)),
-                "monthly": lambda qs: qs.filter(count_date__gte=today.replace(day=1)),
-                "semi-annual": lambda qs: qs.filter(count_date__gte=today - timedelta(days=180)),
-            }
-            queryset = freq_map.get(frequency.lower(), lambda qs: qs)(queryset)
-
+            queryset = queryset.filter(frequency=frequency)
+        status_param = params.get("status")
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        count_date = params.get("count_date")
+        if count_date:
+            queryset = queryset.filter(count_date=count_date)
+        # Support date range filtering via start_date and end_date query params
+        start_date = params.get("start_date")
+        if start_date:
+            queryset = queryset.filter(count_date__gte=start_date)
+        end_date = params.get("end_date")
+        if end_date:
+            queryset = queryset.filter(count_date__lte=end_date)
         return queryset
+
+    # -----------------------------------
+    # :: Get Serializer Class
+    # -----------------------------------
+
+    """
+    Chooses a summary serializer for listing when include_entries is false, otherwise uses the default serializer.
+    """
 
     def get_serializer_class(self):
         include_entries = self.request.query_params.get("include_entries")
@@ -108,84 +163,111 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
             return CountSheetSummarySerializer
         return super().get_serializer_class()
 
+    # -----------------------------------
+    # :: Create Function
+    # -----------------------------------
+
+    """
+    Creates or retrieves a daily CountSheet for a location and frequency, validates user access, optionally excludes entries, 
+    and returns the sheet with an appropriate status code.
+    """
+
     def create(self, request, *args, **kwargs):
         serializer = EnsureCountSheetSerializer(
             data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-
         location = serializer.validated_data["location"]
-        self.validate_location_access(request.user, location)
-
+        self._validate_location_access(request.user, location)
+        count_date = serializer.validated_data.get("count_date")
         sheet = CountSheet.objects.ensure_daily_sheet(
             location=location,
             frequency=serializer.validated_data["frequency"],
-            target_date=serializer.validated_data.get("count_date"),
+            target_date=count_date,
             created_by=request.user,
         )
-
         response_serializer = self.get_serializer(sheet)
-        data = response_serializer.data
-
-        if not serializer.validated_data.get("include_entries", True):
-            data.pop("entries", None)
-
+        response_data = response_serializer.data
+        include_entries = serializer.validated_data.get(
+            "include_entries", True)
+        if not include_entries:
+            response_data = {k: v for k,
+                             v in response_data.items() if k != "entries"}
         status_code = status.HTTP_201_CREATED if getattr(
             sheet, "_was_created", False) else status.HTTP_200_OK
-        return Response(data, status=status_code)
+        return Response(response_data, status=status_code)
+
+    # -----------------------------------
+    # :: Submit Function
+    # -----------------------------------
+
+    """
+    Submits a CountSheet, validating input and user permissions, and prevents submission if the sheet is locked.
+    """
 
     @action(detail=True, methods=["post"], permission_classes=[StaffCanSubmitCounts])
     def submit(self, request, pk=None):
         sheet = self.get_object()
-        if sheet.locked:
-            raise ValidationError("Sheet is already locked.")
-        
         serializer = SubmitCountSheetSerializer(
             data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        
-        # 1. Submit the sheet
+        if sheet.locked:
+            raise ValidationError("Sheet is already locked.")
         sheet.submit(request.user)
+        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
 
-        # 2. AUTO CREATE REPORT ARCHIVE (Yahi missing tha!)
-        from reports.models import ReportArchive, ExportFormat
-        ReportArchive.objects.create(
-            sheet=sheet,
-            location=sheet.location,
-            frequency=sheet.frequency,
-            count_date=sheet.count_date,
-            exported_by=request.user,
-            submitted_by=request.user,
-            submitted_at=sheet.submitted_at,
-            export_format=ExportFormat.CSV,  # ya PDF
-            payload_snapshot={
-                "low_stock": sheet.entries.filter(highlight_state="low").count(),
-                "total_items": sheet.entries.count(),
-            },
-            export_notes=serializer.validated_data.get("note", ""),
-        )
+    # -----------------------------------
+    # :: Reset Function
+    # -----------------------------------
 
-        return Response(self.get_serializer(sheet).data)
+    """
+    Resets a CountSheet to its initial state, accessible only by managers.
+    """
 
     @action(detail=True, methods=["post"], permission_classes=[ManagersOnly])
     def reset(self, request, pk=None):
         sheet = self.get_object()
         sheet.reset()
-        return Response(self.get_serializer(sheet).data)
+        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+
+    # -----------------------------------
+    # :: Lock Function
+    # -----------------------------------
+
+    """
+    Locks a CountSheet to prevent edits, updating its status and timestamp, accessible only by managers.
+    """
 
     @action(detail=True, methods=["post"], permission_classes=[ManagersOnly])
     def lock(self, request, pk=None):
         sheet = self.get_object()
-        if not sheet.locked:
-            sheet.locked = True
-            sheet.save(update_fields=["locked", "updated_at"])
-        return Response(self.get_serializer(sheet).data)
+        if sheet.locked:
+            return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+        sheet.locked = True
+        sheet.save(update_fields=["locked", "updated_at"])
+        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+
+    # -----------------------------------
+    # :: UnLock Function
+    # -----------------------------------
+
+    """
+    Unlocks a CountSheet to allow edits, updating its status and timestamp, accessible only by managers.
+    """
 
     @action(detail=True, methods=["post"], permission_classes=[ManagersOnly])
     def unlock(self, request, pk=None):
         sheet = self.get_object()
         sheet.locked = False
         sheet.save(update_fields=["locked", "updated_at"])
-        return Response(self.get_serializer(sheet).data)
+        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+
+    # -----------------------------------
+    # :: Today Function
+    # -----------------------------------
+
+    """
+    Convenience endpoint to fetch or create today's sheet for a location/frequency.
+    """
 
     @action(detail=False, methods=["get"])
     def today(self, request):
@@ -193,14 +275,12 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
         frequency = request.query_params.get("frequency")
         if not location_id or not frequency:
             raise ValidationError(
-                "Both 'location' and 'frequency' query parameters are required.")
-
-        location = Location.objects.filter(
-            pk=location_id, is_active=True).first()
-        if not location:
+                "location and frequency query parameters are required.")
+        try:
+            location = Location.objects.get(pk=location_id, is_active=True)
+        except Location.DoesNotExist:
             raise ValidationError("Invalid location.")
-
-        self.validate_location_access(request.user, location)
+        self._validate_location_access(request.user, location)
 
         sheet = CountSheet.objects.ensure_daily_sheet(
             location=location,
@@ -208,67 +288,125 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
             target_date=date.today(),
             created_by=request.user,
         )
-        return Response(self.get_serializer(sheet).data)
+        serializer = self.get_serializer(sheet)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # --------------------------------------
-# :: CountEntryViewSet
+# :: Count Entry ViewSet Class
 # --------------------------------------
+
+
+"""
+Allows staff to view and update count entries they are assigned to.
+"""
+
+
 class CountEntryViewSet(LocationScopedMixin, viewsets.ModelViewSet):
     serializer_class = CountEntrySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
     http_method_names = ["get", "patch", "head", "options"]
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ["item__name",
-                       "override__display_order", "sheet__count_date"]
-    ordering = ["override__display_order"]
+    filter_backends = (filters.OrderingFilter,)
+    ordering_fields = (
+        "item__name", "override__display_order", "sheet__count_date")
+    ordering = ("override__display_order",)
     pagination_class = TenPerPagePagination
-
     queryset = CountEntry.objects.select_related(
-        "sheet", "sheet__location", "item", "override", "override__location"
+        "sheet",
+        "sheet__location",
+        "item",
+        "override",
+        "override__location",
     ).all()
 
+    # -----------------------------------
+    # :: Get Query Set Function
+    # -----------------------------------
+
+    """
+    Returns the CountEntry queryset restricted to entries the current user is allowed to access.
+    """
+
     def get_queryset(self):
-        return self.restrict_entry_queryset(self.queryset)
+        return self._restrict_entry_queryset(self.queryset)
+
+    # -----------------------------------
+    # :: Filter QuerySet Function
+    # -----------------------------------
+
+    """
+    Filters a CountEntry queryset based on sheet, location, frequency, highlight state, status, and active flags, applying user-defined query parameters
+    """
 
     def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
         params = self.request.query_params
-        filters_map = {
-            "sheet": "sheet_id",
-            "location": "sheet__location_id",
-            "frequency": "sheet__frequency",
-            "highlight": "highlight_state",
-            "status": "sheet__status",
-        }
-
-        for param, field in filters_map.items():
-            if value := params.get(param):
-                queryset = queryset.filter(**{field: value})
-
-        if not params.get("include_inactive", "").lower() in {"1", "true"}:
+        sheet_id = params.get("sheet")
+        if sheet_id:
+            queryset = queryset.filter(sheet_id=sheet_id)
+        location_id = params.get("location")
+        if location_id:
+            queryset = queryset.filter(sheet__location_id=location_id)
+        frequency = params.get("frequency")
+        if frequency:
+            queryset = queryset.filter(sheet__frequency=frequency)
+        highlight_state = params.get("highlight")
+        if highlight_state:
+            queryset = queryset.filter(highlight_state=highlight_state)
+        status_param = params.get("status")
+        if status_param:
+            queryset = queryset.filter(sheet__status=status_param)
+        include_inactive = params.get("include_inactive")
+        if not include_inactive or include_inactive.lower() not in {"1", "true"}:
             queryset = queryset.filter(
-                item__is_active=True, override__is_active=True)
-
+                override__is_active=True, item__is_active=True)
         return queryset
 
+    # -----------------------------------
+    # :: Perform Update Function
+    # -----------------------------------
+
+    """
+    Updates a CountEntry, enforcing sheet lock restrictions and recording the user who made the change.
+    """
+
     def perform_update(self, serializer):
-        if serializer.instance.sheet.locked and not is_manager(self.request.user):
+        entry = serializer.instance
+        if entry.sheet.locked and not is_manager(self.request.user):
             raise PermissionDenied(
                 "Sheet is locked. Contact a manager to make changes.")
         serializer.save(updated_by=self.request.user)
 
+    # -----------------------------------
+    # :: History Function
+    # -----------------------------------
+
+    """
+    Returns the audit history of a CountEntry, showing all changes in reverse chronological order.
+    """
+
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
     def history(self, request, pk=None):
         entry = self.get_object()
-        serializer = CountEntryAuditSerializer(
-            entry.audit_log.order_by("-changed_at"), many=True)
-        return Response(serializer.data)
+        audit_qs = entry.audit_log.all().order_by("-changed_at")
+        serializer = CountEntryAuditSerializer(audit_qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    # -----------------------------------
+    # :: Low Stock Function
+    # -----------------------------------
+
+    """
+    Returns CountEntry items with low (and optionally near) stock levels for the current user.
+    """
 
     @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated], url_path="low-stock")
     def low_stock(self, request):
         queryset = self.filter_queryset(self.get_queryset())
+        include_near = request.query_params.get("include_near")
         highlights = ["low"]
-        if request.query_params.get("include_near", "").lower() in {"1", "true"}:
+        if include_near and include_near.lower() in {"1", "true"}:
             highlights.append("near")
         queryset = queryset.filter(highlight_state__in=highlights)
-        return Response(self.get_serializer(queryset, many=True).data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

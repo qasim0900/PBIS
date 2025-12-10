@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from django.utils import timezone
 from typing import Iterable, Optional
 from django.db import models, transaction
+from django.db.models import UniqueConstraint, Q
 from django.core.exceptions import ValidationError
 from decimal import Decimal, ROUND_HALF_UP, ROUND_UP
 from django.utils.translation import gettext_lazy as _
@@ -166,7 +167,14 @@ class CountSheet(models.Model):
 
     class Meta:
         ordering = ("-count_date", "location__name", "frequency")
-        unique_together = ("location", "frequency", "count_date")
+        constraints = [
+            UniqueConstraint(
+                fields=['location', 'frequency'],
+                # Use the actual draft/active status values
+                condition=Q(status__in=['draft', 'pending']),
+                name='one_active_sheet_per_location_frequency'
+            )
+        ]
 
     # -----------------------------------
     # :: __str__ Function

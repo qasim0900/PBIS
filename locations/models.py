@@ -133,6 +133,12 @@ class LocationOverride(models.Model):
         decimal_places=2,
         help_text=_("Trigger point for low stock alerts in count units."),
     )
+    count = models.DecimalField(
+    max_digits=9,
+    decimal_places=2,
+    default=0,
+    help_text=_("Latest counted quantity for this item at this location.")
+)
     frequency = models.CharField(
         max_length=32,
         choices=CountFrequency.choices,

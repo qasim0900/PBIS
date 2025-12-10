@@ -6,7 +6,6 @@ import api from '../../services/api';
 // Async Thunks
 // --------------------
 
-// Login user
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ username, password }, { rejectWithValue }) => {
@@ -158,7 +157,17 @@ export const selectIsAuthenticated = createSelector(
 export const selectAuth = (state) => state.auth;
 export const selectLoading = createSelector([selectAuthState], (auth) => auth.loading);
 export const selectError = createSelector([selectAuthState], (auth) => auth.error);
-export const selectIsAdmin = createSelector([selectUser], (user) => user?.role === 'admin');
-export const selectIsManager = createSelector([selectUser], (user) => user?.role === 'manager');
+export const selectIsAdmin = (state) =>
+  state.auth.user?.role === 'admin';
+
+export const selectIsManager = (state) => {
+  const role = state.auth.user?.role;
+  return role === 'manager' || role === 'admin';
+};
+
+export const selectIsStaff = (state) => {
+  const role = state.auth.user?.role;
+  return role === 'staff' || role === 'manager' || role === 'admin';
+};
 
 export default authSlice.reducer;

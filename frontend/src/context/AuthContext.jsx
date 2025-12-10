@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
   // ---- FIX: This will NEVER be undefined now ----
   const { user, token, loading } = useSelector(selectAuth);
 
-  const isAdmin = useSelector(selectIsAdmin);
+  const isAdmin = useSelector(selectIsAdmin) || useSelector(selectIsManager);
   const isManager = useSelector(selectIsManager);
 
   // Restore user when token is already in localStorage

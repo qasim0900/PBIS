@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useDispatch } from "react-redux";
+import { useEffect, useCallback, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Box,
   Card,
@@ -10,13 +10,16 @@ import {
   Button,
   CircularProgress,
 } from "@mui/material";
-import { Send } from "@mui/icons-material";
 
 import Header from "../components/Header";
 import Table from "../components/Table";
-import countsAPI from "../services/countsAPI";
 import locationsAPI from "../services/locationsAPI";
 import { showNotification } from "../store/slices/uiSlice";
+import {
+  fetchCountSheets,
+  fetchCountEntries,
+  setSelectedSheet,
+} from "../store/slices/countsSlice";
 
 const frequencyOptions = [
   { label: "Mon/Wed", value: "mon_wed" },
@@ -30,19 +33,14 @@ const frequencyOptions = [
 const CountsView = () => {
   const dispatch = useDispatch();
 
+  const { sheets, entries, selectedSheet, loading } = useSelector(state => state.counts);
+
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedFrequency, setSelectedFrequency] = useState("");
 
-  const [sheets, setSheets] = useState([]);
-  const [selectedSheet, setSelectedSheet] = useState(null);
-  const [entries, setEntries] = useState([]);
-
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-
   // ---------------------------------------------------------
-  // 1) Fetch Locations
+  // Fetch Locations
   // ---------------------------------------------------------
   const fetchLocations = useCallback(async () => {
     try {
@@ -56,99 +54,37 @@ const CountsView = () => {
   }, [dispatch]);
 
   // ---------------------------------------------------------
-  // 2) Create + Fetch Sheets for a location/frequency
+  // Fetch sheets for a location/frequency
   // ---------------------------------------------------------
-  const fetchSheets = useCallback(async (locationId = null, frequency = null) => {
-    if (!locationId || !frequency) {
-      setSheets([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // FIRST: ensure sheet exists
-      await countsAPI.ensureSheet(locationId, frequency);
-
-      // THEN: fetch sheets
-      const res = await countsAPI.getSheets(locationId, frequency);
-      const data = res.data.results || res.data || [];
-      setSheets(data);
-    } catch (error) {
-      dispatch(showNotification({ message: "No sheets found", type: "info" }));
-      setSheets([]);
-    } finally {
-      setLoading(false);
-    }
+  const loadSheets = useCallback(async (locationId, frequency) => {
+    if (!locationId || !frequency) return;
+    dispatch(fetchCountSheets({ location: locationId, frequency }));
   }, [dispatch]);
 
   // ---------------------------------------------------------
-  // 3) Fetch entries of a specific sheet
+  // View sheet entries
   // ---------------------------------------------------------
-  const fetchEntries = useCallback(async (sheetId) => {
-    try {
-      const res = await countsAPI.getEntries(sheetId);
-      setEntries(res.data.results || res.data || []);
-    } catch {
-      setEntries([]);
-    }
-  }, []);
-
   const viewSheet = useCallback(async (sheet) => {
-    setSelectedSheet(sheet);
-    setLoading(true);
-    await fetchEntries(sheet.id);
-    setLoading(false);
-  }, [fetchEntries]);
+    dispatch(setSelectedSheet(sheet));
+    dispatch(fetchCountEntries(sheet.id));
+  }, [dispatch]);
 
   // ---------------------------------------------------------
-  // 4) Submit Sheet
-  // ---------------------------------------------------------
-  const handleSubmit = useCallback(async () => {
-    if (!selectedSheet?.id || selectedSheet.status !== "draft") return;
-
-    setSubmitting(true);
-    try {
-      await countsAPI.submitSheet(selectedSheet.id);
-      dispatch(showNotification({ message: "Sheet submitted!", type: "success" }));
-
-      // Refresh list
-      fetchSheets(selectedLocation, selectedFrequency);
-      setSelectedSheet(null);
-
-    } catch {
-      dispatch(showNotification({ message: "Submit failed", type: "error" }));
-    } finally {
-      setSubmitting(false);
-    }
-  }, [selectedSheet, selectedLocation, selectedFrequency, dispatch, fetchSheets]);
-
-  // ---------------------------------------------------------
-  // ON LOAD → load locations only
+  // Initial load → locations + all sheets
   // ---------------------------------------------------------
   useEffect(() => {
     fetchLocations();
+    dispatch(fetchCountSheets()); // load all sheets without filters
+  }, [dispatch, fetchLocations]);
 
-    // Load ALL sheets on initial load
-    const loadAllSheets = async () => {
-      try {
-        const res = await countsAPI.getSheets();   // no filters → ALL data
-        const data = res.data.results || res.data || [];
-        setSheets(data);
-      } catch {
-        setSheets([]);
-      }
-    };
-
-    loadAllSheets();
-  }, [fetchLocations]);
   // ---------------------------------------------------------
-  // Re-fetch sheets when location or frequency changes
+  // Refetch sheets when location or frequency changes
   // ---------------------------------------------------------
   useEffect(() => {
     if (selectedLocation && selectedFrequency) {
-      fetchSheets(selectedLocation, selectedFrequency);
+      loadSheets(selectedLocation, selectedFrequency);
     }
-  }, [selectedLocation, selectedFrequency, fetchSheets]);
+  }, [selectedLocation, selectedFrequency, loadSheets]);
 
   // ---------------------------------------------------------
   // Table columns
@@ -187,7 +123,6 @@ const CountsView = () => {
     <Box>
       <Header title="Inventory Counts Overview" subtitle="View all count sheets">
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", mb: 3 }}>
-          {/* Location Select */}
           <TextField
             select label="Location" size="small"
             value={selectedLocation}
@@ -203,7 +138,6 @@ const CountsView = () => {
             ))}
           </TextField>
 
-          {/* Frequency Select */}
           <TextField
             select label="Frequency" size="small"
             value={selectedFrequency}
@@ -219,39 +153,25 @@ const CountsView = () => {
           <Button
             variant="contained"
             disabled={!selectedLocation || !selectedFrequency}
-            onClick={() => fetchSheets(selectedLocation, selectedFrequency)}
+            onClick={() => loadSheets(selectedLocation, selectedFrequency)}
           >
             Load Sheet
           </Button>
         </Box>
       </Header>
 
-      {/* Loading */}
       {loading ? (
         <Card sx={{ p: 8, textAlign: "center" }}>
           <CircularProgress />
         </Card>
       ) : selectedSheet ? (
         <Box>
-
-          {/* Header */}
           <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between" }}>
             <Typography variant="h6">
               {selectedSheet.location.name} • {selectedSheet.frequency_display} • {selectedSheet.count_date}
             </Typography>
-
-            {selectedSheet.status === "draft" && (
-              <Button
-                variant="contained" color="success"
-                startIcon={submitting ? <CircularProgress size={20} /> : <Send />}
-                onClick={handleSubmit} disabled={submitting}
-              >
-                Submit Sheet
-              </Button>
-            )}
           </Box>
 
-          {/* Entries Table */}
           <Card>
             <CardContent>
               <Table
@@ -268,7 +188,7 @@ const CountsView = () => {
             </CardContent>
           </Card>
 
-          <Button sx={{ mt: 2 }} variant="text" onClick={() => setSelectedSheet(null)}>
+          <Button sx={{ mt: 2 }} variant="text" onClick={() => dispatch(setSelectedSheet(null))}>
             ← Back
           </Button>
         </Box>
@@ -277,8 +197,7 @@ const CountsView = () => {
           <CardContent>
             <Typography variant="h6" gutterBottom>
               {selectedLocation && selectedFrequency
-                ? `Sheets for ${locations.find((l) => l.id == selectedLocation)?.name} - ${frequencyOptions.find((f) => f.value === selectedFrequency)?.label
-                }`
+                ? `Sheets for ${locations.find((l) => l.id == selectedLocation)?.name} - ${frequencyOptions.find((f) => f.value === selectedFrequency)?.label}`
                 : "No sheet loaded"}
             </Typography>
 

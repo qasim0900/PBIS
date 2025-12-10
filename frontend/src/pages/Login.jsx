@@ -27,7 +27,6 @@ import {
   Facebook,
   Twitter,
   Instagram,
-  LinkedIn,
 } from '@mui/icons-material';
 import { loginUser, selectAuth, clearError } from '../store/slices/authSlice';
 import { showNotification } from '../store/slices/uiSlice';
@@ -61,7 +60,6 @@ const Login = () => {
     try {
       await dispatch(loginUser({ username, password })).unwrap();
       dispatch(showNotification({ message: 'Login successful!', type: 'success' }));
-      console.log("Auth state:", isAuthenticated);
       navigate('/counts', { replace: true });
     } catch (err) {
       dispatch(showNotification({ message: err?.message || 'Invalid credentials', type: 'error' }));
