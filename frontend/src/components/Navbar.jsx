@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebarCollapse, setSidebarCollapsed } from '../store/slices/uiSlice';
 import { logoutUser, selectUser } from '../store/slices/authSlice';
 import { useNavigate } from 'react-router-dom';
+import { persistor } from "../store";
 
 /**
  * MenuAppBar - Application top navigation bar
@@ -29,8 +30,9 @@ const MenuAppBar = () => {
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const handleLogout = useCallback(() => {
     dispatch(logoutUser());
+    persistor.purge();
     dispatch({ type: "RESET_ALL" });
-    navigate('/login');
+    navigate("/login");
   }, [dispatch, navigate]);
 
   const handleMenuClick = useCallback(() => {
