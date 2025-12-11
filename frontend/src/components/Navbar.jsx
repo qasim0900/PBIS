@@ -29,6 +29,7 @@ const MenuAppBar = () => {
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const handleLogout = useCallback(() => {
     dispatch(logoutUser());
+    dispatch({ type: "RESET_ALL" });
     navigate('/login');
   }, [dispatch, navigate]);
 

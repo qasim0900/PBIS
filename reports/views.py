@@ -16,84 +16,27 @@ from users.permissions import ManagersOnly, is_manager
 # -----------------------------------
 
 class ReportArchiveViewSet(viewsets.ModelViewSet):
-    """
-    CRUD and export tracking for ReportArchive.
-
-    Access:
-    - Managers/Admins: full access
-    - Staff: restricted to assigned locations (read-only)
-    """
     serializer_class = ReportArchiveSerializer
-    permission_classes = [IsAuthenticated, ManagersOnly]
+    permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "head", "options"]
     filter_backends = (filters.OrderingFilter,)
-    ordering_fields = ("count_date", "created_at",
-                       "location__name", "frequency")
     ordering = ("-created_at",)
 
-    # Smart queryset: prefetch related objects to avoid N+1 queries
-    queryset = ReportArchive.objects.select_related(
-        "sheet",
-        "location",
-        "exported_by",
-        "submitted_by",
-    )
-
-    # -----------------------------------
-    # :: Helper: Restrict queryset by user role
-    # -----------------------------------
-
-    def _restrict_queryset(self, queryset):
-        """
-        Restrict access based on user role and assigned locations.
-        """
-        user = self.request.user
-        if is_manager(user):
-            return queryset
-
-        # Staff: only assigned locations
-        assigned_ids = user.assigned_locations.values_list("id", flat=True)
-        return queryset.filter(location_id__in=assigned_ids)
-
-    # -----------------------------------
-    # :: Helper: Validate location access
-    # -----------------------------------
-
-    def _validate_location_access(self, user, location: Location):
-        """
-        Ensure the user can access a specific location.
-        """
-        if is_manager(user):
-            return
-        if not user.assigned_locations.filter(pk=location.pk).exists():
-            raise PermissionDenied("You are not assigned to this location.")
-
-    # -----------------------------------
-    # :: Get Queryset
-    # -----------------------------------
-
     def get_queryset(self):
-        """
-        Return queryset restricted by user access.
-        """
-        return self._restrict_queryset(super().get_queryset())
-
-    # -----------------------------------
-    # :: Filter Queryset (by query params)
-    # -----------------------------------
+        # YE SABSE SAHI HAI — prefetch + all records
+        return ReportArchive.objects.select_related(
+            "sheet", "location", "exported_by", "submitted_by"
+        ).all()
 
     def filter_queryset(self, queryset):
-        """
-        Allow filtering by location, frequency, or count_date.
-        """
-        queryset = super().filter_queryset(queryset)
+        queryset = super().filter_queryset(queryset)  # ordering etc.
         params = self.request.query_params
-
-        if location := params.get("location"):
-            queryset = queryset.filter(location_id=location)
+        
+        if location_id := params.get("location"):
+            queryset = queryset.filter(location_id=location_id)
         if frequency := params.get("frequency"):
             queryset = queryset.filter(frequency=frequency)
-
+            
         return queryset
 
     # -----------------------------------

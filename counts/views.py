@@ -7,6 +7,9 @@ from rest_framework.response import Response
 from rest_framework import filters, status, viewsets
 from .pagination import TenPerPagePagination
 from rest_framework.permissions import IsAuthenticated
+from django.db import transaction
+from django.utils import timezone
+from reports.models import ReportArchive, ExportFormat
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from users.permissions import ManagersOnly, StaffCanSubmitCounts, is_manager
 from .serializers import (
@@ -207,13 +210,76 @@ class CountSheetViewSet(LocationScopedMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], permission_classes=[StaffCanSubmitCounts])
     def submit(self, request, pk=None):
         sheet = self.get_object()
+
+        if sheet.locked:
+            raise ValidationError("Sheet is already locked.")
+
         serializer = SubmitCountSheetSerializer(
             data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        if sheet.locked:
-            raise ValidationError("Sheet is already locked.")
-        sheet.submit(request.user)
-        return Response(self.get_serializer(sheet).data, status=status.HTTP_200_OK)
+
+        from django.db import transaction
+        from django.utils import timezone
+        from reports.models import ReportArchive, ExportFormat
+
+        with transaction.atomic():
+            sheet.status = "submitted"
+            sheet.locked = True
+            sheet.submitted_by = request.user
+            sheet.submitted_at = timezone.now()
+            sheet.save(update_fields=[
+                       "status", "locked", "submitted_by", "submitted_at"])
+
+            # FULL REPORT WITH ITEM + COMPLETE OVERRIDE DATA
+            report_items = []
+            for entry in sheet.entries.select_related("item", "override"):
+                override = entry.override
+                item = entry.item
+
+                report_items.append({
+                    "item_name": item.name,
+                    "category": item.get_category_display() if hasattr(item, 'get_category_display') else (item.category or "N/A"),
+                    "count_unit": item.count_unit,
+                    "pack_size": str(item.pack_size),
+                    "par_level": str(override.par_level),
+                    "order_point": str(override.order_point),
+                    "count": str(override.count),
+                    "min_order_qty": str(override.min_order_qty or 0),
+                    "on_hand_quantity": str(entry.on_hand_quantity),
+                    "quantity_to_order": str(entry.calculated_qty_to_order),
+                    "order_units": str(entry.calculated_order_units),
+
+                    "storage_location": override.storage_location or "N/A",
+                    "frequency": override.get_frequency_display(),
+                    "display_order": override.display_order,
+                    "override_notes": override.notes or "",
+                    "highlight": entry.get_highlight_state_display(),
+                    "entry_notes": entry.notes or "",
+                })
+
+            # REPORT CREATE WITH FULL OVERRIDE DATA
+            ReportArchive.objects.create(
+                sheet=sheet,
+                location=sheet.location,
+                frequency=sheet.frequency,
+                count_date=sheet.count_date,
+                exported_by=request.user,
+                submitted_by=request.user,
+                submitted_at=timezone.now(),
+                export_format=ExportFormat.PDF,
+                payload_snapshot={
+                    "report_title": f"{sheet.location.name} - {sheet.get_frequency_display()} Report",
+                    "count_date": str(sheet.count_date),
+                    "total_items": len(report_items),
+                    "low_stock_count": len([i for i in report_items if i["highlight"] == "Low"]),
+                    "generated_by": request.user.get_full_name() or request.user.username,
+                    "generated_at": timezone.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "items": report_items,
+                },
+                export_notes=serializer.validated_data.get("note", ""),
+            )
+
+        return Response(self.get_serializer(sheet).data)
 
     # -----------------------------------
     # :: Reset Function
@@ -329,7 +395,8 @@ class CountEntryViewSet(LocationScopedMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         return self._restrict_entry_queryset(
-            self.queryset.select_related("override", "override__location", "item")
+            self.queryset.select_related(
+                "override", "override__location", "item")
         )
 
     # -----------------------------------

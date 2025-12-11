@@ -14,12 +14,13 @@ import {
 import Header from "../components/Header";
 import Table from "../components/Table";
 import locationsAPI from "../services/locationsAPI";
-import countsAPI from "../services/countsAPI"; // make sure this exists
+import countsAPI from "../services/countsAPI";
 import { showNotification } from "../store/slices/uiSlice";
 import {
   fetchCountSheets,
   fetchCountEntries,
   setSelectedSheet,
+  ensureCountSheet,
 } from "../store/slices/countsSlice";
 
 const frequencyOptions = [
@@ -33,7 +34,7 @@ const frequencyOptions = [
 
 const CountsView = () => {
   const dispatch = useDispatch();
-  const { sheets, entries, selectedSheet, loading } = useSelector(state => state.counts);
+  const { sheets, entries, selectedSheet, loading } = useSelector((state) => state.counts);
 
   const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -51,19 +52,16 @@ const CountsView = () => {
     }
   }, [dispatch]);
 
-  // Fetch sheets for a location/frequency
-  const loadSheets = useCallback(async (locationId, frequency) => {
-    if (!locationId || !frequency) return;
-    dispatch(fetchCountSheets({ location: locationId, frequency }));
-  }, [dispatch]);
+  // View Sheet Entries
+  const viewSheet = useCallback(
+    async (sheet) => {
+      dispatch(setSelectedSheet(sheet));
+      dispatch(fetchCountEntries(sheet.id));
+    },
+    [dispatch]
+  );
 
-  // View sheet entries
-  const viewSheet = useCallback(async (sheet) => {
-    dispatch(setSelectedSheet(sheet));
-    dispatch(fetchCountEntries(sheet.id));
-  }, [dispatch]);
-
-  // Submit sheet
+  // Submit Sheet
   const handleSubmitSheet = async () => {
     if (!selectedSheet) return;
     try {
@@ -85,46 +83,51 @@ const CountsView = () => {
   // Refetch sheets when location or frequency changes
   useEffect(() => {
     if (selectedLocation && selectedFrequency) {
-      loadSheets(selectedLocation, selectedFrequency);
+      dispatch(
+        ensureCountSheet({
+          locationId: selectedLocation,
+          frequency: selectedFrequency,
+        })
+      ).then(() => {
+        dispatch(fetchCountSheets({ location: selectedLocation, frequency: selectedFrequency }));
+      });
     }
-  }, [selectedLocation, selectedFrequency, loadSheets]);
+  }, [selectedLocation, selectedFrequency, dispatch]);
+
+  // Flatten entries for Table
+  const flattenedEntries = entries.map((e) => ({
+    ...e,
+    storage_location: e.override?.storage_location || "",
+    counted: e.override?.count || "",
+  }));
 
   // Table columns for sheets
-  const columns = useMemo(() => [
-    { header: "Location", accessor: "location.name" },
-    { header: "Frequency", accessor: "frequency_display" },
-    { header: "Date", accessor: "count_date" },
-    {
-      header: "Status",
-      accessor: "status",
-      render: (row) => (
-        <span className={`px-2 py-1 rounded text-xs font-medium ${row.status === "submitted"
-          ? "bg-green-100 text-green-800"
-          : "bg-yellow-100 text-yellow-800"
-          }`}>
-          {row.status_display || row.status}
-        </span>
-      ),
-    },
-    { header: "Items", accessor: "entry_count" },
-    {
-      header: "Action",
-      render: (row) => (
-        <Button size="small" variant="outlined" onClick={() => viewSheet(row)}>
-          View
-        </Button>
-      ),
-    },
-  ], [viewSheet]);
-
-
-  const flattenedEntries = entries.map((e) => {
-    return {
-      ...e,
-      storage_location: e.override?.storage_location || "",
-      counted: e.override?.count || "",
-    };
-  });
+  const columns = useMemo(
+    () => [
+      { header: "Location", accessor: "location.name" },
+      { header: "Frequency", accessor: "frequency_display" },
+      { header: "Date", accessor: "count_date" },
+      {
+        header: "Status",
+        accessor: "status",
+        render: (row) => (
+          <span
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              row.status === "submitted" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+            }`}
+          >
+            {row.status_display || row.status}
+          </span>
+        ),
+      },
+      { header: "Items", accessor: "entry_count" },
+      {
+        header: "Action",
+        render: (row) => <Button size="small" variant="outlined" onClick={() => viewSheet(row)}>View</Button>,
+      },
+    ],
+    [viewSheet]
+  );
 
   return (
     <Box>
@@ -143,7 +146,9 @@ const CountsView = () => {
           >
             <MenuItem value="">Select Location</MenuItem>
             {locations.map((l) => (
-              <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
+              <MenuItem key={l.id} value={l.id}>
+                {l.name}
+              </MenuItem>
             ))}
           </TextField>
 
@@ -156,15 +161,26 @@ const CountsView = () => {
             sx={{ minWidth: 200 }}
           >
             <MenuItem value="">Select Frequency</MenuItem>
-            {frequencyOptions.map(f => (
-              <MenuItem key={f.value} value={f.value}>{f.label}</MenuItem>
+            {frequencyOptions.map((f) => (
+              <MenuItem key={f.value} value={f.value}>
+                {f.label}
+              </MenuItem>
             ))}
           </TextField>
 
           <Button
             variant="contained"
             disabled={!selectedLocation || !selectedFrequency}
-            onClick={() => loadSheets(selectedLocation, selectedFrequency)}
+            onClick={async () => {
+              if (!selectedLocation || !selectedFrequency) return;
+              await dispatch(
+                ensureCountSheet({
+                  locationId: selectedLocation,
+                  frequency: selectedFrequency,
+                })
+              );
+              dispatch(fetchCountSheets({ location: selectedLocation, frequency: selectedFrequency }));
+            }}
           >
             Load Sheet
           </Button>
@@ -193,11 +209,12 @@ const CountsView = () => {
                   { header: "To Order", accessor: "calculated_qty_to_order" },
                   { header: "Status", accessor: "highlight_display" },
                   { header: "Category", accessor: "item.category_display" },
-                  { header: "Storage Location", accessor: "storage_location" },
-                  { header: "Counted", accessor: "counted" },
+                  { header: "Storage Location", accessor: "storage_location", render: (row) => row.storage_location },
+                  { header: "Counted", accessor: "counted", render: (row) => row.counted },
                 ]}
                 data={flattenedEntries}
                 searchable
+                rowKey={(row) => `${row.id}-${row.sheet_id}`} // unique keys
               />
             </CardContent>
           </Card>
@@ -218,11 +235,13 @@ const CountsView = () => {
           <CardContent>
             <Typography variant="h6" gutterBottom>
               {selectedLocation && selectedFrequency
-                ? `Sheets for ${locations.find((l) => l.id == selectedLocation)?.name} - ${frequencyOptions.find((f) => f.value === selectedFrequency)?.label}`
+                ? `Sheets for ${locations.find((l) => l.id == selectedLocation)?.name} - ${
+                    frequencyOptions.find((f) => f.value === selectedFrequency)?.label
+                  }`
                 : "No sheet loaded"}
             </Typography>
 
-            <Table columns={columns} data={sheets} searchable />
+            <Table columns={columns} data={sheets} searchable rowKey={(row) => `sheet-${row.id}`} />
           </CardContent>
         </Card>
       )}

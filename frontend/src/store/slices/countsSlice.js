@@ -21,7 +21,7 @@ export const fetchCountSheets = createAsyncThunk(
   'counts/fetchSheets',
   async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await countsAPI.getSheets(params.location, params.frequency, params.extraParams);
+      const response = await countsAPI.getSheets(filters);
       return response.data.results || response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.detail || 'Failed to fetch count sheets');
