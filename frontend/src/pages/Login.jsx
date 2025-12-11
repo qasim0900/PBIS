@@ -28,7 +28,7 @@ import {
   Twitter,
   Instagram,
 } from '@mui/icons-material';
-import { loginUser, selectAuth, clearError } from '../store/slices/authSlice';
+import { loginUser, selectAuthState, clearError } from '../store/slices/authSlice';
 import { showNotification } from '../store/slices/uiSlice';
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -36,7 +36,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const authState = useSelector(selectAuth);
+  const authState = useSelector(selectAuthState);
   const loading = authState?.loading || false;
   const isAuthenticated = authState?.isAuthenticated || !!authState?.token;
   const theme = useTheme();

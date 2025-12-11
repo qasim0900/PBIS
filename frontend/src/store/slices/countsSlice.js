@@ -148,7 +148,16 @@ const countsSlice = createSlice({
       .addCase(fetchCountSheets.rejected, (state, action) => { state.loading = false; state.error = action.payload; })
 
       // Ensure Sheet
-      .addCase(ensureCountSheet.fulfilled, (state, action) => { state.sheets.unshift(action.payload); })
+      .addCase(ensureCountSheet.fulfilled, (state, action) => {
+  const exists = state.sheets.find(s => s.id === action.payload.id);
+  if (!exists) {
+    state.sheets.unshift(action.payload);
+  } else {
+    // Optional: update existing sheet if needed
+    const index = state.sheets.findIndex(s => s.id === action.payload.id);
+    state.sheets[index] = action.payload;
+  }
+})
       .addCase(ensureCountSheet.rejected, (state, action) => { state.error = action.payload; })
 
       // Create Sheet

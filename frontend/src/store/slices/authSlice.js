@@ -6,15 +6,18 @@ import api from '../../services/api';
 // Async Thunks
 // --------------------
 
+// Login
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
   async ({ username, password }, { rejectWithValue }) => {
     try {
       const response = await authAPI.login(username, password);
       const { access, refresh } = response.data;
+
       localStorage.setItem('access_token', access);
       localStorage.setItem('refresh_token', refresh);
       api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+
       const userResponse = await authAPI.getMe();
       return { tokens: { access, refresh }, user: userResponse.data };
     } catch (err) {
@@ -46,6 +49,7 @@ export const refreshToken = createAsyncThunk(
     try {
       const refresh = localStorage.getItem('refresh_token');
       if (!refresh) throw new Error('No refresh token found');
+
       const response = await authAPI.refresh(refresh);
       const { access } = response.data;
       localStorage.setItem('access_token', access);
@@ -66,6 +70,7 @@ const initialState = {
   refreshToken: localStorage.getItem('refresh_token'),
   loading: false,
   error: null,
+  isAuthenticated: !!localStorage.getItem('access_token'),
 };
 
 const authSlice = createSlice({
@@ -79,11 +84,11 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.isAuthenticated = false;
+
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       delete api.defaults.headers.common['Authorization'];
     },
-    resetAllState: () => { },
     clearError: (state) => {
       state.error = null;
     },
@@ -94,7 +99,6 @@ const authSlice = createSlice({
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
-
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -106,12 +110,11 @@ const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
-        state.isAuthenticated = true;
+        state.isAuthenticated = false; // ❌ Fix: do NOT mark as authenticated
       })
       // Fetch current user
       .addCase(fetchCurrentUser.pending, (state) => {
         state.loading = true;
-        state.isAuthenticated = true;
       })
       .addCase(fetchCurrentUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -124,7 +127,7 @@ const authSlice = createSlice({
         state.token = null;
         state.refreshToken = null;
         state.error = action.payload;
-        state.isAuthenticated = true;
+        state.isAuthenticated = false;
       })
       // Refresh token
       .addCase(refreshToken.fulfilled, (state, action) => {
@@ -135,7 +138,7 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.refreshToken = null;
-        state.isAuthenticated = true;
+        state.isAuthenticated = false;
       });
   },
 });
@@ -143,28 +146,20 @@ const authSlice = createSlice({
 export const { logoutUser, clearError } = authSlice.actions;
 
 // --------------------
-// Memoized Selectors
+// Selectors
 // --------------------
 export const selectAuthState = (state) => state.auth;
-
 export const selectUser = createSelector([selectAuthState], (auth) => auth.user);
 export const selectToken = createSelector([selectAuthState], (auth) => auth.token);
 export const selectRefreshToken = createSelector([selectAuthState], (auth) => auth.refreshToken);
-export const selectIsAuthenticated = createSelector(
-  [selectAuthState],
-  (auth) => !!auth.token
-);
-export const selectAuth = (state) => state.auth;
+export const selectIsAuthenticated = createSelector([selectAuthState], (auth) => !!auth.token);
 export const selectLoading = createSelector([selectAuthState], (auth) => auth.loading);
 export const selectError = createSelector([selectAuthState], (auth) => auth.error);
-export const selectIsAdmin = (state) =>
-  state.auth.user?.role === 'admin';
-
+export const selectIsAdmin = (state) => state.auth.user?.role === 'admin';
 export const selectIsManager = (state) => {
   const role = state.auth.user?.role;
   return role === 'manager' || role === 'admin';
 };
-
 export const selectIsStaff = (state) => {
   const role = state.auth.user?.role;
   return role === 'staff' || role === 'manager' || role === 'admin';

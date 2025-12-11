@@ -16,7 +16,7 @@ import CatalogView from './pages/CatalogView';
 import OverridesView from './pages/OverridesView';
 import UsersView from './pages/UsersView';
 import {
-  selectAuth,
+  selectAuthState,
   selectIsManager,
   selectIsAdmin,
   fetchCurrentUser,
@@ -28,7 +28,7 @@ const DRAWER_WIDTH = 2;
 const COLLAPSED_WIDTH = 7;
 
 const ProtectedRoute = ({ children, requireManager = false, requireAdmin = false }) => {
-  const { isAuthenticated, loading } = useSelector(selectAuth);
+  const { isAuthenticated, loading } = useSelector(selectAuthState);
   const isManager = useSelector(selectIsManager);
   const isAdmin = useSelector(selectIsAdmin);
 
@@ -94,7 +94,7 @@ const Layout = ({ children }) => {
 
 
 const AppRoutes = () => {
-  const { token, isAuthenticated } = useSelector(selectAuth);
+  const { token, isAuthenticated } = useSelector(selectAuthState);
   const dispatch = useDispatch();
   useEffect(() => {
     if (token && !isAuthenticated) {
