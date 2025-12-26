@@ -15,7 +15,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = [os.getenv("ALLOWED_HOST", "localhost")]
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
 CORS_ALLOW_ALL_ORIGINS = False
 
 INSTALLED_APPS = [
@@ -174,6 +174,5 @@ LOGGING = {
 }
 
 
-CORS_ALLOWED_ORIGINS = [
-    os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:3000")
-]
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:3000").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:3000").split(",")
