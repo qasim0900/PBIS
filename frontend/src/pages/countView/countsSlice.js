@@ -1,5 +1,6 @@
 import { countsAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../../api/axiosConfig';
 
 //-----------------------------------
 // :: initial State
@@ -99,8 +100,14 @@ or rejects with a formatted error message if it fails.
 
 export const updateCountEntry = createAsyncThunk(
   "counts/updateCountEntry",
-  async ({ id, data }) => {
-    await api.patch(`/counts/${id}/`, data);
+  async ({ id, data }, { rejectWithValue }) => {
+    try {
+      const response = await countsAPI.patch(id, data);
+      return response.data;
+    } catch (err) {
+      console.error("Update API error:", err);
+      return rejectWithValue(handleApiError(err, "Failed to update count entry"));
+    }
   }
 );
 
@@ -211,6 +218,13 @@ const countsSlice = createSlice({
     setEntries: (state, action) => {
       state.entries = action.payload;
     },
+    updateLocalEntry: (state, action) => {
+      const { id, data } = action.payload;
+      const idx = state.entries.findIndex(e => e.id === id);
+      if (idx !== -1) {
+        state.entries[idx] = { ...state.entries[idx], ...data };
+      }
+    },
     clearEntries: (state) => {
       state.entries = [];
     },
@@ -290,15 +304,21 @@ const countsSlice = createSlice({
       .addCase(updateCountEntry.pending, handlePending)
       .addCase(updateCountEntry.fulfilled, (state, { payload }) => {
         state.loading = false;
-        const idx = state.entries.findIndex(e => e.id === payload.id);
-        if (idx !== -1) state.entries[idx] = payload;
+        if (payload && payload.id) {
+          const idx = state.entries.findIndex(e => e.id === payload.id);
+          if (idx !== -1) state.entries[idx] = payload;
+        }
       })
       .addCase(updateCountEntry.rejected, handleRejected)
 
 
 
       .addCase(submitCountSheet.pending, (state) => { state.loading = true; })
-      .addCase(submitCountSheet.fulfilled, (state) => { state.loading = false; })
+      .addCase(submitCountSheet.fulfilled, (state) => { 
+        state.loading = false;
+        state.entries = [];
+        state.selectedSheet = null;
+      })
       .addCase(submitCountSheet.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
@@ -326,5 +346,5 @@ const countsSlice = createSlice({
 This exports the Redux actions and the reducer from the `countsSlice` for use across the app.
 */
 
-export const { setSelectedSheet, setEntries, setFilters, clearError, clearEntries, clearLowStock, clearFilteredItems } = countsSlice.actions;
+export const { setSelectedSheet, setEntries, setFilters, clearError, clearEntries, clearLowStock, clearFilteredItems, updateLocalEntry } = countsSlice.actions;
 export default countsSlice.reducer;

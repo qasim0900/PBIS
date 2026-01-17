@@ -137,7 +137,7 @@ const CountsView = () => {
   This callback submits the count entries, shows success or error notifications, and manages the submitting state.
   */
 
-  const handleSubmit = useCallback(async () => {
+    const handleSubmit = useCallback(async () => {
     if (!entries.length || !selectedLocation || !selectedFrequency) {
       dispatch(showNotification({ message: "Missing data or selection", type: "warning" }));
       return;
@@ -145,8 +145,11 @@ const CountsView = () => {
 
     setSubmitting(true);
 
-
     try {
+      // Find the count sheet ID from the selectedSheet or entries if available
+      // The backend expects a sheet ID for the submit endpoint
+      // In this setup, we create the sheet first in submitCountSheet thunk
+      
       await dispatch(submitCountSheet()).unwrap();
 
       dispatch(showNotification({
@@ -158,9 +161,12 @@ const CountsView = () => {
       setSelectedLocation("");
       setSelectedFrequency("");
       dispatch(setSelectedSheet(null));
+      setIsConfirmOpen(false);
+    } catch (err) {
+      console.error("Submission error:", err);
+      dispatch(showNotification({ message: "Submission failed", type: "error" }));
     } finally {
       setSubmitting(false);
-      setIsConfirmOpen(false);
     }
 
   }, [dispatch, entries, selectedLocation, selectedFrequency]);

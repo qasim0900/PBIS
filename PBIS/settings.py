@@ -71,7 +71,7 @@ Define which host/domain names this Django site can serve.
 """
 
 try:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+    ALLOWED_HOSTS = ["*"]
 except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
@@ -251,7 +251,7 @@ Configure database using environment variable or fallback to SQLite.
 """
 
 try:
-    database_url = os.getenv("DATABASE")
+    database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE")
     if database_url:
         DATABASES = {"default": dj_database_url.parse(database_url)}
     else:
@@ -415,8 +415,10 @@ Configure trusted origins for CSRF protection in production.
 """
 
 try:
-    CSRF_TRUSTED_ORIGINS = os.getenv(
-        "CSRF_TRUSTED_ORIGINS", "http://localhost:5000"
-    ).split(",")
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:5000",
+        "https://*.replit.dev",
+        "https://*.repl.co",
+    ]
 except Exception as e:
     CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]
