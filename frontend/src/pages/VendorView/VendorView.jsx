@@ -97,6 +97,7 @@ const VendorView = () => {
 
     try {
       if (editing) {
+        console.log("Form", formData)
         await dispatch(updateVendor({ id: editing.id, data: formData })).unwrap();
         dispatch(showNotification({ message: 'Vendor updated successfully', type: 'success' }));
       } else {

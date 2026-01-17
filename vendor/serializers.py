@@ -14,8 +14,6 @@ Defines the serializer for the Vendor model, handling validation and data repres
 class VendorSerializer(serializers.ModelSerializer):
     location = serializers.PrimaryKeyRelatedField(
         queryset=Location.objects.all(),
-        many=True,
-        required=False
     )
     location_names = serializers.SerializerMethodField(read_only=True)
     # -----------------------------
@@ -43,7 +41,7 @@ class VendorSerializer(serializers.ModelSerializer):
         ]
 
     def get_location_names(self, obj):
-        return [loc.name for loc in obj.location.all()]
+        return [obj.location.name] if obj.location else []
 
     # -----------------------------------
     # :: validate_name Function

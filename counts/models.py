@@ -110,12 +110,13 @@ class CountSheet(models.Model):
         self.submitted_by = user
         self.submitted_at = timezone.now()
         self.save(update_fields=['status', 'submitted_by', 'submitted_at'])
-        count_date = self.count_date
-        week_day = count_date.weekday()
-        week_start = count_date - timedelta(days=week_day)
+        
+        # Reports location and frequency ki base pa save hon database main.
+        # jab main counts create karon tab hi report create ho jai aur usi location frequency ki jab dusri count ay to same report main save ho ager diffrent ho to new report generate ho.
         report, created = Report.objects.get_or_create(
             location=self.location,
-            period_start=week_start,
+            frequency=self.location.frequency,
+            period_start=self.count_date, # Use the count_date as period_start for specific day reports
             defaults={'is_active': True}
         )
         report.count_entries.add(*self.entries.all())

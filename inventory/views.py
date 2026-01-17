@@ -46,14 +46,13 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
     """
 
     def get_queryset(self):
-        qs = InventoryItem.objects.select_related("location", "frequency")
-        location = self.request.query_params.get("location")
-        frequency = self.request.query_params.get("dateRange")
-        filters = {}
-        if location and location.isdigit():
-            filters["location_id"] = int(location)
-        if frequency and frequency.isdigit():
-            filters["frequency_id"] = int(frequency)
-        if filters:
-            qs = qs.filter(**filters)
+        qs = InventoryItem.objects.active().with_relations()
+        location_id = self.request.query_params.get("location")
+        frequency_id = self.request.query_params.get("dateRange")
+        
+        if location_id and location_id.isdigit():
+            qs = qs.for_location(int(location_id))
+        if frequency_id and frequency_id.isdigit():
+            qs = qs.filter(frequency_id=int(frequency_id))
+            
         return qs

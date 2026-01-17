@@ -14,6 +14,8 @@ vendor, location, frequency, and optional count sheet for tracking and exporting
 class Report(models.Model):
     location = models.ForeignKey(
         "locations.Location", on_delete=models.PROTECT, null=True)
+    frequency = models.ForeignKey(
+        "frequency.Frequency", on_delete=models.PROTECT, null=True)
     period_start = models.DateField(null=True, blank=True)
     count_entries = models.ManyToManyField(
         'counts.CountEntry', related_name='reports')

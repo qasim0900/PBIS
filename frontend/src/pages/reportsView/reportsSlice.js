@@ -47,6 +47,20 @@ export const updateReport = createAsyncThunk(
     }
 );
 
+export const deleteReport = createAsyncThunk(
+    "reports/deleteReport",
+    async (id, { rejectWithValue, dispatch }) => {
+        try {
+            await api.reportsAPI.delete(id);
+            dispatch(showNotification({ message: "Report deleted successfully", type: "success" }));
+            return id;
+        } catch (err) {
+            dispatch(showNotification({ message: "Failed to delete report", type: "error" }));
+            return rejectWithValue(err.response?.data || err.message);
+        }
+    }
+);
+
 // -------------------------
 // :: Slice
 // -------------------------
@@ -100,6 +114,19 @@ const reportsSlice = createSlice({
                 if (idx !== -1) state.data[idx] = action.payload;
             })
             .addCase(updateReport.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // DELETE
+            .addCase(deleteReport.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteReport.fulfilled, (state, action) => {
+                state.loading = false;
+                state.data = state.data.filter((r) => r.id !== action.payload);
+            })
+            .addCase(deleteReport.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

@@ -58,7 +58,7 @@ export default function VendorDesign({
         if (!formData.phone) newErrors.phone = 'Phone is required';
         if (!formData.email) newErrors.email = 'Email is required';
         if (!formData.notes) newErrors.notes = 'Notes are required';
-        if (!formData.location || !formData.location.length)
+        if (!formData.location)
             newErrors.location = 'Please select at least one location';
         if (!formData.color) newErrors.color = 'Vendor Color is required';
 
@@ -184,9 +184,14 @@ export default function VendorDesign({
                             <TextField
                                 select
                                 label="Location *"
-                                value={formData.location || []}
+                                value={formData.location || 0}
                                 onChange={updateForm('location')}
-                                SelectProps={{ multiple: true }}
+                                SelectProps={{
+                                    multiple: false,
+                                    MenuProps: {
+                                        disableAutoFocusItem: true,
+                                    },
+                                }}
                                 fullWidth
                                 error={!!errors.location}
                                 helperText={errors.location}

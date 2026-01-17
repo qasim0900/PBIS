@@ -14,6 +14,11 @@ import {
   LinearProgress,
   useMediaQuery,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 
 import {
@@ -45,6 +50,7 @@ const CountsView = () => {
   const [selectedFrequency, setSelectedFrequency] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [localLoading, setLocalLoading] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
 
   //---------------------------------------
@@ -140,17 +146,22 @@ const CountsView = () => {
     setSubmitting(true);
 
 
-    await dispatch(submitCountSheet()).unwrap();
+    try {
+      await dispatch(submitCountSheet()).unwrap();
 
-    dispatch(showNotification({
-      message: "Count sheet submitted! Entries added to report.",
-      type: "success"
-    }));
+      dispatch(showNotification({
+        message: "Count sheet submitted! Entries added to report.",
+        type: "success"
+      }));
 
-    dispatch(clearEntries());
-    setSelectedLocation("");
-    setSelectedFrequency("");
-    dispatch(setSelectedSheet(null));
+      dispatch(clearEntries());
+      setSelectedLocation("");
+      setSelectedFrequency("");
+      dispatch(setSelectedSheet(null));
+    } finally {
+      setSubmitting(false);
+      setIsConfirmOpen(false);
+    }
 
   }, [dispatch, entries, selectedLocation, selectedFrequency]);
 
@@ -179,9 +190,16 @@ const CountsView = () => {
   */
 
   return (
-    <Box sx={{ pt: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2, md: 3 }, pb: { xs: 1, sm: 2 } }}>
+    <Box sx={{ pt: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2, md: 3 }, pb: { xs: 1, sm: 2 }, maxWidth: 1400, mx: "auto" }}>
       <PageHeader title="Survey Count" subtitle="Enter current inventory counts">
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, width: isMobile ? "100%" : "auto" }}>
+        <Box sx={{ 
+          display: "flex", 
+          flexDirection: { xs: "column", sm: "row" },
+          flexWrap: "wrap", 
+          gap: 2, 
+          width: { xs: "100%", md: "auto" },
+          alignItems: { xs: "stretch", sm: "center" }
+        }}>
           <TextField
             select
             size="small"
@@ -191,7 +209,7 @@ const CountsView = () => {
               setSelectedLocation(e.target.value);
               setSelectedFrequency("");
             }}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: { xs: "100%", sm: 200 }, flex: { xs: "1 1 100%", sm: "none" } }}
           >
             <MenuItem value="">Select Location</MenuItem>
             {locations.map((l) => (
@@ -207,7 +225,7 @@ const CountsView = () => {
             label="Frequency"
             value={selectedFrequency}
             onChange={(e) => setSelectedFrequency(e.target.value)}
-            sx={{ minWidth: 180 }}
+            sx={{ minWidth: { xs: "100%", sm: 180 }, flex: { xs: "1 1 100%", sm: "none" } }}
             disabled={freqLoading || !selectedLocation}
           >
             <MenuItem value="">Select Frequency</MenuItem>
@@ -218,24 +236,45 @@ const CountsView = () => {
             ))}
           </TextField>
 
-          <Button
-            variant="contained"
-            onClick={handleLoadData}
-            disabled={!selectedLocation || !selectedFrequency || localLoading}
-          >
-            {localLoading ? "Loading..." : "Load Sheet"}
-          </Button>
+          <Box sx={{ display: "flex", gap: 2, width: { xs: "100%", sm: "auto" } }}>
+            <Button
+              variant="contained"
+              onClick={handleLoadData}
+              fullWidth={isMobile}
+              disabled={!selectedLocation || !selectedFrequency || localLoading}
+              sx={{ flex: 1 }}
+            >
+              {localLoading ? "Loading..." : "Load Sheet"}
+            </Button>
 
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleSubmit}
-            disabled={!selectedSheet || submitting}
-          >
-            {submitting ? "Submitting..." : "Submit Count"}
-          </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={() => setIsConfirmOpen(true)}
+              fullWidth={isMobile}
+              disabled={!selectedSheet || submitting}
+              sx={{ flex: 1 }}
+            >
+              {submitting ? "Submitting..." : "Submit Count"}
+            </Button>
+          </Box>
         </Box>
       </PageHeader>
+
+      <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)}>
+        <DialogTitle>Are you sure to submit?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Once submitted, these counts will be added to the report for this location and frequency.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
+          <Button onClick={handleSubmit} color="success" variant="contained">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {selectedSheet && entries.length > 0 && (
         <LinearProgress

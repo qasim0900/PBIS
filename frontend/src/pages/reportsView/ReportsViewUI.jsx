@@ -5,10 +5,13 @@ import { Box, TextField, MenuItem } from "@mui/material";
 const ReportsViewUI = ({
     locations,
     frequencies,
+    availableDates = [],
     selectedLocation,
     setSelectedLocation,
     selectedFrequency,
     setSelectedFrequency,
+    selectedDate,
+    setSelectedDate,
     sheets,
     selectedSheet,
     handleSheetChange,
@@ -83,6 +86,22 @@ const ReportsViewUI = ({
                 {frequencies.map((f) => (
                     <MenuItem key={f.id} value={f.value || f.id}>
                         {f.days_range}
+                    </MenuItem>
+                ))}
+            </TextField>
+
+            <TextField
+                select
+                label="Date"
+                size="small"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                sx={{ minWidth: 150 }}
+            >
+                <MenuItem value="">All Dates</MenuItem>
+                {availableDates.map((date) => (
+                    <MenuItem key={date} value={date}>
+                        {new Date(date).toLocaleDateString()}
                     </MenuItem>
                 ))}
             </TextField>

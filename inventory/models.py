@@ -13,44 +13,14 @@ Custom queryset for InventoryItem providing methods to filter by active status a
 
 
 class InventoryItemQuerySet(models.QuerySet):
-
-    # -----------------------------------
-    # :: Active Function
-    # -----------------------------------
-
     def active(self):
         return self.filter(is_active=True)
 
-    # -----------------------------------
-    # :: global_items Function
-    # -----------------------------------
+    def for_location(self, location_id):
+        return self.filter(location_id=location_id)
 
-    """
-    Sirf woh items jo kisi specific location se related nahi
-    """
-
-    def global_items(self):
-        return self.filter(location__isnull=True)
-
-    # -----------------------------------
-    # :: for_location Function
-    # -----------------------------------
-
-    def for_location(self, location):
-        return self.filter(location=location)
-
-    # -----------------------------------
-    # :: for_location_or_global Function
-    # -----------------------------------
-
-    """
-    Location specific + global items dono return karega
-    """
-
-    def for_location_or_global(self, location):
-        return self.filter(
-            models.Q(location=location) | models.Q(location__isnull=True)
-        )
+    def with_relations(self):
+        return self.select_related("location", "frequency", "vendor", "default_vendor")
 
 # -----------------------------------
 # :: Item Category Class
@@ -153,12 +123,10 @@ class InventoryItem(models.Model):
     )
     vendor = models.ForeignKey(
         'vendor.Vendor',
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
+        related_name="inventory_items",
         null=True,
-        blank=True,
-        related_name="location_items",
-        verbose_name="Location-specific Vendor",
-        help_text="Agar location ke liye alag vendor ho to",
+        blank=True
     )
     display_order = models.PositiveIntegerField(
         default=0,

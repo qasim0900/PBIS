@@ -47,6 +47,7 @@ export const reportsAPI = {
   create: (data) => api.post("/reports/create/", data),
   update: (id, data) => api.put(`/reports/${id}/update/`, data),
   patch: (id, data) => api.patch(`/reports/${id}/update/`, data),
+  delete: (id) => api.delete(`/reports/${id}/delete/`),
 };
 
 

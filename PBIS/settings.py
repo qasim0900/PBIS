@@ -57,8 +57,8 @@ Set the DEBUG mode based on environment variables for development or production.
 """
 
 try:
-    DEBUG = os.getenv("DEBUG")
-except Exception:
+    DEBUG = os.getenv("DEBUG", "True") == "True"
+except Exception as e:
     raise RuntimeError(f"Error DEBUG: {e}")
 
 
@@ -71,8 +71,8 @@ Define which host/domain names this Django site can serve.
 """
 
 try:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1").split(",")
-except Exception:
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "*").split(",")
+except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
 # ------------------------------------
@@ -86,9 +86,9 @@ Configure Cross-Origin Resource Sharing (CORS) settings for frontend access.
 try:
     CORS_ALLOW_ALL_ORIGINS = True
     CORS_ALLOWED_ORIGINS = os.getenv(
-        "CORS_ALLOWED_ORIGIN"
+        "CORS_ALLOWED_ORIGIN", "http://localhost:5000"
     ).split(",")
-except Exception:
+except Exception as e:
     raise RuntimeError(f"Error setting CORS_ALLOWED_ORIGINS: {e}")
 
 
@@ -416,7 +416,7 @@ Configure trusted origins for CSRF protection in production.
 
 try:
     CSRF_TRUSTED_ORIGINS = os.getenv(
-        "CSRF_TRUSTED_ORIGINS"
+        "CSRF_TRUSTED_ORIGINS", "http://localhost:5000"
     ).split(",")
-except Exception:
-    CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
+except Exception as e:
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]

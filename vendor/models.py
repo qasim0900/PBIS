@@ -30,9 +30,11 @@ class Vendor(models.Model):
     phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField(blank=True)
     notes = models.TextField(blank=True)
-    location = models.ManyToManyField(
-        "locations.Location",
+    location = models.ForeignKey(
+        'locations.Location',
+        on_delete=models.CASCADE,
         related_name="vendors",
+        null=True,
         blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)

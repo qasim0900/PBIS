@@ -9,6 +9,7 @@ import {
     TextField,
     Typography,
     Stack,
+    Button,
 } from "@mui/material";
 
 
@@ -57,6 +58,7 @@ const InventoryCard = ({ item }) => {
         item.pack_ratio_display || `1 ${order_unit} = 1 ${count_unit}`;
     const [localCount, setLocalCount] = useState(on_hand_quantity);
     const [localNotes, setLocalNotes] = useState(notes || "");
+    const [isEditing, setIsEditing] = useState(false);
     const currentCount = localCount === "" ? 0 : Number(localCount);
     const par = Number(par_level) || 0;
     const orderPoint = Number(order_point) || 0;
@@ -74,22 +76,33 @@ const InventoryCard = ({ item }) => {
     */
 
     const { cardStyle, borderColor, statusTag } = useMemo(() => {
+        let colors = {
+            border: "#22c55e",
+            bg: "#f0fdf4"
+        };
+
+        if (currentCount >= 0 && currentCount <= 5) {
+            colors = { border: "#ef4444", bg: "#fef2f2" };
+        } else if (currentCount > 5 && currentCount <= 7) {
+            colors = { border: "#f59e0b", bg: "#fffbeb" };
+        }
+
         if (is_critical) {
             return {
                 cardStyle: {
-                    borderColor: "#ef4444",
+                    borderColor: colors.border,
                     borderWidth: 3,
-                    bgcolor: "#fef2f2",
+                    bgcolor: colors.bg,
                 },
-                borderColor: "#ef4444",
+                borderColor: colors.border,
                 statusTag: (
                     <Box
                         sx={{
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
-                            backgroundColor: "#fecaca",
-                            color: "#7f1d1d",
+                            backgroundColor: colors.bg === "#fef2f2" ? "#fecaca" : "#fef3c7",
+                            color: colors.bg === "#fef2f2" ? "#7f1d1d" : "#92400e",
                             px: 2,
                             py: 0.75,
                             borderRadius: 20,
@@ -102,7 +115,7 @@ const InventoryCard = ({ item }) => {
                                 width: 18,
                                 height: 18,
                                 borderRadius: "50%",
-                                bgcolor: "#dc2626",
+                                bgcolor: colors.border,
                                 color: "#fff",
                                 display: "flex",
                                 alignItems: "center",
@@ -119,38 +132,16 @@ const InventoryCard = ({ item }) => {
             };
         }
 
-        if (currentCount <= par) {
-            return {
-                cardStyle: {
-                    borderColor: "#f59e0b",
-                    borderWidth: 3,
-                    bgcolor: "#fffbeb",
-                },
-                borderColor: "#f59e0b",
-                statusTag: null,
-            };
-        }
-
-
-        //-----------------------------------
-        // :: Card Return Code
-        //-----------------------------------
-
-        /*
-        This final branch returns a green style (no warning tag) when the item is above par and not critical, 
-        and the memo updates only when critical status, current count, or par level changes.
-        */
-
         return {
             cardStyle: {
-                borderColor: "#22c55e",
+                borderColor: colors.border,
                 borderWidth: 3,
-                bgcolor: "#f0fdf4",
+                bgcolor: colors.bg,
             },
-            borderColor: "#22c55e",
+            borderColor: colors.border,
             statusTag: null,
         };
-    }, [is_critical, currentCount, par]);
+    }, [is_critical, currentCount]);
 
 
     //-----------------------------------
@@ -169,11 +160,15 @@ const InventoryCard = ({ item }) => {
         if (localNotes.trim() !== (notes || "").trim())
             updateData.notes = localNotes.trim() || "";
 
-        if (!Object.keys(updateData).length) return;
+        if (!Object.keys(updateData).length) {
+            setIsEditing(false);
+            return;
+        }
 
         try {
             await dispatch(updateCountEntry({ id, data: updateData })).unwrap();
             dispatch(showNotification({ message: "Updated successfully", type: "success" }));
+            setIsEditing(false);
         } catch {
             setLocalCount(on_hand_quantity);
             setLocalNotes(notes);
@@ -226,7 +221,14 @@ const InventoryCard = ({ item }) => {
                             </Typography>
                         )}
                     </Box>
-                    {statusTag}
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        {!isEditing && (
+                            <Button size="small" variant="outlined" onClick={() => setIsEditing(true)}>
+                                Edit
+                            </Button>
+                        )}
+                        {statusTag}
+                    </Stack>
                 </Box>
 
                 {vendor_name && (
@@ -268,6 +270,7 @@ const InventoryCard = ({ item }) => {
                     <TextField
                         fullWidth
                         type="number"
+                        disabled={!isEditing}
                         value={localCount}
                         onChange={(e) => setLocalCount(e.target.value === "" ? "" : Number(e.target.value))}
                         onBlur={saveChanges}
@@ -279,7 +282,7 @@ const InventoryCard = ({ item }) => {
                                 fontSize: "1.2rem",
                                 fontWeight: 700,
                                 textAlign: "center",
-                                bgcolor: "#fafafa",
+                                bgcolor: isEditing ? "#ffffff" : "#fafafa",
                                 borderRadius: 2,
                                 border: `2px solid ${borderColor}`,
                             },
@@ -309,6 +312,7 @@ const InventoryCard = ({ item }) => {
                     multiline
                     rows={3}
                     fullWidth
+                    disabled={!isEditing}
                     value={localNotes}
                     onChange={(e) => setLocalNotes(e.target.value)}
                     onBlur={saveChanges}
