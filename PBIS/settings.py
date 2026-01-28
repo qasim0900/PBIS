@@ -117,6 +117,7 @@ try:
         "counts",
         "reports",
         "vendor",
+        "brand",
         "users",
     ]
 except Exception as e:
