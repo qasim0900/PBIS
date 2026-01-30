@@ -3,6 +3,7 @@ from rest_framework import serializers
 from vendor.models import Vendor
 from locations.models import Location
 from frequency.models import Frequency
+from brand.models import Brand
 from locations.serializers import LocationSerializer
 
 # -----------------------------------
@@ -20,7 +21,13 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    name_display = serializers.CharField(
+        source='get_name_display',
+        read_only=True
+    )
+
     vendor_name = serializers.SerializerMethodField(read_only=True)
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
     pack_ratio_display = serializers.SerializerMethodField(read_only=True)
 
     # ---------- Relations (write) ----------
@@ -40,6 +47,12 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         allow_null=True
     )
 
+    brand = serializers.PrimaryKeyRelatedField(
+        queryset=Brand.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
     frequency = serializers.PrimaryKeyRelatedField(
         queryset=Frequency.objects.all(),
         required=False,
@@ -52,6 +65,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            'name_display',
 
             'category',
             'category_display',
@@ -64,6 +78,9 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'default_vendor',
             'vendor',
             'vendor_name',
+            
+            'brand',
+            'brand_name',
 
             'location',
             'par_level',
@@ -85,8 +102,10 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'id',
             'category_display',
+            'name_display',
             'pack_ratio_display',
             'vendor_name',
+            'brand_name',
             'created_at',
             'updated_at',
         ]

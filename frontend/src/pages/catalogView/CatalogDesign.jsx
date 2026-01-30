@@ -42,6 +42,11 @@ This React component renders an inventory catalogue with a searchable table and 
 form to add or edit items, including category-based styling, status display, and full item management functionality.
 */
 
+const NAMES = [
+    { value: 'apple', label: 'Apple' },
+    { value: 'mango', label: 'Mango' },
+];
+
 const CatalogDesign = ({
     items,
     modalOpen,
@@ -55,6 +60,7 @@ const CatalogDesign = ({
     currentItem,
     locations,
     vendors,
+    brands,
     frequencies,
 }) => {
 
@@ -169,12 +175,17 @@ const CatalogDesign = ({
                 <DialogContent dividers>
                     <Box display="grid" gridTemplateColumns="1fr 1fr" gap={2} mt={1}>
                         <TextField
+                            select
                             label="Name"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             fullWidth
                             sx={{ gridColumn: '1 / -1' }}
-                        />
+                        >
+                            {NAMES.map((n) => (
+                                <MenuItem key={n.value} value={n.value}>{n.label}</MenuItem>
+                            ))}
+                        </TextField>
 
                         <TextField select label="Category" value={formData.category}
                             onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
@@ -220,6 +231,19 @@ const CatalogDesign = ({
                             <MenuItem value="">— Select Vendor —</MenuItem>
                             {vendors.map(v => (
                                 <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>
+                            ))}
+                        </TextField>
+
+                        <TextField
+                            select
+                            label="Brand"
+                            value={formData.brand || ''}
+                            onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                            fullWidth
+                        >
+                            <MenuItem value="">— Select Brand —</MenuItem>
+                            {(brands || []).map(b => (
+                                <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
                             ))}
                         </TextField>
 

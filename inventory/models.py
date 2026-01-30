@@ -40,6 +40,11 @@ class ItemCategory(models.TextChoices):
     OTHER = "other", _("Other")
 
 
+class InventoryName(models.TextChoices):
+    APPLE = "apple", _("Apple")
+    MANGO = "mango", _("Mango")
+
+
 # -----------------------------------
 # :: Inventory Item QuerySet Class
 # -----------------------------------
@@ -50,11 +55,23 @@ Custom queryset for InventoryItem providing methods to filter by active status a
 
 
 class InventoryItem(models.Model):
-    name = models.CharField(max_length=255)
+    name = models.CharField(
+        max_length=255,
+        choices=InventoryName.choices,
+        default=InventoryName.APPLE
+    )
     category = models.CharField(
         max_length=32,
         choices=ItemCategory.choices,
         default=ItemCategory.OTHER,
+    )
+    
+    brand = models.ForeignKey(
+        'brand.Brand',
+        on_delete=models.CASCADE,
+        related_name="inventory_items",
+        null=True,
+        blank=True
     )
     count_unit = models.CharField(
         max_length=32,

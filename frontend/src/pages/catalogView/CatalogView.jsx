@@ -5,6 +5,7 @@ import { showNotification } from '../../api/uiSlice.js';
 import { fetchVendors } from '../VendorView/VendorSlice.js';
 import { fetchLocations } from '../locationView/locationsSlice.js';
 import { fetchFrequencies } from '../FrequencyView/frequencySlice.js';
+import { fetchBrands } from '../BrandView/BrandSlice.js';
 import {
   fetchAllItems,
   createItem,
@@ -31,6 +32,7 @@ const CatalogView = () => {
   const { vendors } = useSelector((state) => state.vendors);
   const { locations } = useSelector((state) => state.locations);
   const { frequencies } = useSelector((state) => state.frequencies);
+  const { brands } = useSelector((state) => state.brands);
   const { items, currentItem, loading } = useSelector((state) => state.inventory);
 
 
@@ -44,13 +46,14 @@ const CatalogView = () => {
   */
 
   const emptyForm = {
-    name: '',
+    name: 'apple',
     category: 'fruit',
     count_unit: '',
     order_unit: '',
     pack_size: 1,
     location: null,
     vendor: null,
+    brand: null,
     default_vendor: null,
     frequency: null,
     par_level: 1,
@@ -75,6 +78,7 @@ const CatalogView = () => {
     dispatch(fetchLocations());
     dispatch(fetchVendors());
     dispatch(fetchFrequencies());
+    dispatch(fetchBrands());
   }, [dispatch]);
 
 
@@ -97,6 +101,7 @@ const CatalogView = () => {
       vendor: vendors?.[0]?.id || null,
       default_vendor: vendors?.[0]?.id || null,
       frequency: frequencies?.[0]?.id || null,
+      brand: brands?.[0]?.id || null,
     }));
     setModalOpen(true);
   };
@@ -122,6 +127,7 @@ const CatalogView = () => {
       pack_size: item.pack_size,
       location: item.location,
       vendor: item.vendor,
+      brand: item.brand,
       default_vendor: item.default_vendor || item.vendor,
       frequency: item.frequency,
       par_level: item.par_level,
@@ -199,6 +205,7 @@ const CatalogView = () => {
       currentItem={currentItem}
       locations={locations}
       vendors={vendors}
+      brands={brands}
       frequencies={frequencies}
     />
   );

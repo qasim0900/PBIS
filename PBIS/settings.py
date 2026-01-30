@@ -42,7 +42,7 @@ Load the Django secret key from environment variables or use a default.
 
 try:
     SECRET_KEY = os.getenv(
-        "SECRET_KEY",
+        "SECRET_KEY", "replit-default-secret-key-12345"
     )
 except Exception as e:
     raise RuntimeError(f"Could not load SECRET_KEY: {e}")

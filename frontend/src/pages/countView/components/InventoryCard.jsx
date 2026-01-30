@@ -34,7 +34,8 @@ const InventoryCard = ({ item }) => {
         pack_size = 1,
     } = item;
 
-    const name = item.item?.name || item.name || "Unknown Item";
+    const name = item.item?.name_display || item.name_display || item.item?.name || item.name || "Unknown Item";
+    const brand_name = item.brand_name || item.item?.brand_name || "";
     const count_unit = item.count_unit || "units";
     const order_unit = item.order_unit || "units";
     const pack_ratio = item.pack_ratio_display || `1 ${order_unit} = 1 ${count_unit}`;
@@ -189,12 +190,21 @@ const InventoryCard = ({ item }) => {
                     </Stack>
                 </Box>
 
-                {/* Vendor */}
-                {vendor_name && (
+                {/* Vendor & Brand */}
+                {(vendor_name || brand_name) && (
                     <Box sx={{ bgcolor: "rgba(0,0,0,0.02)", px: 1.5, py: 0.75, borderRadius: 1, mb: 1.5 }}>
-                        <Typography sx={{ color: "text.secondary", fontSize: 12, fontWeight: 600 }}>
-                            📦 {vendor_name}
-                        </Typography>
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            {vendor_name && (
+                                <Typography sx={{ color: "text.secondary", fontSize: 12, fontWeight: 600 }}>
+                                    📦 {vendor_name}
+                                </Typography>
+                            )}
+                            {brand_name && (
+                                <Typography sx={{ color: "text.secondary", fontSize: 12, fontWeight: 600 }}>
+                                    🏷️ {brand_name}
+                                </Typography>
+                            )}
+                        </Stack>
                         <Typography sx={{ color: "text.secondary", fontSize: 11, mt: 0.25 }}>{pack_ratio}</Typography>
                     </Box>
                 )}
