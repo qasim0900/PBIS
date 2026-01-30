@@ -21,6 +21,7 @@ api_patterns = [
     path("", include("inventory.urls")),
     path("", include("counts.urls")),
     path("", include("reports.urls")),
+    path("", include("brand.urls")),
 ]
 
 

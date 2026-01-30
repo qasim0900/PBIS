@@ -6,7 +6,6 @@ import {
   Drawer,
   SwipeableDrawer,
   List,
-  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -22,6 +21,7 @@ import {
   Calculate,
   CalendarViewDay,
   Assessment,
+  Verified,
   LocationOn,
   Category,
   People,
@@ -40,8 +40,8 @@ import { selectIsManager, selectIsAdmin } from '../pages/loginView/authSlice';
 Defines constants for the sidebar widths: `DRAWER_WIDTH` for the expanded state and `COLLAPSED_WIDTH` for the collapsed state.
 */
 
-const DRAWER_WIDTH = 280;
-const COLLAPSED_WIDTH = 72;
+const DRAWER_WIDTH = 250;
+const COLLAPSED_WIDTH = 70;
 
 
 //---------------------------------------
@@ -54,61 +54,80 @@ and screen size, with hover and selection styling.
 */
 
 const SidebarMenuItem = React.memo(({ item, collapsed, isMobile, selected, onClick }) => (
-  <ListItem disablePadding sx={{ mb: 0.5 }}>
+  <ListItemButton
+    onClick={onClick}
+    selected={selected}
+    sx={{
+      px: collapsed && !isMobile ? 1 : 2,
+      justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+      borderRadius: 2,
+      mb: 0.5,
+      minHeight: 48,
+      alignItems: 'center', // fix vertical alignment
+      transition: 'all 0.3s ease',
+      position: 'relative',
+      '&:hover': {
+        backgroundColor: 'rgba(255,255,255,0.08)',
+      },
+      '&.Mui-selected': {
+        backgroundColor: 'rgba(99,102,241,0.18)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: '4px',
+          backgroundColor: '#6366F1',
+          borderRadius: '0 4px 4px 0',
+        },
+        '&:hover': {
+          backgroundColor: 'rgba(99,102,241,0.25)',
+        },
+      },
+    }}
+  >
     <Tooltip title={collapsed && !isMobile ? item.text : ''} placement="right">
-      <ListItemButton
-        selected={selected}
-        onClick={onClick}
+      <ListItemIcon
         sx={{
-          minHeight: 48,
-          justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
-          px: collapsed && !isMobile ? 1 : 2,
-          borderRadius: 0,
-          '&.Mui-selected': {
-            backgroundColor: 'rgba(99, 102, 241, 0.3)',
-            '&:hover': { backgroundColor: 'rgba(99, 102, 241, 0.4)' },
-          },
-          '&:hover': { backgroundColor: 'rgba(255,255,255,0.08)' },
+          color: selected ? '#6366F1' : 'rgba(255,255,255,0.7)',
+          minWidth: collapsed && !isMobile ? 0 : 40,
+          justifyContent: 'center',
+          transition: 'color 0.3s ease',
         }}
       >
-        <ListItemIcon
-          sx={{
-            color: selected ? '#a5b4fc' : 'rgba(255,255,255,0.7)',
-            minWidth: collapsed && !isMobile ? 0 : 40,
-            justifyContent: 'center',
-          }}
-        >
-          {item.icon}
-        </ListItemIcon>
-        {(!collapsed || isMobile) && (
-          <>
-            <ListItemText
-              primary={item.text}
-              primaryTypographyProps={{
-                fontSize: '0.9rem',
-                fontWeight: selected ? 600 : 400,
-              }}
-            />
-            {item.badge && (
-              <Chip
-                label={item.badge}
-                size="small"
-                sx={{
-                  height: 20,
-                  fontSize: '0.65rem',
-                  backgroundColor: 'rgba(255,255,255,0.15)',
-                  color: 'white',
-                  borderRadius: 0,
-                }}
-              />
-            )}
-          </>
-        )}
-      </ListItemButton>
+        {item.icon}
+      </ListItemIcon>
     </Tooltip>
-  </ListItem>
-));
 
+    {(!collapsed || isMobile) && (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+        <ListItemText
+          primary={item.text}
+          primaryTypographyProps={{
+            fontSize: 14,
+            fontWeight: selected ? 600 : 500,
+            color: selected ? '#F9FAFB' : '#D1D5DB',
+            whiteSpace: 'nowrap',
+          }}
+        />
+        {item.badge && (
+          <Chip
+            label={item.badge}
+            size="small"
+            sx={{
+              height: 20,
+              fontSize: '0.65rem',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              color: 'white',
+              borderRadius: 0,
+            }}
+          />
+        )}
+      </Box>
+    )}
+  </ListItemButton>
+));
 
 //---------------------------------------
 // :: Sidebar Function
@@ -144,6 +163,7 @@ const Sidebar = () => {
       { text: 'Frequency', icon: <CalendarViewDay />, path: '/frequencies', roles: ['manager', 'admin'], badge: 'Manager' },
       { text: 'Locations', icon: <LocationOn />, path: '/locations', roles: ['admin'], badge: 'Admin' },
       { text: 'Vendors', icon: <Business />, path: '/vendors', roles: ['admin'], badge: 'Admin' },
+      { text: 'Brands', icon: <Verified />, path: '/brands', roles: ['admin'], badge: 'Admin' },
       { text: 'Catalog', icon: <Category />, path: '/catalog', roles: ['admin'], badge: 'Admin' },
       { text: 'Users', icon: <People />, path: '/users', roles: ['admin'], badge: 'Admin' },
     ],
@@ -222,42 +242,39 @@ const Sidebar = () => {
   accessible menu items, and dividers, with padding and collapse handling.
   */
 
-  const drawerContent = useMemo(
-    () => (
-      <>
-        {isMobile && (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
-              Menu
-            </Typography>
-            <IconButton onClick={handleClose} sx={{ color: 'white' }}>
-              <Close />
-            </IconButton>
-          </Box>
-        )}
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-        <Box sx={{ flex: 1, py: 2, px: collapsed && !isMobile ? 1 : 2 }}>
-          <List>
-            {menuItems
-              .filter((item) => hasAccess(item.roles))
-              .map((item) => (
-                <SidebarMenuItem
-                  key={item.path}
-                  item={item}
-                  collapsed={collapsed}
-                  isMobile={isMobile}
-                  selected={location.pathname === item.path}
-                  onClick={() => handleNavigate(item.path)}
-                />
-              ))}
-          </List>
+  const drawerContent = (
+    <>
+      {isMobile && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 2 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
+            Menu
+          </Typography>
+          <IconButton onClick={handleClose} sx={{ color: 'white' }}>
+            <Close />
+          </IconButton>
         </Box>
-        <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
-      </>
-    ),
-    [menuItems, collapsed, isMobile, location.pathname, hasAccess, handleNavigate, handleClose]
-  );
+      )}
 
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+
+      <Box sx={{ flex: 1, py: 2, px: collapsed && !isMobile ? 1 : 2 }}>
+        <List disablePadding>
+          {menuItems
+            .filter((item) => hasAccess(item.roles))
+            .map((item) => (
+              <SidebarMenuItem
+                key={item.path}
+                item={item}
+                collapsed={collapsed}
+                isMobile={isMobile}
+                selected={location.pathname === item.path}
+                onClick={() => handleNavigate(item.path)}
+              />
+            ))}
+        </List>
+      </Box>
+    </>
+  );
 
   //---------------------------------------
   // :: Mobile View
@@ -275,14 +292,16 @@ const Sidebar = () => {
         open={!collapsed}
         onClose={handleClose}
         onOpen={handleOpen}
-        ModalProps={{ keepMounted: true, disableEnforceFocus: true, disableRestoreFocus: true }}
+        disableBackdropTransition={false}
+        disableDiscovery={false}
+        ModalProps={{ keepMounted: true }}
         sx={{
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
-            boxSizing: 'border-box',
-            border: 'none',
-            background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)',
+            background: 'linear-gradient(180deg, #0B1220 0%, #1C2541 100%)',
             color: 'white',
+            border: 'none',
+            transition: 'transform 0.35s ease-out',
           },
         }}
       >
@@ -305,18 +324,13 @@ const Sidebar = () => {
       variant="permanent"
       sx={{
         width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
-        flexShrink: 0,
-        mt: '64px',
-        transition: 'width 0.3s ease',
         '& .MuiDrawer-paper': {
           width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          border: 'none',
-          background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)',
+          background: 'linear-gradient(180deg, #0B1220 0%, #1C2541 100%)',
           color: 'white',
+          border: 'none',
           overflowX: 'hidden',
-          transition: 'width 0.3s ease',
-          borderRadius: 0,
+          transition: 'width 0.35s ease-out',
           mt: '64px',
         },
       }}

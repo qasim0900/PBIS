@@ -71,6 +71,26 @@ export const vendorsAPI = {
 };
 
 // -------------------------
+// :: Brands APIs
+// -------------------------
+
+/*
+Handles brand-related operations such as listing brands,
+creating a brand, retrieving brand details,
+updating brand information, and deleting brands.
+*/
+
+export const brandsAPI = {
+  list: () => api.get("/brands/"),
+  create: (data) => api.post("/brands/create/", data),
+  retrieve: (id) => api.get(`/brands/${id}/`),
+  update: (id, data) => api.put(`/brands/${id}/update/`, data),
+  patch: (id, data) => api.patch(`/brands/${id}/update/`, data),
+  remove: (id) => api.delete(`/brands/${id}/delete/`),
+};
+
+
+// -------------------------
 // :: Locations APIs
 // -------------------------
 
@@ -161,10 +181,11 @@ all backend endpoints from one centralized module.
 export default {
   authAPI,
   usersAPI,
+  brandsAPI,
+  countsAPI,
   reportsAPI,
   vendorsAPI,
   locationsAPI,
   inventoryAPI,
   frequenciesAPI,
-  countsAPI,
 };

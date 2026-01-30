@@ -14,6 +14,7 @@ users, vendors, catalog, inventory, locations, overrides, and frequency).
 import uiReducer from './api/uiSlice';
 import authReducer from "./pages/loginView/authSlice";
 import usersReducer from "./pages/userView/usersSlice";
+import brandReducer from "./pages/BrandView/BrandSlice";
 import countsReducer from "./pages/countView/countsSlice";
 import vendorReducer from "./pages/VendorView/VendorSlice";
 import reportsReducer from "./pages/reportsView/reportsSlice";
@@ -49,15 +50,16 @@ slice while keeping other slices normal, so the store can manage the entire app 
 
 const appReducer = combineReducers({
     auth: persistReducer(authPersistConfig, authReducer),
-    inventory: inventoryReducer,
-    locations: locationsReducer,
-    frequencies: frequencyReducer,
+    ui: uiReducer,
+    users: usersReducer,
+    brands: brandReducer,
     counts: countsReducer,
     vendors: vendorReducer,
     catalog: catalogReducer,
-    users: usersReducer,
     reports: reportsReducer,
-    ui: uiReducer,
+    inventory: inventoryReducer,
+    locations: locationsReducer,
+    frequencies: frequencyReducer,
 });
 
 

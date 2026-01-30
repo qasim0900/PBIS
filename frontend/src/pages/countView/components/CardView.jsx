@@ -27,15 +27,14 @@ const CardView = ({ data = [], loading = false }) => {
 
     if (loading) {
         return (
-            <Stack spacing={2}>
+            <Stack spacing={isMobile ? 2 : 3}>
                 {[1, 2, 3, 4, 5].map((i) => (
                     <Skeleton key={i} variant="rectangular" height={300} sx={{ borderRadius: 2 }} />
                 ))}
             </Stack>
         );
     }
-
-    if (!data.length) {
+    if (!data || data.length === 0) {
         return (
             <Card sx={{ textAlign: "center", py: { xs: 6, sm: 8 } }}>
                 <CardContent>

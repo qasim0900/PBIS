@@ -16,6 +16,7 @@ import Login from '../pages/loginView/LoginView';
 import UsersView from '../pages/userView/UsersView';
 import CountsView from '../pages/countView/CountsView';
 import VendorView from '../pages/VendorView/VendorView';
+import BrandView from '../pages/BrandView/BrandView';
 import ReportsView from '../pages/reportsView/ReportsView';
 import CatalogView from '../pages/catalogView/CatalogView';
 import LocationsView from '../pages/locationView/LocationsView';
@@ -66,6 +67,7 @@ const AppRoutes = () => {
             { path: '/reports', element: <ReportsView />, requireManager: true },
             { path: '/locations', element: <LocationsView />, requireAdmin: true },
             { path: '/vendors', element: <VendorView />, requireAdmin: true },
+            { path: '/brands', element: <BrandView />, requireAdmin: true },
             { path: '/catalog', element: <CatalogView />, requireAdmin: true },
             { path: '/users', element: <UsersView />, requireAdmin: true },
         ],

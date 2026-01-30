@@ -199,7 +199,7 @@ const CountsView = () => {
   */
 
   const canLoad = selectedLocation && selectedFrequency;
-  const showCard = isLoaded && selectedSheet && entries.length > 0;
+  const showCard = isLoaded && selectedSheet
 
 
   //-----------------------------------
@@ -293,7 +293,7 @@ const CountsView = () => {
         </DialogActions>
       </Dialog>
 
-      {showCard && (
+      {isLoaded && selectedSheet && (
         <>
           <LinearProgress
             variant="determinate"
@@ -302,8 +302,14 @@ const CountsView = () => {
             sx={{ height: 4, borderRadius: 1, bgcolor: "#e0e0e0", mt: 1, mb: 2 }}
           />
 
-          <Paper elevation={0} sx={{ p: 1, borderRadius: 2, border: 1, borderColor: "divider" }}>
-            <CardView data={selectedSheet.entries} loading={loading || localLoading} />
+          <Paper
+            elevation={0}
+            sx={{ p: 1, borderRadius: 2, border: 1, borderColor: "divider" }}
+          >
+            <CardView
+              data={selectedSheet?.entries || []}
+              loading={loading || localLoading}
+            />
           </Paper>
         </>
       )}
