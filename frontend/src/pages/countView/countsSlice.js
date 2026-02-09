@@ -173,6 +173,8 @@ export const submitCountSheet = createAsyncThunk(
           item: itemId,
           on_hand_quantity: Number(entry.on_hand_quantity) || 0,
           notes: entry.notes || '',
+          par_level: entry.par_level,
+          order_point: entry.order_point,
         };
       });
 

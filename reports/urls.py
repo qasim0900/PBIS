@@ -1,23 +1,14 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import ReportViewSet
 
 # -----------------------------------
 # :: DRF Router Setup
 # -----------------------------------
 
-"""
-Includes all the registered router URLs in the `urlpatterns`
-for the Report module.
-"""
+router = DefaultRouter()
+router.register(r"reports", ReportViewSet, basename="report")
 
 urlpatterns = [
-    path("reports/", ReportViewSet.as_view({"get": "list"})),
-    path("reports/create/", ReportViewSet.as_view({"post": "create"})),
-    path(
-        "reports/<int:pk>/update/",
-        ReportViewSet.as_view({
-            "put": "update",
-            "patch": "partial_update",
-        }),
-    ),
+    path("", include(router.urls)),
 ]

@@ -16,11 +16,11 @@ const ReportsViewUI = ({
     handleLoadSheets,
     handleDownloadCSV,
     handlePrint,
+    onHideReport,
     loading,
     reportColumns,
     data,
 }) => {
-
     const handleSplitButtonSelect = (index, option) => {
         switch (option) {
             case "Load Report":
@@ -31,6 +31,11 @@ const ReportsViewUI = ({
                 break;
             case "View File":
                 handlePrint();
+                break;
+            case "Delete Report":
+                if (sheets && sheets.length > 0) {
+                  onHideReport(sheets[0].id);
+                }
                 break;
             default:
                 break;
@@ -90,7 +95,7 @@ const ReportsViewUI = ({
                 ))}
             </TextField>
             <SplitButton
-                options={["Load Report", "Download CSV", "View File"]}
+                options={["Load Report", "Download CSV", "View File", "Delete Report"]}
                 initialIndex={0}
                 buttonLabel="Load Report"
                 onSelect={handleSplitButtonSelect}

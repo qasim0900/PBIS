@@ -8,15 +8,30 @@ import api from "../../api/index";
 
 export const listReports = createAsyncThunk(
     "reports/listReports",
-    async ({ location, frequency }, { rejectWithValue, dispatch }) => {
+    async ({ location, frequency, latest_only }, { rejectWithValue, dispatch }) => {
         try {
             const res = await api.reportsAPI.list({
                 location,
                 frequency,
+                latest_only,
             });
             return res.data;
         } catch (err) {
             dispatch(showNotification({ message: "Failed to load reports", type: "error" }));
+            return rejectWithValue(err.response?.data || err.message);
+        }
+    }
+);
+
+export const hideReport = createAsyncThunk(
+    "reports/hideReport",
+    async (id, { rejectWithValue, dispatch }) => {
+        try {
+            await api.reportsAPI.hide(id);
+            dispatch(showNotification({ message: "Report removed from UI", type: "success" }));
+            return id;
+        } catch (err) {
+            dispatch(showNotification({ message: "Failed to remove report", type: "error" }));
             return rejectWithValue(err.response?.data || err.message);
         }
     }
@@ -130,6 +145,19 @@ const reportsSlice = createSlice({
                 state.data = state.data.filter((r) => r.id !== action.payload);
             })
             .addCase(deleteReport.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // HIDE
+            .addCase(hideReport.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(hideReport.fulfilled, (state, action) => {
+                state.loading = false;
+                state.data.results = (state.data.results || []).filter((r) => r.id !== action.payload);
+            })
+            .addCase(hideReport.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });

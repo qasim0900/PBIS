@@ -48,7 +48,7 @@ class CountEntrySerializer(serializers.ModelSerializer):
         fields = [
             'id', 'sheet', 'pack_size', 'count_unit', 'order_unit', 'item', 'item_detail', 'item_name',
             'on_hand_quantity', 'calculated_qty_to_order', 'calculated_order_units',
-            'highlight_state', 'highlight_display', 'notes'
+            'highlight_state', 'highlight_display', 'notes', 'par_level', 'order_point'
         ]
         read_only_fields = [
             'calculated_qty_to_order',
@@ -56,12 +56,12 @@ class CountEntrySerializer(serializers.ModelSerializer):
             'highlight_state',
             'highlight_display'
         ]
-        
+
     def create(self, validated_data):
         entry = CountEntry(**validated_data)
         entry.save(recalculate=True)
         return entry
-    
+
     def update(self, instance, validated_data):
         for attr in ("on_hand_quantity", "notes"):
             if attr in validated_data:
@@ -69,7 +69,7 @@ class CountEntrySerializer(serializers.ModelSerializer):
         updated_by = validated_data.pop("updated_by", None)
         if updated_by is not None:
             instance.updated_by = updated_by
-        instance.save(recalculate=True) 
+        instance.save(recalculate=True)
         return instance
 
 

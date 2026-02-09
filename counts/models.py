@@ -157,6 +157,10 @@ class CountEntry(models.Model):
 
     on_hand_quantity = models.DecimalField(
         max_digits=9, decimal_places=2, default=0)
+    par_level = models.DecimalField(
+        max_digits=9, decimal_places=2, null=True, blank=True)
+    order_point = models.DecimalField(
+        max_digits=9, decimal_places=2, null=True, blank=True)
     calculated_qty_to_order = models.DecimalField(
         max_digits=9, decimal_places=2, default=0, editable=False)
     calculated_order_units = models.DecimalField(
@@ -229,25 +233,32 @@ class CountEntry(models.Model):
     """
 
     def perform_calculation(self) -> OrderCalculation:
-        par_level = self.item.par_level or Decimal("0")
-        order_point = self.item.order_point or Decimal("0")
+        par_level = self.par_level if self.par_level is not None else (self.item.par_level or Decimal("0"))
+        order_point = self.order_point if self.order_point is not None else (self.item.order_point or Decimal("0"))
         on_hand = self.on_hand_quantity or Decimal("0")
         pack_size = self.item.pack_size or Decimal("1")
 
-        # Case 1: Over par → no order
+        # Needed to reach par: par - count
+        deficit = (par_level - on_hand)
+
+        # Case 1: Over par or at par → no order
         if on_hand >= par_level:
             return OrderCalculation(
                 Decimal("0"),
                 Decimal("0"),
                 self.HIGHLIGHT_GREEN
             )
-        deficit = (par_level - on_hand).quantize(
-            Decimal("0.01"), rounding=ROUND_HALF_UP
-        )
 
+        # Convert to order units: deficit / pack_size
+        # round up to meet par
         order_units = (deficit / pack_size).quantize(
             Decimal("1"), rounding=ROUND_CEILING
         )
+        
+        # Ensure it's at least 0
+        if order_units < 0:
+            order_units = Decimal("0")
+
         if on_hand <= order_point:
             highlight = self.HIGHLIGHT_RED
         else:

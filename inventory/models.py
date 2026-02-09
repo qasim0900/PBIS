@@ -75,17 +75,22 @@ class InventoryItem(models.Model):
     )
     count_unit = models.CharField(
         max_length=32,
+        blank=True,
+        null=True,
         help_text="Unit jab staff ginti karta hai (bag, tub, each, kg...)",
     )
     order_unit = models.CharField(
         max_length=32,
         blank=True,
+        null=True,
         help_text="Unit jab order karte hain (case, box, carton...)",
     )
     pack_size = models.DecimalField(
         max_digits=9,
         decimal_places=2,
         default=Decimal("1"),
+        null=True,
+        blank=True,
         validators=[MinValueValidator(Decimal("0.01"))],
         help_text="1 order unit mein kitne count units hote hain",
     )
@@ -93,7 +98,9 @@ class InventoryItem(models.Model):
     default_vendor = models.ForeignKey(
         'vendor.Vendor',
         on_delete=models.PROTECT,
-        related_name="items"
+        related_name="items",
+        null=True,
+        blank=True
     )
 
     helper_text = models.CharField(
@@ -217,19 +224,16 @@ class InventoryItem(models.Model):
         super().clean()
         if self.location is None:
             if not self.count_unit:
-                raise models.ValidationError(
-                    {"count_unit": "Global item ke liye count unit zaroori hai."})
-            if self.pack_size <= 0:
+                pass # Make it optional
+            if self.pack_size and self.pack_size <= 0:
                 raise models.ValidationError(
                     {"pack_size": "Pack size > 0 honi chahiye."})
         else:
             if self.par_level is not None and self.par_level <= 0:
-                raise models.ValidationError(
-                    {"par_level": "Par level > 0 honi chahiye."})
+                pass # Make it optional/NA
             if self.order_point is not None and self.par_level is not None:
                 if self.order_point > self.par_level:
-                    raise models.ValidationError(
-                        {"order_point": "Order point par level se zyada nahi ho sakta."})
+                    pass # Non-critical
 
     @property
     def pack_ratio_display(self) -> str:

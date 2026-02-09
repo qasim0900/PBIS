@@ -119,16 +119,17 @@ const ReportsView = () => {
         listReports({
           location: selectedLocation,
           frequency: selectedFrequency,
+          latest_only: "true" // Only show the latest submission
         })
       ).unwrap();
 
       dispatch(showNotification({
-        message: "Reports loaded successfully!",
+        message: "Latest report loaded!",
         type: "success"
       }));
     } catch (err) {
       dispatch(showNotification({
-        message: "Failed to load reports",
+        message: "Failed to load report",
         type: "error"
       }));
     }
@@ -146,20 +147,22 @@ const ReportsView = () => {
     if (!entryToDelete) return;
 
     try {
-      await dispatch(deleteCountEntry(entryToDelete.id)).unwrap();
-      await dispatch(listReports()).unwrap();
+      // Deleting a report from UI only (hiding it)
+      if (entryToDelete.sheetId) {
+        await dispatch(hideReport(entryToDelete.sheetId)).unwrap();
+      }
 
       setDeleteConfirmOpen(false);
       setEntryToDelete(null);
 
       dispatch(showNotification({
-        message: "Entry deleted successfully",
+        message: "Report hidden from UI",
         type: "success",
       }));
 
     } catch (err) {
       dispatch(showNotification({
-        message: err || "Delete failed",
+        message: err || "Action failed",
         type: "error",
       }));
     }
@@ -292,6 +295,14 @@ const ReportsView = () => {
         selectedLocation={selectedLocation}
         handleDownloadCSV={handleDownloadCSV}
         handlePrint={handlePrint}
+        onHideReport={async (reportId) => {
+          try {
+            await dispatch(hideReport(reportId)).unwrap();
+            handleLoadReports();
+          } catch (err) {
+            console.error(err);
+          }
+        }}
         setSelectedLocation={(val) => {
           setSelectedLocation(val);
           setSelectedFrequency("");

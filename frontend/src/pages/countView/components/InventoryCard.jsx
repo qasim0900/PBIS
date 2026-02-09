@@ -146,7 +146,11 @@ const InventoryCard = ({ item }) => {
 
         dispatch(updateSelectedSheetEntry({
             id,
-            data: { on_hand_quantity: Number(value) }
+            data: { 
+                on_hand_quantity: Number(value),
+                par_level: Number(modalData.par_level),
+                order_point: Number(modalData.order_point)
+            }
         }));
     };
     const handleKeyDown = (e) => {
