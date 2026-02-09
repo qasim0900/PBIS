@@ -46,7 +46,7 @@ const CatalogView = () => {
     default_vendor: null,
     par_level: 1,
     order_point: 1,
-    storage_location: '',
+    frequency_name: '',
     notes: '',
     is_active: true,
   };
@@ -82,7 +82,7 @@ const CatalogView = () => {
       { key: "brand", label: "Brand" },
       { key: "par_level", label: "Par Level" },
       { key: "order_point", label: "Order Point" },
-      { key: "storage_location", label: "Storage Location" },
+      { key: "frequency_name", label: "Inventory List" },
     ];
 
     const missingFields = requiredFields.filter(
@@ -143,7 +143,7 @@ const CatalogView = () => {
       default_vendor: item.default_vendor || item.vendor,
       par_level: item.par_level,
       order_point: item.order_point,
-      storage_location: item.storage_location,
+      frequency_name: item.frequency_name,
       notes: item.notes || '',
       is_active: item.is_active,
     });

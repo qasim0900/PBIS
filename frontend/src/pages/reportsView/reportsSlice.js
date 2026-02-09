@@ -8,9 +8,12 @@ import api from "../../api/index";
 
 export const listReports = createAsyncThunk(
     "reports/listReports",
-    async (_, { rejectWithValue, dispatch }) => {
+    async ({ location, frequency }, { rejectWithValue, dispatch }) => {
         try {
-            const res = await api.reportsAPI.list();
+            const res = await api.reportsAPI.list({
+                location,
+                frequency,
+            });
             return res.data;
         } catch (err) {
             dispatch(showNotification({ message: "Failed to load reports", type: "error" }));

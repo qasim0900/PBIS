@@ -418,8 +418,6 @@ Configure trusted origins for CSRF protection in production.
 try:
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:5000",
-        "https://*.replit.dev",
-        "https://*.repl.co",
     ]
 except Exception as e:
     CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]

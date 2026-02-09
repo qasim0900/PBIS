@@ -26,10 +26,10 @@ class Vendor(models.Model):
             )
         ]
     )
-    contact_person = models.CharField(max_length=255, blank=True)
-    phone = models.CharField(max_length=20, blank=True)
-    email = models.EmailField(blank=True)
-    notes = models.TextField(blank=True)
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
     location = models.ForeignKey(
         'locations.Location',
         on_delete=models.CASCADE,

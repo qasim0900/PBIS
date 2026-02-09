@@ -55,9 +55,6 @@ export default function VendorDesign({
         if (!formData.name) newErrors.name = 'Vendor Name is required';
         if (!formData.contact_person)
             newErrors.contact_person = 'Contact Person is required';
-        if (!formData.phone) newErrors.phone = 'Phone is required';
-        if (!formData.email) newErrors.email = 'Email is required';
-        if (!formData.notes) newErrors.notes = 'Notes are required';
         if (!formData.location)
             newErrors.location = 'Please select at least one location';
         if (!formData.color) newErrors.color = 'Vendor Color is required';

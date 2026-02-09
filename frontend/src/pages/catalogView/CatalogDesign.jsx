@@ -195,11 +195,19 @@ const CatalogDesign = ({
                         <TextField label="Order Unit" value={formData.order_unit}
                             onChange={(e) => setFormData({ ...formData, order_unit: e.target.value })} />
 
-                        <TextField select label="Inventory List" value={formData.frequency || ''}
-                            onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}>
-                            <MenuItem value="">— Select  Inventory List —</MenuItem>
-                            {((frequencies) || []).map((f) => (
-                                <MenuItem key={f.id} value={f.id}>{f.frequency_name}</MenuItem>
+                        <TextField
+                            select
+                            label="Inventory List"
+                            value={formData.frequency_name || ''}
+                            onChange={(e) =>
+                                setFormData({ ...formData, frequency_name: e.target.value })
+                            }
+                        >
+                            <MenuItem value="">— Select Inventory List —</MenuItem>
+                            {(frequencies || []).map((f) => (
+                                <MenuItem key={f.id} value={f.id}>
+                                    {f.frequency_name}
+                                </MenuItem>
                             ))}
                         </TextField>
 

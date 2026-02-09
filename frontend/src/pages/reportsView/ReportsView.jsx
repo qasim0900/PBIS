@@ -100,14 +100,14 @@ const ReportsView = () => {
         orderUnit: entry.item_detail.order_unit,
         notes: entry.notes,
         itemId: entry.item_detail.id,
-        order_point:entry.item_detail.order_point,
-        par_level:entry.item_detail.par_level
+        order_point: entry.item_detail.order_point,
+        par_level: entry.item_detail.par_level
       }))
     );
 
     setRows(allRows);
 
-    // Dropdowns from data
+ 
     setItemsDropdown([...new Set(allRows.map(r => ({ id: r.itemId, name: r.item })))]);
     setVendorsDropdown([...new Set(allRows.map(r => r.vendor))]);
 
@@ -115,12 +115,24 @@ const ReportsView = () => {
 
   const handleLoadReports = useCallback(async () => {
     try {
-      await dispatch(listReports()).unwrap();
-      dispatch(showNotification({ message: "Reports loaded successfully!", type: "success" }));
+      await dispatch(
+        listReports({
+          location: selectedLocation,
+          frequency: selectedFrequency,
+        })
+      ).unwrap();
+
+      dispatch(showNotification({
+        message: "Reports loaded successfully!",
+        type: "success"
+      }));
     } catch (err) {
-      dispatch(showNotification({ message: "Failed to load reports", type: "error" }));
+      dispatch(showNotification({
+        message: "Failed to load reports",
+        type: "error"
+      }));
     }
-  }, [dispatch]);
+  }, [dispatch, selectedLocation, selectedFrequency]);
 
   // ----------------------
   // Delete Logic
@@ -135,8 +147,6 @@ const ReportsView = () => {
 
     try {
       await dispatch(deleteCountEntry(entryToDelete.id)).unwrap();
-
-      // Re-fetch reports from server to make sure deleted item doesn't return
       await dispatch(listReports()).unwrap();
 
       setDeleteConfirmOpen(false);
@@ -178,7 +188,6 @@ const ReportsView = () => {
         })
       ).unwrap();
 
-      // ✔️ TABLE UPDATE LOGIC
       setRows(prevRows =>
         prevRows.map(row =>
           row.id === editRow.id ? { ...row, ...editRow } : row

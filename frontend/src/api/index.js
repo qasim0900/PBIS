@@ -43,7 +43,7 @@ and updating existing reports.
 */
 
 export const reportsAPI = {
-  list: () => api.get("/reports/"),
+  list: (params) => api.get("/reports/", { params }),
   create: (data) => api.post("/reports/create/", data),
   update: (id, data) => api.put(`/reports/${id}/update/`, data),
   patch: (id, data) => api.patch(`/reports/${id}/update/`, data),
