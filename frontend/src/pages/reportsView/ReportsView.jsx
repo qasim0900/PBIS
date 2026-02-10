@@ -107,7 +107,7 @@ const ReportsView = () => {
 
     setRows(allRows);
 
- 
+
     setItemsDropdown([...new Set(allRows.map(r => ({ id: r.itemId, name: r.item })))]);
     setVendorsDropdown([...new Set(allRows.map(r => r.vendor))]);
 
@@ -119,7 +119,7 @@ const ReportsView = () => {
         listReports({
           location: selectedLocation,
           frequency: selectedFrequency,
-          latest_only: "true" // Only show the latest submission
+          latest_only: "true"
         })
       ).unwrap();
 
@@ -147,11 +147,16 @@ const ReportsView = () => {
     if (!entryToDelete) return;
 
     try {
-      // Deleting a report from UI only (hiding it)
       if (entryToDelete.sheetId) {
-        await dispatch(hideReport(entryToDelete.sheetId)).unwrap();
+        await dispatch(deleteCountEntry(entryToDelete.id)).unwrap();
       }
-
+      await dispatch(
+        listReports({
+          location: selectedLocation,
+          frequency: selectedFrequency,
+          latest_only: "true"
+        })
+      ).unwrap();
       setDeleteConfirmOpen(false);
       setEntryToDelete(null);
 

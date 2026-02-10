@@ -64,6 +64,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         report.save()
         return Response({"status": "report hidden from UI"})
 
+
     @action(detail=False, methods=["post"])
     def delete_report(self, request):
         report_id = request.data.get("id")

@@ -56,12 +56,12 @@ class CountEntrySerializer(serializers.ModelSerializer):
             'highlight_state',
             'highlight_display'
         ]
-
+        
     def create(self, validated_data):
         entry = CountEntry(**validated_data)
         entry.save(recalculate=True)
         return entry
-
+    
     def update(self, instance, validated_data):
         for attr in ("on_hand_quantity", "notes"):
             if attr in validated_data:
@@ -69,7 +69,7 @@ class CountEntrySerializer(serializers.ModelSerializer):
         updated_by = validated_data.pop("updated_by", None)
         if updated_by is not None:
             instance.updated_by = updated_by
-        instance.save(recalculate=True)
+        instance.save(recalculate=True) 
         return instance
 
 

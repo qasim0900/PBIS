@@ -198,9 +198,9 @@ const CatalogDesign = ({
                         <TextField
                             select
                             label="Inventory List"
-                            value={formData.frequency_name || ''}
+                            value={formData.frequency || ''}
                             onChange={(e) =>
-                                setFormData({ ...formData, frequency_name: e.target.value })
+                                setFormData({ ...formData, frequency: e.target.value })
                             }
                         >
                             <MenuItem value="">— Select Inventory List —</MenuItem>

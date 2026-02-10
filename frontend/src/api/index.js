@@ -43,12 +43,12 @@ and updating existing reports.
 */
 
 export const reportsAPI = {
-  list: (params) => api.get("/reports/reports/", { params }),
-  create: (data) => api.post("/reports/reports/", data),
-  update: (id, data) => api.put(`/reports/reports/${id}/`, data),
-  patch: (id, data) => api.patch(`/reports/reports/${id}/`, data),
-  delete: (id) => api.delete(`/reports/reports/${id}/`),
-  hide: (id) => api.post(`/reports/reports/${id}/hide/`),
+  list: (params) => api.get("/reports/", { params }),
+  create: (data) => api.post("/reports/", data),
+  update: (id, data) => api.put(`/reports/${id}/`, data),
+  patch: (id, data) => api.patch(`/reports/${id}/`, data),
+  delete: (id) => api.delete(`/reports/${id}/`),
+  hide: (id) => api.post(`/reports/${id}/hide/`),
 };
 
 

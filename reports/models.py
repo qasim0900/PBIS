@@ -46,4 +46,4 @@ class Report(models.Model):
     """
 
     def __str__(self) -> str:
-        return f"Entry #{self.id or '?'} - {self.item} (sheet: {self.sheet_id})"
+        return f"Entry #{self.id or '?'} - {self.created_at}"
