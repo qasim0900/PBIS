@@ -23,7 +23,7 @@ import {
 import { Delete, Edit } from "@mui/icons-material";
 import ColorBadge from "../../components/ColorBadge";
 import { downloadCSVReport } from "./csvView";
-import { printReport } from './printView'
+import { printReport } from './printView';
 import { updateCountEntry, deleteCountEntry } from "../countView/countsSlice";
 
 const ReportsView = () => {
@@ -56,11 +56,13 @@ const ReportsView = () => {
   const [itemsDropdown, setItemsDropdown] = useState([]);
   const [vendorsDropdown, setVendorsDropdown] = useState([]);
 
+  // Fetch locations and frequencies
   useEffect(() => {
     dispatch(fetchLocations()).unwrap().then(setLocations);
     dispatch(fetchFrequencies()).unwrap().then(setFrequencies);
   }, [dispatch]);
 
+  // Available report dates
   const availableDates = useMemo(() => {
     if (!reports) return [];
     const list = reports?.results || reports || [];
@@ -68,6 +70,7 @@ const ReportsView = () => {
     return dates.sort((a, b) => new Date(b) - new Date(a));
   }, [reports]);
 
+  // Filter reports based on selection
   const filteredReports = useMemo(() => {
     let list = reports?.results || reports || [];
 
@@ -107,12 +110,14 @@ const ReportsView = () => {
 
     setRows(allRows);
 
-
     setItemsDropdown([...new Set(allRows.map(r => ({ id: r.itemId, name: r.item })))]);
     setVendorsDropdown([...new Set(allRows.map(r => r.vendor))]);
 
   }, [filteredReports]);
 
+  // ----------------------
+  // Load Reports
+  // ----------------------
   const handleLoadReports = useCallback(async () => {
     try {
       await dispatch(
@@ -136,40 +141,55 @@ const ReportsView = () => {
   }, [dispatch, selectedLocation, selectedFrequency]);
 
   // ----------------------
-  // Delete Logic
+  // Unified Delete Logic
   // ----------------------
-  const handleDeleteEntryClick = (entry) => {
-    setEntryToDelete(entry);
+  const handleDeleteClick = (entry) => {
+    setEntryToDelete(entry || { sheetId: true }); // entry = null for full report
     setDeleteConfirmOpen(true);
   };
 
-  const confirmDeleteEntry = async () => {
+  const confirmDelete = async () => {
     if (!entryToDelete) return;
 
     try {
-      if (entryToDelete.sheetId) {
+      if (entryToDelete.sheetId && entryToDelete.id) {
+        // Individual entry delete
         await dispatch(deleteCountEntry(entryToDelete.id)).unwrap();
+        dispatch(showNotification({ message: "Entry deleted successfully", type: "success" }));
+      } else if (entryToDelete.sheetId) {
+        // Full report delete
+        if (!selectedLocation || !selectedFrequency) {
+          dispatch(showNotification({
+            message: "Select a location and Inventory List first",
+            type: "error"
+          }));
+          setDeleteConfirmOpen(false);
+          setEntryToDelete(null);
+          return;
+        }
+        await dispatch(deleteReport({
+          location_id: selectedLocation,
+          frequency_id: selectedFrequency
+        })).unwrap();
+        dispatch(showNotification({ message: "Report deleted successfully", type: "success" }));
       }
-      await dispatch(
-        listReports({
-          location: selectedLocation,
-          frequency: selectedFrequency,
-          latest_only: "true"
-        })
-      ).unwrap();
+
+      await dispatch(listReports({
+        location: selectedLocation,
+        frequency: selectedFrequency,
+        latest_only: "true"
+      })).unwrap();
+
       setDeleteConfirmOpen(false);
       setEntryToDelete(null);
-
-      dispatch(showNotification({
-        message: "Report hidden from UI",
-        type: "success",
-      }));
 
     } catch (err) {
       dispatch(showNotification({
         message: err || "Action failed",
         type: "error",
       }));
+      setDeleteConfirmOpen(false);
+      setEntryToDelete(null);
     }
   };
 
@@ -219,7 +239,9 @@ const ReportsView = () => {
     }
   };
 
-
+  // ----------------------
+  // Table Columns
+  // ----------------------
   const reportColumns = useMemo(() => [
     { header: "Item", render: (r) => r.item || "—" },
     { header: "Vendor", render: (r) => r.vendor || "—" },
@@ -266,7 +288,7 @@ const ReportsView = () => {
             <IconButton
               size="small"
               color="error"
-              onClick={() => handleDeleteEntryClick(r)}
+              onClick={() => handleDeleteClick(r)}
             >
               <Delete fontSize="small" />
             </IconButton>
@@ -276,6 +298,9 @@ const ReportsView = () => {
     },
   ], [dispatch]);
 
+  // ----------------------
+  // CSV & Print
+  // ----------------------
   const handleDownloadCSV = useCallback(() => {
     downloadCSVReport(rows, dispatch, showNotification);
   }, [rows, dispatch]);
@@ -300,14 +325,7 @@ const ReportsView = () => {
         selectedLocation={selectedLocation}
         handleDownloadCSV={handleDownloadCSV}
         handlePrint={handlePrint}
-        onHideReport={async (reportId) => {
-          try {
-            await dispatch(hideReport(reportId)).unwrap();
-            handleLoadReports();
-          } catch (err) {
-            console.error(err);
-          }
-        }}
+        deleteReport={() => handleDeleteClick()} // for full report
         setSelectedLocation={(val) => {
           setSelectedLocation(val);
           setSelectedFrequency("");
@@ -335,12 +353,14 @@ const ReportsView = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to delete this entry? This action cannot be undone.
+            {entryToDelete?.id
+              ? "Are you sure you want to delete this entry? This action cannot be undone."
+              : "Are you sure you want to delete the full report? This action cannot be undone."}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={confirmDeleteEntry} color="error" variant="contained">
+          <Button onClick={confirmDelete} color="error" variant="contained">
             Delete
           </Button>
         </DialogActions>

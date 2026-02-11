@@ -16,7 +16,7 @@ const ReportsViewUI = ({
     handleLoadSheets,
     handleDownloadCSV,
     handlePrint,
-    onHideReport,
+    deleteReport,
     loading,
     reportColumns,
     data,
@@ -33,9 +33,7 @@ const ReportsViewUI = ({
                 handlePrint();
                 break;
             case "Delete Report":
-                if (sheets && sheets.length > 0) {
-                  onHideReport(sheets[0].id);
-                }
+                deleteReport();
                 break;
             default:
                 break;
@@ -99,6 +97,7 @@ const ReportsViewUI = ({
                 initialIndex={0}
                 buttonLabel="Load Report"
                 onSelect={handleSplitButtonSelect}
+                disabled={!selectedLocation || !selectedFrequency}
             />
         </Box>
     );

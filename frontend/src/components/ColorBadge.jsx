@@ -73,6 +73,7 @@ const ColorBadge = ({ status, labels = {} }) => {
 
   return (
     <Box
+      component="span"
       sx={{
         bgcolor: config.bg,
         color: config.color,

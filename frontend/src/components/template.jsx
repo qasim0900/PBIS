@@ -143,7 +143,7 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
                       <Typography variant="caption" fontWeight={600} color="text.secondary">
                         {header}
                       </Typography>
-                      <Typography variant="body2" sx={{ mt: 0.5 }}>
+                      <Typography variant="body2" component="div" sx={{ mt: 0.5 }}>
                         {render ? render(row) : getNestedValue(row, accessor)}
                       </Typography>
                     </Box>

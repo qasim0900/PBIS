@@ -67,13 +67,23 @@ export const updateReport = createAsyncThunk(
 
 export const deleteReport = createAsyncThunk(
     "reports/deleteReport",
-    async (id, { rejectWithValue, dispatch }) => {
+    async ({ location_id, frequency_id }, { rejectWithValue, dispatch }) => {
         try {
-            await api.reportsAPI.delete(id);
-            dispatch(showNotification({ message: "Report deleted successfully", type: "success" }));
-            return id;
+            await api.reportsAPI.delete({ location_id, frequency_id });
+            dispatch(
+                showNotification({
+                    message: "Report deleted successfully",
+                    type: "success",
+                })
+            );
+            return { location_id, frequency_id };
         } catch (err) {
-            dispatch(showNotification({ message: "Failed to delete report", type: "error" }));
+            dispatch(
+                showNotification({
+                    message: err.response?.data?.error || "Failed to delete report",
+                    type: "error",
+                })
+            );
             return rejectWithValue(err.response?.data || err.message);
         }
     }
@@ -142,7 +152,12 @@ const reportsSlice = createSlice({
             })
             .addCase(deleteReport.fulfilled, (state, action) => {
                 state.loading = false;
-                state.data = state.data.filter((r) => r.id !== action.payload);
+
+                const deletedIds = action.payload?.deleted_ids || [];
+
+                state.data = Array.isArray(state.data)
+                    ? state.data.filter(r => !deletedIds.includes(r.id))
+                    : [];
             })
             .addCase(deleteReport.rejected, (state, action) => {
                 state.loading = false;

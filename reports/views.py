@@ -1,12 +1,17 @@
 from .models import Report
+from django.db.models import Max
+from django.db import transaction
+from rest_framework import status
 from rest_framework import viewsets
+from counts.models import CountEntry
+from django.db.models import Prefetch
 from .serializers import ReportSerializer
-from users.permissions import IsAdminOrManager
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.pagination import CursorPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
+from users.permissions import IsAdminOrManager
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import CursorPagination
 # -----------------------------------
 # :: Report View Class
 # -----------------------------------
@@ -28,52 +33,51 @@ class ReportViewSet(viewsets.ModelViewSet):
     pagination_class = ReportCursorPagination
 
     def get_queryset(self):
-        queryset = Report.objects.filter(is_visible=True).select_related(
-            "location", "frequency"
-        ).prefetch_related("count_entries")  # optimize ManyToMany
-
-        location_id = self.request.query_params.get("location")
-        frequency_id = self.request.query_params.get("frequency")
-        latest_only = self.request.query_params.get("latest_only")
-
+        queryset = Report.objects.all()
+        params = self.request.query_params
+        try:
+            location_id = int(params.get("location")) if params.get(
+                "location") else None
+            frequency_id = int(params.get("frequency")) if params.get(
+                "frequency") else None
+        except ValueError:
+            return Report.objects.none()
         if location_id:
             queryset = queryset.filter(location_id=location_id)
-
         if frequency_id:
             queryset = queryset.filter(frequency_id=frequency_id)
-
-        if latest_only == "true" and location_id:
-            filter_kwargs = {"location_id": location_id, "is_visible": True}
-            if frequency_id:
-                filter_kwargs["frequency_id"] = frequency_id
-
-            latest_report = Report.objects.filter(
-                **filter_kwargs
-            ).order_by("-created_at").first()
-            if latest_report:
-                queryset = queryset.filter(id=latest_report.id)
+        if params.get("latest_only") == "true":
+            latest_id = queryset.aggregate(latest_id=Max("id"))["latest_id"]
+            if latest_id is not None:
+                queryset = queryset.filter(id=latest_id)
             else:
-                queryset = queryset.none()
-
+                return Report.objects.none()
         return queryset
 
-    @action(detail=True, methods=["post"])
-    def hide(self, request, pk=None):
-        report = self.get_object()
-        report.is_visible = False
-        report.save()
-        return Response({"status": "report hidden from UI"})
-
-
     @action(detail=False, methods=["post"])
-    def delete_report(self, request):
-        report_id = request.data.get("id")
-        if not report_id:
-            return Response({"error": "Report ID is required"}, status=400)
+    def delete(self, request):
+        location_id = request.data.get("location_id")
+        frequency_id = request.data.get("frequency_id")
+
+        if not location_id:
+            return Response({"error": "location_id is required"}, status=400)
+
         try:
-            report = Report.objects.get(id=report_id)
-            report.is_visible = False
-            report.save()
-            return Response({"status": "report hidden from UI"})
-        except Report.DoesNotExist:
-            return Response({"error": "Report not found"}, status=404)
+            with transaction.atomic():
+                reports_qs = Report.objects.filter(location__id=location_id)
+                if frequency_id:
+                    reports_qs = reports_qs.filter(frequency__id=frequency_id)
+
+                report_ids = list(reports_qs.values_list("id", flat=True))
+                count_entries_qs = CountEntry.objects.filter(sheet_id__in=report_ids)
+                count_entries_deleted_count, _ = count_entries_qs.delete()
+                reports_deleted_count, _ = Report.objects.filter(id__in=report_ids).delete()
+
+            return Response({
+                "status": "success",
+                "reports_deleted": reports_deleted_count,
+                "count_entries_deleted": count_entries_deleted_count
+            }, status=200)
+
+        except Exception as e:
+            return Response({"error": f"Unexpected error: {str(e)}"}, status=500)

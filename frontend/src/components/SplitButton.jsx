@@ -41,7 +41,7 @@ A SplitButton component that displays a main button with a dropdown of options, 
 updating the selected index, and triggering a callback on choice.
 */
 
-const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect }) => {
+const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect, disabled = false }) => {
     const [open, setOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(initialIndex);
     const anchorRef = useRef(null);
@@ -55,8 +55,9 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect }) 
     */
 
     const handleClick = useCallback(() => {
+        if (disabled) return;
         if (onSelect) onSelect(selectedIndex, options[selectedIndex]);
-    }, [onSelect, selectedIndex, options]);
+    }, [onSelect, selectedIndex, options, disabled]);
 
 
     //---------------------------------------
@@ -68,14 +69,11 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect }) 
     with the chosen option when a menu item is clicked.
     */
 
-    const handleMenuItemClick = useCallback(
-        (event, index) => {
-            setSelectedIndex(index);
-            setOpen(false);
-            if (onSelect) onSelect(index, options[index]);
-        },
-        [onSelect, options]
-    );
+    const handleMenuItemClick = useCallback((event, index) => {
+        setSelectedIndex(index);
+        setOpen(false);
+        if (onSelect) onSelect(index, options[index]);
+    }, [onSelect, options]);
 
     //---------------------------------------
     // :: handle Toggle Function
@@ -85,7 +83,9 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect }) 
     A callback that toggles the dropdown menu open or closed.
     */
 
-    const handleToggle = useCallback(() => setOpen((prev) => !prev), []);
+    const handleToggle = useCallback(() => {
+        if (!disabled) setOpen((prev) => !prev);
+    }, [disabled]);
 
 
     //---------------------------------------
@@ -96,13 +96,10 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect }) 
     A callback that closes the dropdown menu when clicking outside of the button group, ignoring clicks on the button itself.
     */
 
-    const handleClose = useCallback(
-        (event) => {
-            if (anchorRef.current && anchorRef.current.contains(event.target)) return;
-            setOpen(false);
-        },
-        []
-    );
+    const handleClose = useCallback((event) => {
+        if (anchorRef.current && anchorRef.current.contains(event.target)) return;
+        setOpen(false);
+    }, []);
 
 
 
