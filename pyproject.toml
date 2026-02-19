@@ -1,0 +1,28 @@
+[project]
+name = "PBIS"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "qasim0900",email = "qasim_kamran2007@yahoo.com"}
+]
+package-mode = false
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "django (>=5.2.8,<6.0.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "djangorestframework (>=3.15.2,<4.0.0)",
+    "dj-database-url (>=3.0.1,<4.0.0)",
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "djangorestframework-simplejwt (>=5.5.1,<6.0.0)",
+    "django-cors-headers (>=4.9.0,<5.0.0)",
+    "openpyxl (>=3.1.5,<4.0.0)",
+    "whitenoise (>=6.11.0,<7.0.0)",
+    "gunicorn (>=23.0.0,<24.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
