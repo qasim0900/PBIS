@@ -223,7 +223,7 @@ export default function VendorDesign({
 
                             {/* Phone */}
                             <TextField
-                                label="Phone *"
+                                label="Phone"
                                 value={formData.phone}
                                 onChange={updateForm('phone')}
                                 fullWidth
@@ -233,7 +233,7 @@ export default function VendorDesign({
 
                             {/* Email */}
                             <TextField
-                                label="Email *"
+                                label="Email"
                                 type="email"
                                 value={formData.email}
                                 onChange={updateForm('email')}
@@ -244,7 +244,7 @@ export default function VendorDesign({
 
                             {/* Notes */}
                             <TextField
-                                label="Notes *"
+                                label="Notes"
                                 multiline
                                 rows={3}
                                 value={formData.notes}
