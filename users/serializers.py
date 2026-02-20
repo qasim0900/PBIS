@@ -140,7 +140,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             return user
         except Exception as e:
             raise serializers.ValidationError({
-                "non_field_errors": [f"User creation failed: {str(e)}"]
+                "detail": f"Account creation failed. Please ensure all details are correct or contact support if the issue persists."
             })
             
             

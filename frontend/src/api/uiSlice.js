@@ -8,7 +8,11 @@ const uiSlice = createSlice({
   },
   reducers: {
     showNotification: (state, action) => {
-      state.notification = action.payload;
+      state.notification = {
+        ...action.payload,
+        id: Date.now(),
+        duration: action.payload.type === 'error' ? 8000 : 5000
+      };
     },
     hideNotification: (state) => {
       state.notification = null;

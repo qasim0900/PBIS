@@ -419,5 +419,13 @@ try:
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:5000",
     ]
+    replit_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
+    if replit_domain:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_domain}")
+    replit_slug = os.getenv("REPLIT_SLUG", "")
+    replit_owner = os.getenv("REPLIT_OWNER", "")
+    if replit_slug and replit_owner:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}.{replit_owner}.repl.co")
+        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}-00-{replit_owner}.repl.co")
 except Exception as e:
     CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]

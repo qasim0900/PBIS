@@ -109,10 +109,10 @@ const CountsView = () => {
         })
       );
 
-      dispatch(showNotification({ message: "Sheet loaded with items!", type: "success" }));
+      dispatch(showNotification({ message: "Inventory sheet successfully synchronized.", type: "success" }));
       setIsLoaded(true);
     } catch {
-      dispatch(showNotification({ message: "Unable to load sheet. Please try again.", type: "error" }));
+      dispatch(showNotification({ message: "Unable to synchronize inventory sheet. Please try again.", type: "error" }));
     } finally {
       setLocalLoading(false);
     }

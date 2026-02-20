@@ -108,7 +108,6 @@ class InventoryItem(models.Model):
         blank=True,
         help_text="Inline helper (e.g. '1 case = 12 bags')",
     )
-    notes = models.TextField(blank=True)
 
     location = models.ForeignKey(
         'locations.Location',

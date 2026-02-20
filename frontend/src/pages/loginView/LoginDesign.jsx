@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from 'framer-motion';
 import Footer from './Footer.jsx';
 import { Visibility, VisibilityOff, Person, Lock } from '@mui/icons-material';
 import {

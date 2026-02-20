@@ -116,7 +116,15 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
-    # ---------- Methods ----------
+    def validate_par_level(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Par level cannot be negative.")
+        return value
+
+    def validate_order_point(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Order point cannot be negative.")
+        return value
     def get_vendor_name(self, obj):
         return obj.vendor.name if obj.vendor else None
 

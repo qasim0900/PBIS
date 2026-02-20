@@ -129,12 +129,12 @@ const ReportsView = () => {
       ).unwrap();
 
       dispatch(showNotification({
-        message: "Latest report loaded!",
+        message: "Latest report synchronization complete.",
         type: "success"
       }));
     } catch (err) {
       dispatch(showNotification({
-        message: "Failed to load report",
+        message: "Synchronisation failed. Please verify your connection and try again.",
         type: "error"
       }));
     }

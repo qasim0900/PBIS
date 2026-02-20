@@ -6,6 +6,7 @@ import { fetchBrands } from '../BrandView/BrandSlice.js';
 import { fetchVendors } from '../VendorView/VendorSlice.js';
 import { fetchLocations } from '../locationView/locationsSlice.js';
 import { fetchFrequencies } from '../FrequencyView/frequencySlice.js';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   fetchAllItems,
   createItem,
@@ -97,7 +98,7 @@ const CatalogView = () => {
       const fieldNames = missingFields.map((f) => f.label).join(", ");
       dispatch(
         showNotification({
-          message: `Please fill the following required fields: ${fieldNames}`,
+          message: `Required fields missing: ${fieldNames}. Please complete the form to proceed.`,
           type: "error",
         })
       );
@@ -167,15 +168,15 @@ const CatalogView = () => {
 
       if (currentItem) {
         await dispatch(updateItem({ id: currentItem.id, data: payload })).unwrap();
-        dispatch(showNotification({ message: 'Item updated', type: 'success' }));
+        dispatch(showNotification({ message: 'Catalog entry successfully updated.', type: 'success' }));
       } else {
         await dispatch(createItem(payload)).unwrap();
-        dispatch(showNotification({ message: 'Item created', type: 'success' }));
+        dispatch(showNotification({ message: 'New catalog entry successfully created.', type: 'success' }));
       }
       setModalOpen(false);
       dispatch(fetchAllItems());
     } catch {
-      dispatch(showNotification({ message: 'Unable to save item. Please try again.', type: 'error' }));
+      dispatch(showNotification({ message: 'Persistence failed. Please verify your entries and try again.', type: 'error' }));
     } finally {
       setSaving(false);
     }
@@ -187,23 +188,33 @@ const CatalogView = () => {
   //-----------------------------------
 
   return (
-    <CatalogDesign
-      items={items}
-      loading={loading}
-      modalOpen={modalOpen}
-      formData={formData}
-      setFormData={setFormData}
-      setModalOpen={setModalOpen}
-      openAddModal={openAddModal}
-      openEditModal={openEditModal}
-      frequencies={frequencies}
-      handleSave={handleSave}
-      saving={saving}
-      currentItem={currentItem}
-      locations={locations}
-      vendors={vendors}
-      brands={brands}
-    />
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="catalog-view"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <CatalogDesign
+          items={items}
+          loading={loading}
+          modalOpen={modalOpen}
+          formData={formData}
+          setFormData={setFormData}
+          setModalOpen={setModalOpen}
+          openAddModal={openAddModal}
+          openEditModal={openEditModal}
+          frequencies={frequencies}
+          handleSave={handleSave}
+          saving={saving}
+          currentItem={currentItem}
+          locations={locations}
+          vendors={vendors}
+          brands={brands}
+        />
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

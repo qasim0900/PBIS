@@ -61,9 +61,9 @@ def main():
 
     try:
         execute_from_command_line(sys.argv)
-        sys.exit(1)
     except Exception as e:
         logging.error(f"Execution failed: {e}")
+        sys.exit(1)
 
 
 # -----------------------------------

@@ -56,6 +56,11 @@ class CountEntrySerializer(serializers.ModelSerializer):
             'highlight_state',
             'highlight_display'
         ]
+
+    def validate_on_hand_quantity(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Quantity cannot be negative.")
+        return value
         
     def create(self, validated_data):
         entry = CountEntry(**validated_data)
