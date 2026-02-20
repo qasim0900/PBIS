@@ -1,4 +1,5 @@
 import LocationsDesign from './LocationsDesign.jsx';
+import AppLoading from '../../components/AppLoading';
 import { showNotification } from '../../api/uiSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
@@ -125,6 +126,11 @@ const Locations = () => {
   /*
   Passes data, form state, and handlers to LocationsDesign component
   */
+
+  // Show loading screen when initial data is being fetched
+  if (loading && locations.length === 0) {
+    return <AppLoading />;
+  }
 
   return (
     <LocationsDesign

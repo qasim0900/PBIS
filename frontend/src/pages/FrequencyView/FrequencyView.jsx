@@ -1,4 +1,5 @@
 import FrequencyDesign from './FrequencyDesign.jsx';
+import AppLoading from '../../components/AppLoading';
 import { useDispatch, useSelector } from 'react-redux';
 import { showNotification } from '../../api/uiSlice.js';
 import { useEffect, useState, useCallback } from 'react';
@@ -119,6 +120,11 @@ const FrequencyView = () => {
   /*
   Passing state and handlers from the container to the FrequencyDesign component for rendering.
   */
+
+  // Show loading screen when initial data is being fetched
+  if (loading && frequencies.length === 0) {
+    return <AppLoading />;
+  }
 
   return (
     <FrequencyDesign

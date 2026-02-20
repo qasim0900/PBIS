@@ -1,4 +1,5 @@
 import BrandDesign from './BrandDesign.jsx';
+import AppLoading from '../../components/AppLoading';
 import { showNotification } from '../../api/uiSlice.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
@@ -91,6 +92,12 @@ const BrandView = () => {
   //---------------------------------------
   // :: Render
   //---------------------------------------
+
+  // Show loading screen when initial data is being fetched
+  if (loading && brands.length === 0) {
+    return <AppLoading />;
+  }
+
   return (
     <BrandDesign
       brands={brands}

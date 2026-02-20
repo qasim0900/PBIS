@@ -1,4 +1,5 @@
 import TableView from '../../components/template';
+import AppLoading from '../../components/AppLoading';
 import { showNotification } from '../../api/uiSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Button, IconButton, Chip } from '@mui/material';
@@ -190,6 +191,11 @@ const UsersView = () => {
   //---------------------------------------
   // :: Render
   //---------------------------------------
+
+  // Show loading screen when initial data is being fetched
+  if (loading && users.length === 0) {
+    return <AppLoading />;
+  }
 
   return (
     <Box>

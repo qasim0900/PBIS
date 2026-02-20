@@ -1,4 +1,5 @@
 import VendorDesign from './VendorDesign.jsx';
+import AppLoading from '../../components/AppLoading';
 import { showNotification } from '../../api/uiSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
@@ -117,6 +118,11 @@ const VendorView = () => {
   /*
   Passes data, form state, and handlers to VendorDesign component
   */
+
+  // Show loading screen when initial data is being fetched
+  if (loading && vendors.length === 0) {
+    return <AppLoading />;
+  }
 
   return (
     <VendorDesign

@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { listReports, deleteReport } from "./reportsSlice";
 import ReportsViewUI from "./ReportsViewUI";
+import AppLoading from "../../components/AppLoading";
 import { showNotification } from "../../api/uiSlice";
 import { selectUser } from "../loginView/authSlice";
 import { fetchLocations } from "../locationView/locationsSlice";
@@ -315,6 +316,11 @@ const ReportsView = () => {
       showNotification
     );
   }, [rows, locations, selectedLocation, username, dispatch]);
+
+  // Show loading screen when initial data is being fetched
+  if (loading && (!reports || reports.length === 0)) {
+    return <AppLoading />;
+  }
 
   return (
     <>

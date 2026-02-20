@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import CatalogDesign from './CatalogDesign.jsx';
+import AppLoading from '../../components/AppLoading.jsx';
 import { useDispatch, useSelector } from 'react-redux';
 import { showNotification } from '../../api/uiSlice.js';
 import { fetchBrands } from '../BrandView/BrandSlice.js';
 import { fetchVendors } from '../VendorView/VendorSlice.js';
 import { fetchLocations } from '../locationView/locationsSlice.js';
 import { fetchFrequencies } from '../FrequencyView/frequencySlice.js';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import {
   fetchAllItems,
   createItem,
@@ -187,33 +188,30 @@ const CatalogView = () => {
   // :: Return Code
   //-----------------------------------
 
+  // Show loading screen when initial data is being fetched
+  if (loading && items.length === 0) {
+    return <AppLoading />;
+  }
+
   return (
     <AnimatePresence mode="wait">
-      <motion.div
-        key="catalog-view"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <CatalogDesign
-          items={items}
-          loading={loading}
-          modalOpen={modalOpen}
-          formData={formData}
-          setFormData={setFormData}
-          setModalOpen={setModalOpen}
-          openAddModal={openAddModal}
-          openEditModal={openEditModal}
-          frequencies={frequencies}
-          handleSave={handleSave}
-          saving={saving}
-          currentItem={currentItem}
-          locations={locations}
-          vendors={vendors}
-          brands={brands}
-        />
-      </motion.div>
+      <CatalogDesign
+        items={items}
+        loading={loading}
+        modalOpen={modalOpen}
+        formData={formData}
+        setFormData={setFormData}
+        setModalOpen={setModalOpen}
+        openAddModal={openAddModal}
+        openEditModal={openEditModal}
+        frequencies={frequencies}
+        handleSave={handleSave}
+        saving={saving}
+        currentItem={currentItem}
+        locations={locations}
+        vendors={vendors}
+        brands={brands}
+      />
     </AnimatePresence>
   );
 };
