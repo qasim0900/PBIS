@@ -27,13 +27,13 @@ except Exception as e:
     raise RuntimeError(f"Error DEBUG: {e}")
 
 try:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,www.pbinventory.cloud,pbinventory.cloud").split(",")
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "http://72.60.66.213").split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
 try:
     CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:5000").split(",")
+    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGIN", "http://72.60.66.213:5000").split(",")
     CORS_ALLOW_CREDENTIALS = True
     CORS_ALLOW_HEADERS = [
         "accept",
@@ -158,13 +158,7 @@ try:
                 "connect_timeout": 10,
                 "options": "-c default_transaction_isolation=read_committed"
             }
-    else:
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": BASE_DIR / "db.sqlite3",
-            }
-        }
+
 except Exception as e:
     raise RuntimeError(f"Error configuring DATABASES: {e}")
 
@@ -278,7 +272,7 @@ except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5000,https://www.pbinventory.cloud,https://pbinventory.cloud").split(",")
+    CSRF_TRUSTED_ORIGINS = 'http://72.60.66.213:5000'
     
     # Production security settings
     if not DEBUG:
@@ -293,4 +287,4 @@ try:
         CSRF_COOKIE_SECURE = True
         X_FRAME_OPTIONS = 'DENY'
 except Exception as e:
-    CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]
+    CSRF_TRUSTED_ORIGINS = ["http://72.60.66.213:5000"]
