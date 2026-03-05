@@ -27,7 +27,7 @@ except Exception as e:
     raise RuntimeError(f"Error DEBUG: {e}")
 
 try:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,www.pbinventory.cloud,pbinventory.cloud").split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
@@ -278,7 +278,7 @@ except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5000").split(",")
+    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5000,https://www.pbinventory.cloud,https://pbinventory.cloud").split(",")
     
     # Production security settings
     if not DEBUG:
