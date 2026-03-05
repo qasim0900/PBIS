@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { showNotification } from '../../api/uiSlice.js';
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -46,25 +45,16 @@ const Login = () => {
   );
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-      >
-        <LoginDesign
-          username={username}
-          setUsername={setUsername}
-          password={password}
-          setPassword={setPassword}
-          showPassword={showPassword}
-          setShowPassword={setShowPassword}
-          handleSubmit={handleSubmit}
-          loading={loading}
-        />
-      </motion.div>
-    </AnimatePresence>
+    <LoginDesign
+      username={username}
+      setUsername={setUsername}
+      password={password}
+      setPassword={setPassword}
+      showPassword={showPassword}
+      setShowPassword={setShowPassword}
+      handleSubmit={handleSubmit}
+      loading={loading}
+    />
   );
 };
 

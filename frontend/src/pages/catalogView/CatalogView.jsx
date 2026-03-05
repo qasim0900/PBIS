@@ -7,7 +7,6 @@ import { fetchBrands } from '../BrandView/BrandSlice.js';
 import { fetchVendors } from '../VendorView/VendorSlice.js';
 import { fetchLocations } from '../locationView/locationsSlice.js';
 import { fetchFrequencies } from '../FrequencyView/frequencySlice.js';
-import { fetchAllUnits } from './unitsSlice.js';
 import { AnimatePresence } from 'framer-motion';
 import {
   fetchAllItems,
@@ -30,7 +29,6 @@ const CatalogView = () => {
   const { locations } = useSelector((state) => state.locations);
   const { frequencies } = useSelector((state) => state.frequencies);
   const { brands } = useSelector((state) => state.brands);
-  const { units } = useSelector((state) => state.units);
   const { items, currentItem, loading } = useSelector((state) => state.inventory);
 
 
@@ -41,7 +39,6 @@ const CatalogView = () => {
   const emptyForm = {
     name: '',
     category: 'other',
-    unit: '',
     count_unit: '',
     order_unit: '',
     pack_size: 1,
@@ -68,7 +65,6 @@ const CatalogView = () => {
     dispatch(fetchVendors());
     dispatch(fetchFrequencies());
     dispatch(fetchBrands());
-    dispatch(fetchAllUnits());
   }, [dispatch]);
 
 
@@ -80,7 +76,6 @@ const CatalogView = () => {
     const requiredFields = [
       { key: "name", label: "Name" },
       { key: "category", label: "Category" },
-      { key: "unit", label: "Unit" },
       { key: "count_unit", label: "Count Unit" },
       { key: "order_unit", label: "Order Unit" },
       { key: "pack_size", label: "Pack Size" },
@@ -141,7 +136,6 @@ const CatalogView = () => {
     setFormData({
       name: item.name,
       category: item.category,
-      unit: item.unit,
       count_unit: item.count_unit,
       order_unit: item.order_unit,
       pack_size: item.pack_size,
@@ -151,7 +145,7 @@ const CatalogView = () => {
       default_vendor: item.default_vendor || item.vendor,
       par_level: item.par_level,
       order_point: item.order_point,
-      frequency: item.frequency,
+      frequency_name: item.frequency_name,
       notes: item.notes || '',
       is_active: item.is_active,
     });
@@ -217,7 +211,6 @@ const CatalogView = () => {
         locations={locations}
         vendors={vendors}
         brands={brands}
-        units={units}
       />
     </AnimatePresence>
   );

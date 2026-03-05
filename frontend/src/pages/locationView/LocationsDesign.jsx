@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import TableView from '../../components/template';
 import LocationForm from '../../components/forms/LocationForm';
-import { Add, LocationOn, Schedule, Code, Close } from '@mui/icons-material';
+import { Add, LocationOn, Schedule, Code, Close, Edit } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -15,15 +16,15 @@ import {
     MenuItem,
 } from '@mui/material';
 
+//---------------------------------------
+// :: Animations
+//---------------------------------------
+const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
+const scaleIn = { initial: { scale: 0.9, opacity: 0 }, animate: { scale: 1, opacity: 1 }, transition: { type: 'spring', duration: 0.3 } };
 
 //---------------------------------------
-// :: Locations Design Function
+// :: LocationsDesign Component
 //---------------------------------------
-
-
-/*
-A presentational component that renders the Locations table and a dialog form for creating or editing a location.
-*/
 
 export default function LocationsDesign({
     locations,
@@ -39,77 +40,41 @@ export default function LocationsDesign({
 }) {
     const [errors, setErrors] = useState({});
 
-
     //---------------------------------------
-    // :: useEffect Clean Function
+    // :: Clear errors on page click
     //---------------------------------------
-
-
-    /*
-    This `useEffect` clears form errors whenever the user clicks anywhere on the page.
-    */
-
     useEffect(() => {
-        const clear = () => setErrors({});
-        document.addEventListener('click', clear);
-        return () => document.removeEventListener('click', clear);
+        const clearErrors = () => setErrors({});
+        document.addEventListener('click', clearErrors);
+        return () => document.removeEventListener('click', clearErrors);
     }, []);
 
+    //---------------------------------------
+    // :: Update form field handler
+    //---------------------------------------
+    const updateForm = (key) => (e) => setFormData((prev) => ({ ...prev, [key]: e.target.value }));
 
     //---------------------------------------
-    // :: update Form Function
+    // :: Validate form
     //---------------------------------------
-
-
-    /*
-    This function returns an event handler that updates a specific form field in `formData` using the given key.
-    */
-
-    const updateForm = (key) => (e) =>
-        setFormData((prev) => ({ ...prev, [key]: e.target.value }));
-
-
-    //---------------------------------------
-    // :: validate Form Function
-    //---------------------------------------
-
-
-    /*
-    This function checks if the **frequency field is filled**, sets an error message if not, and returns `true` only if the form has **no errors**.
-    */
-
     const validateForm = () => {
         const err = {};
         if (!formData.frequency) err.frequency = 'Inventory List is required';
         setErrors(err);
-        return !Object.keys(err).length;
+        return Object.keys(err).length === 0;
     };
 
-
     //---------------------------------------
-    // :: handle Form Submit Function
+    // :: Handle form submission
     //---------------------------------------
-
-
-    /*
-    This function **prevents the default form submission**, validates the form, and only calls `handleSubmit()` if the validation passes.
-    */
-
     const handleFormSubmit = (e) => {
         e.preventDefault();
         if (validateForm()) handleSubmit();
     };
 
-
     //---------------------------------------
-    // :: columns List
+    // :: Table columns
     //---------------------------------------
-
-
-    /*
-    Defines table columns for Locations with custom renderers showing name, code, and timezone in styled UI components.
-    */
-
     const columns = [
         {
             header: 'Location',
@@ -134,57 +99,32 @@ export default function LocationsDesign({
         },
         {
             header: 'Code',
-            render: (row) => (
-                <Chip icon={<Code fontSize="small" />} label={row.code} size="small" />
-            ),
+            render: (row) => <Chip icon={<Code fontSize="small" />} label={row.code} size="small" />,
             align: 'center',
         },
         {
             header: 'Timezone',
-            render: (row) => (
-                <Chip icon={<Schedule fontSize="small" />} label={row.timezone} size="small" />
-            ),
+            render: (row) => <Chip icon={<Schedule fontSize="small" />} label={row.timezone} size="small" />,
             align: 'center',
         },
     ];
 
-
     //---------------------------------------
-    // :: actions Function
+    // :: Row actions
     //---------------------------------------
-
-
-    /*
-    Creates an "Edit" button for each row that opens the dialog pre-filled with the selected location's data.
-    */
-
     const actions = (row) => (
-        <Button
-            size="small"
-            variant="outlined"
-            onClick={() =>
-                openDialog({
-                    ...row,
-                    frequency: row.frequency,
-                })
-            }
-        >
-            Edit
-        </Button>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <IconButton size="small" color="primary" onClick={() => openDialog({ ...row, frequency: row.frequency })}>
+                <Edit fontSize="small" />
+            </IconButton>
+        </motion.div>
     );
 
-
     //---------------------------------------
-    // :: Return Code
+    // :: Render component
     //---------------------------------------
-
-
-    /*
-    Displays a locations table with add/edit functionality using a dialog form.
-    */
-
     return (
-        <>
+        <motion.div {...fadeIn}>
             <TableView
                 title="Locations"
                 subtitle={`Manage locations (${locations.length})`}
@@ -196,59 +136,79 @@ export default function LocationsDesign({
                 showRefresh
                 onRefresh={() => window.location.reload()}
                 extraHeaderActions={
-                    <Button variant="contained" startIcon={<Add />} onClick={() => openDialog()}>
-                        Add Location
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={() => openDialog()}
+                            sx={{
+                                background: 'linear-gradient(to right, #6366F1, #8B5CF6)',
+                                boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)',
+                            }}
+                        >
+                            Add Location
+                        </Button>
+                    </motion.div>
                 }
             />
 
-            <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>
-                    {editing ? 'Edit Location' : 'Add Location'}
-                    <IconButton
-                        onClick={closeDialog}
-                        sx={{ position: 'absolute', right: 8, top: 8 }}
-                    >
-                        <Close />
-                    </IconButton>
-                </DialogTitle>
+            <AnimatePresence>
+                {open && (
+                    <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>
+                        <motion.div {...scaleIn}>
+                            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        background: 'linear-gradient(to right, #4F46E5, #8B5CF6)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                    }}
+                                >
+                                    {editing ? 'Edit Location' : 'Add Location'}
+                                </Box>
+                                <IconButton onClick={closeDialog} size="small">
+                                    <Close />
+                                </IconButton>
+                            </DialogTitle>
 
-                <form onSubmit={handleFormSubmit}>
-                    <DialogContent dividers>
-                        <Box mb={2}>
-                            <TextField
-                                select
-                                fullWidth
-                                label="Inventory List *"
-                                value={formData.frequency || ''}
-                                onChange={updateForm('frequency')}
-                                error={!!errors.frequency}
-                                helperText={errors.frequency}
-                            >
-                                <MenuItem value="">— Select Inventory List —</MenuItem>
-                                {frequencies?.map((f) => (
-                                    <MenuItem key={f.id} value={f.id}>
-                                        {f.frequency_name}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
-                        </Box>
+                            <form onSubmit={handleFormSubmit}>
+                                <DialogContent dividers>
+                                    <Box sx={{ mb: 2 }}>
+                                        <TextField
+                                            select
+                                            fullWidth
+                                            label="Inventory List *"
+                                            value={formData.frequency || ''}
+                                            onChange={updateForm('frequency')}
+                                            error={!!errors.frequency}
+                                            helperText={errors.frequency}
+                                        >
+                                            <MenuItem value="">— Select Inventory List —</MenuItem>
+                                            {frequencies?.map((f) => (
+                                                <MenuItem key={f.id} value={f.id}>
+                                                    {f.frequency_name}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Box>
 
-                        <LocationForm
-                            values={formData}
-                            onChange={setFormData}
-                            errors={errors}
-                        />
-                    </DialogContent>
+                                    <LocationForm values={formData} onChange={setFormData} errors={errors} />
+                                </DialogContent>
 
-                    <DialogActions>
-                        <Button onClick={closeDialog}>Cancel</Button>
-                        <Button type="submit" variant="contained">
-                            {editing ? 'Update' : 'Create'}
-                        </Button>
-                    </DialogActions>
-                </form>
-            </Dialog>
-        </>
+                                <DialogActions>
+                                    <Button onClick={closeDialog}>Cancel</Button>
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                        <Button type="submit" variant="contained">
+                                            {editing ? 'Update' : 'Create'}
+                                        </Button>
+                                    </motion.div>
+                                </DialogActions>
+                            </form>
+                        </motion.div>
+                    </Dialog>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 }

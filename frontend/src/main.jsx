@@ -6,6 +6,7 @@ import { CssBaseline } from '@mui/material';
 import store, { persistor } from './index.js';
 import AppLoading from './components/AppLoading';
 import { PersistGate } from 'redux-persist/integration/react';
+import './index.css';
 
 
 //--------------------------------

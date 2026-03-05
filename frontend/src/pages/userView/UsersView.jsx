@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import TableView from '../../components/template';
 import AppLoading from '../../components/AppLoading';
 import { showNotification } from '../../api/uiSlice';
@@ -8,21 +9,12 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Add, Edit, CheckCircle, PersonOff } from '@mui/icons-material';
 import { fetchUsers, createUser, updateUser, setSelectedUser } from './usersSlice';
 
-
-//---------------------------------------
-// :: UsersView Component
-//---------------------------------------
-
+const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
 
 const UsersView = () => {
   const dispatch = useDispatch();
   const { users = [], loading, selectedUser } = useSelector(s => s.users);
   const { user: currentUser } = useSelector(s => s.auth);
-
-  //---------------------------------------
-  // :: Local State
-  //---------------------------------------
-
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,11 +24,6 @@ const UsersView = () => {
     password: '',
     confirmPassword: ''
   });
-
-  //---------------------------------------
-  // :: Dialog Handlers
-  //---------------------------------------
-
 
   const openDialog = useCallback((user = null) => {
     dispatch(setSelectedUser(user));
@@ -53,12 +40,6 @@ const UsersView = () => {
     dispatch(setSelectedUser(null));
     setFormData({ username: '', email: '', role: 'staff', password: '', confirmPassword: '' });
   }, [dispatch]);
-
-
-
-  //---------------------------------------
-  // :: Submit Handler
-  //---------------------------------------
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
@@ -95,14 +76,6 @@ const UsersView = () => {
     }
   }, [dispatch, formData, selectedUser, closeDialog]);
 
-
-
-  //---------------------------------------
-  // :: Toggle User Active Status
-  //---------------------------------------
-
-
-
   const toggleUserStatus = useCallback(async (user) => {
     try {
       await dispatch(updateUser({ id: user.id, data: { is_active: !user.is_active } })).unwrap();
@@ -112,22 +85,9 @@ const UsersView = () => {
     }
   }, [dispatch]);
 
-
-  //---------------------------------------
-  // :: Initial Fetch
-  //---------------------------------------
-
-
   useEffect(() => {
     dispatch(fetchUsers());
   }, [dispatch]);
-
-
-
-  //---------------------------------------
-  // :: Stats & Helpers
-  //---------------------------------------
-
 
   const stats = useMemo(() => ({
     total: users.length,
@@ -136,33 +96,28 @@ const UsersView = () => {
     staff: users.filter(u => u.role === 'staff').length
   }), [users]);
 
-  //---------------------------------------
-  // :: Table Columns
-  //---------------------------------------
-
-
   const getRoleInfo = useCallback(role => ROLES.find(r => r.value === role) || ROLES[2], []);
   const getInitials = useCallback(name => name?.slice(0, 2).toUpperCase() || 'U', []);
-
-  //---------------------------------------
-  // :: Table Columns
-  //---------------------------------------
-
 
   const columns = useMemo(() => [
     {
       header: 'User',
       render: row => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, opacity: row.is_active ? 1 : 0.5 }}>
-          <Box sx={{
-            bgcolor: `${getRoleInfo(row.role).color}.main`,
-            opacity: row.is_active ? 1 : 0.4,
-            borderRadius: '50%', width: 40, height: 40,
-            display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>{getInitials(row.username)}</Box>
+        <Box className="flex items-center gap-3" sx={{ opacity: row.is_active ? 1 : 0.5 }}>
+          <Box 
+            className="rounded-full w-10 h-10 flex items-center justify-center text-white font-bold"
+            sx={{
+              bgcolor: `${getRoleInfo(row.role).color}.main`,
+              opacity: row.is_active ? 1 : 0.4,
+            }}
+          >
+            {getInitials(row.username)}
+          </Box>
           <Box>
-            <Box sx={{ fontWeight: 600, color: row.is_active ? 'text.primary' : 'text.disabled' }}>{row.username}</Box>
-            <Box sx={{ color: 'text.secondary' }}>{row.email}</Box>
+            <Box className="font-semibold" sx={{ color: row.is_active ? 'text.primary' : 'text.disabled' }}>
+              {row.username}
+            </Box>
+            <Box className="text-sm text-gray-500">{row.email}</Box>
           </Box>
         </Box>
       )
@@ -188,53 +143,62 @@ const UsersView = () => {
     }
   ], [getRoleInfo, getInitials]);
 
-  //---------------------------------------
-  // :: Render
-  //---------------------------------------
-
-  // Show loading screen when initial data is being fetched
   if (loading && users.length === 0) {
     return <AppLoading />;
   }
 
   return (
-    <Box>
-      <TableView
-        title="User Management"
-        subtitle="Manage user accounts and permissions"
-        columns={columns}
-        data={users}
-        loading={loading}
-        summaryCards={getStatsCards(stats)}
-        extraHeaderActions={
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => openDialog()}
-            sx={{ background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)' }}
-          >Add User</Button>
-        }
-        actions={row => (
-          <>
-            <IconButton size="small" color="primary" onClick={() => openDialog(row)}><Edit fontSize="small" /></IconButton>
-            <IconButton
-              size="small"
-              color={row.is_active ? 'warning' : 'success'}
-              onClick={() => toggleUserStatus(row)}
-              disabled={row.id === currentUser.id}
-            >{row.is_active ? <PersonOff /> : <CheckCircle />}</IconButton>
-          </>
-        )}
-      />
-      <UserDialog
-        open={dialogOpen}
-        onClose={closeDialog}
-        onSubmit={handleSubmit}
-        formData={formData}
-        setFormData={setFormData}
-        selectedUser={selectedUser}
-      />
-    </Box>
+    <motion.div {...fadeIn}>
+      <Box>
+        <TableView
+          title="User Management"
+          subtitle="Manage user accounts and permissions"
+          columns={columns}
+          data={users}
+          loading={loading}
+          summaryCards={getStatsCards(stats)}
+          extraHeaderActions={
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => openDialog()}
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg hover:shadow-xl transition-shadow"
+              >
+                Add User
+              </Button>
+            </motion.div>
+          }
+          actions={row => (
+            <Box className="flex gap-2">
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <IconButton size="small" color="primary" onClick={() => openDialog(row)}>
+                  <Edit fontSize="small" />
+                </IconButton>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <IconButton
+                  size="small"
+                  color={row.is_active ? 'warning' : 'success'}
+                  onClick={() => toggleUserStatus(row)}
+                  disabled={row.id === currentUser.id}
+                >
+                  {row.is_active ? <PersonOff /> : <CheckCircle />}
+                </IconButton>
+              </motion.div>
+            </Box>
+          )}
+        />
+        <UserDialog
+          open={dialogOpen}
+          onClose={closeDialog}
+          onSubmit={handleSubmit}
+          formData={formData}
+          setFormData={setFormData}
+          selectedUser={selectedUser}
+        />
+      </Box>
+    </motion.div>
   );
 };
 

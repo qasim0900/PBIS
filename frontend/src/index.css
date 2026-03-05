@@ -1,39 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @theme {
-  --color-primary: #A855F7;
-  --color-primary-light: #D8B4FE;
-  --color-primary-dark: #6B21A8;
-  --color-secondary: #22D3EE;
-  --color-accent-magenta: #EC4899;
-  --color-accent-gold: #FACC15;
-  --color-dark-purple: #6B21A8;
-  --color-light-purple: #D8B4FE;
-  --color-teal: #22D3EE;
-  --color-magenta: #EC4899;
+  --color-primary: #6d28d9;
+  --color-primary-light: #8b5cf6;
+  --color-primary-dark: #4c1d95;
+  --color-secondary: #ffffff;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+  --color-background: #f3f4f6;
+  --color-surface: #ffffff;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4b5563;
+  --color-border: #e5e7eb;
 }
 
-@layer base {
-  html, body {
-    @apply bg-gray-100 text-gray-900;
-    background-attachment: fixed;
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+::selection {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #4f46e5;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%);
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 40px rgba(99, 102, 241, 0.15);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-[#7c3aed] hover:bg-[#6d28d9] text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95;
-  }
-  
-  .btn-secondary {
-    @apply bg-[#06b6d4] hover:bg-[#0891b2] text-white font-semibold py-2.5 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-xl hover:scale-105 active:scale-95;
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
   }
 
-  .card-pbis {
-    @apply bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden;
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.4s ease-out forwards;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
   }
 
-  .nav-gradient {
-    background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
+  50% {
+    opacity: 0.5;
   }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.page-transition {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.btn-primary {
+  @apply text-white px-6 py-3 rounded-lg font-semibold transition-all disabled:opacity-50 shadow-md hover:shadow-lg active:scale-95;
+  background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%);
+}
+
+.btn-success {
+  @apply bg-success text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-600 transition-all shadow-md;
+}
+
+.btn-danger {
+  @apply bg-danger text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-600 transition-all shadow-md;
+}
+
+.btn-warning {
+  @apply bg-warning text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-yellow-400 transition-all shadow-md;
+}
+
+.input-field {
+  @apply w-full px-4 py-3 text-base md:text-lg border-2 border-gray-200 rounded-xl focus:border-primary focus:outline-none transition-all bg-white;
+}
+
+.card {
+  @apply bg-white rounded-2xl shadow-lg p-4 md:p-6 border border-gray-100 transition-all hover:shadow-xl hover:-translate-y-1;
+  background-image: linear-gradient(to bottom right, #ffffff, #f9fafb);
+}
+
+.gradient-bg {
+  background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%);
+}
+
+.btn-primary {
+  @apply text-white px-6 py-3 rounded-lg font-semibold transition-all disabled:opacity-50 shadow-md hover:shadow-lg active:scale-95;
+  background: linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%);
+}
+
+.btn-success {
+  @apply bg-emerald-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-emerald-600 transition-all shadow-md active:scale-95;
+}
+
+.btn-danger {
+  @apply bg-rose-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-rose-600 transition-all shadow-md active:scale-95;
+}
+
+.btn-warning {
+  @apply bg-amber-400 text-gray-900 px-6 py-3 rounded-lg font-semibold hover:bg-amber-500 transition-all shadow-md active:scale-95;
 }

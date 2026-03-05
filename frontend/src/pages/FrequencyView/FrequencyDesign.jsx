@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import TableView from '../../components/template';
-import { Add, Close } from '@mui/icons-material';
+import { Add, Close, Edit } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -10,17 +11,21 @@ import {
     DialogActions,
     IconButton,
     TextField,
-    MenuItem,
 } from '@mui/material';
 
+//---------------------------------------
+// :: Animations
+//---------------------------------------
+const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
+const scaleIn = { initial: { scale: 0.95, opacity: 0 }, animate: { scale: 1, opacity: 1 }, transition: { type: 'spring', duration: 0.3 } };
 
 //---------------------------------------
-// :: FrequencyDesign function
+// :: FrequencyDesign Function
 //---------------------------------------
 
 /*
-FrequencyDesign provides a UI for listing, creating, and editing count 
-frequencies with validation for recurrence or day range selection
+FrequencyDesign provides a UI for listing, creating, and editing inventory frequencies
+with validation and animated dialogs for better UX.
 */
 
 export default function FrequencyDesign({
@@ -35,57 +40,29 @@ export default function FrequencyDesign({
     handleSubmit,
 }) {
     const [errors, setErrors] = useState({});
-    const isRecurrenceSelected = false;
-    const isDayRangeSelected = false;
-
 
     //---------------------------------------
-    // :: useEffect Dispatch Function
+    // :: useEffect to clear errors
     //---------------------------------------
-
-    /*
-    This useEffect clears form errors whenever the user clicks anywhere on the page.
-    */
-
     useEffect(() => {
         const clearErrors = () => setErrors({});
         document.addEventListener('click', clearErrors);
         return () => document.removeEventListener('click', clearErrors);
     }, []);
 
-
     //---------------------------------------
     // :: validateForm Function
     //---------------------------------------
-
-    /*
-    This function validates the frequency form by ensuring Times Run is filled, and that the user
-     selects either a recurrence type or a valid start/end day range 
-    (but not both), then stores any errors for display.
-    */
-
     const validateForm = () => {
         const newErrors = {};
-
-        if (!formData.frequency_name) {
-            newErrors.frequency_name = 'Inventory List Name is required';
-        }
-
+        if (!formData.frequency_name) newErrors.frequency_name = 'Inventory List Name is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-
     //---------------------------------------
     // :: handleFormSubmit Function
     //---------------------------------------
-
-    /*
-    This function handles the form submission by preventing default behaviour, 
-    validating the input, preparing a payload (either with start/end days or recurrence type), 
-    and then calling `handleSubmit` to save the frequency.
-    */
-
     const handleFormSubmit = (e) => {
         e.preventDefault();
         if (!validateForm()) return;
@@ -98,46 +75,30 @@ export default function FrequencyDesign({
         handleSubmit(payload);
     };
 
-
     //---------------------------------------
-    // :: columns List
+    // :: columns for TableView
     //---------------------------------------
-
-    /*
-    This `columns` array defines the table structure, mapping each frequency field to a column
-    header and formatting the displayed values (including converting day codes to labels).
-    */
-
     const columns = [
-        { header: 'Inventory List', render: row => row.frequency_name || '—' },
-        { header: 'Description', render: row => row.description || '—' },
+        { header: 'Inventory List', render: (row) => row.frequency_name || '—' },
+        { header: 'Description', render: (row) => row.description || '—' },
     ];
 
     //---------------------------------------
-    // :: actions Function
+    // :: actions for TableView rows
     //---------------------------------------
-
-    /*
-    This `actions` function renders an **Edit** button for each table row, opening the dialog pre-filled with that row’s data.
-    */
-
     const actions = (row) => (
-        <Button size="small" variant="outlined" onClick={() => openDialog(row)}>
-            Edit
-        </Button>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <IconButton size="small" color="primary" onClick={() => openDialog(row)}>
+                <Edit fontSize="small" />
+            </IconButton>
+        </motion.div>
     );
 
-
     //---------------------------------------
-    // :: Return Code
+    // :: Render Component
     //---------------------------------------
-
-    /*
-    A table-based interface to manage count frequencies, with add/edit dialog functionality and validation.
-    */
-
     return (
-        <>
+        <motion.div {...fadeIn}>
             <TableView
                 title="Count Inventory List"
                 subtitle={`Manage count Inventory List (${frequencies.length})`}
@@ -149,71 +110,68 @@ export default function FrequencyDesign({
                 showRefresh
                 onRefresh={() => window.location.reload()}
                 extraHeaderActions={
-                    <Button variant="contained" startIcon={<Add />} onClick={() => openDialog()}>
-                        Add Inventory List
-                    </Button>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={() => openDialog()}
+                            sx={{ background: 'linear-gradient(to right, #6366F1, #8B5CF6)', boxShadow: '0 4px 14px rgba(124, 58, 237, 0.3)' }}
+                        >
+                            Add Inventory List
+                        </Button>
+                    </motion.div>
                 }
             />
 
-            <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>
-                <DialogTitle>
-                    {editing ? 'Edit Inventory List' : 'Add New Inventory List'}
-                    <IconButton
-                        onClick={() => {
-                            setErrors({});
-                            closeDialog();
-                        }}
-                        sx={{ position: 'absolute', right: 8, top: 8 }}
-                    >
-                        <Close />
-                    </IconButton>
-                </DialogTitle>
+            <AnimatePresence>
+                {open && (
+                    <Dialog open={open} onClose={closeDialog} maxWidth="sm" fullWidth>
+                        <motion.div {...scaleIn}>
+                            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ fontWeight: 'bold', background: 'linear-gradient(to right, #4F46E5, #8B5CF6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                    {editing ? 'Edit Inventory List' : 'Add New Inventory List'}
+                                </Box>
+                                <IconButton onClick={() => { setErrors({}); closeDialog(); }} size="small">
+                                    <Close />
+                                </IconButton>
+                            </DialogTitle>
 
-                <form onSubmit={handleFormSubmit} noValidate>
-                    <DialogContent dividers>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+                            <form onSubmit={handleFormSubmit} noValidate>
+                                <DialogContent dividers>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+                                        <TextField
+                                            label="Inventory List Name"
+                                            value={formData.frequency_name || ''}
+                                            onChange={(e) => setFormData({ ...formData, frequency_name: e.target.value })}
+                                            fullWidth
+                                            required
+                                            error={!!errors.frequency_name}
+                                            helperText={errors.frequency_name}
+                                        />
+                                        <TextField
+                                            label="Description"
+                                            value={formData.description || ''}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            fullWidth
+                                            multiline
+                                            rows={3}
+                                        />
+                                    </Box>
+                                </DialogContent>
 
-                            <TextField
-                                label="Inventory List Name"
-                                value={formData.frequency_name || ''}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, frequency_name: e.target.value })
-                                }
-                                fullWidth
-                                required
-                                error={!!errors.frequency_name}
-                                helperText={errors.frequency_name}
-                            />
-
-                            <TextField
-                                label="Description"
-                                value={formData.description || ''}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, description: e.target.value })
-                                }
-                                fullWidth
-                                multiline
-                                rows={3}
-                            />
-
-                        </Box>
-                    </DialogContent>
-
-                    <DialogActions>
-                        <Button
-                            onClick={() => {
-                                setErrors({});
-                                closeDialog();
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button type="submit" variant="contained">
-                            {editing ? 'Update' : 'Create'}
-                        </Button>
-                    </DialogActions>
-                </form>
-            </Dialog>
-        </>
+                                <DialogActions>
+                                    <Button onClick={() => { setErrors({}); closeDialog(); }}>Cancel</Button>
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                        <Button type="submit" variant="contained">
+                                            {editing ? 'Update' : 'Create'}
+                                        </Button>
+                                    </motion.div>
+                                </DialogActions>
+                            </form>
+                        </motion.div>
+                    </Dialog>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 }

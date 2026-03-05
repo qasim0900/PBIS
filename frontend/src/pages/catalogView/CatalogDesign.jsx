@@ -1,5 +1,6 @@
+import { motion, AnimatePresence } from 'framer-motion';
 import TableView from '../../components/template';
-import { Add, Inventory, Close } from '@mui/icons-material';
+import { Add, Inventory, Close, Edit } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -11,39 +12,34 @@ import {
     TextField,
     MenuItem,
     IconButton,
-    Grid,
-    Typography,
 } from '@mui/material';
-import UnitSelect from '../../components/forms/UnitSelect.jsx';
-import { MotionBox, MotionButton, modalVariants, hoverProps, containerVariants } from '../../components/MotionComponents.jsx';
-
 
 //-----------------------------------
-// :: CATEGORIES Color
+// :: Motion Variants
 //-----------------------------------
+const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } };
+const scaleIn = { initial: { scale: 0.9, opacity: 0 }, animate: { scale: 1, opacity: 1 }, transition: { type: 'spring', duration: 0.3 } };
 
-/*
-This code defines a constant list of categories, where each category includes a value, a display label, and an associated colour, 
-typically used for UI elements such as dropdowns or tags.
-*/
-
+//-----------------------------------
+// :: Categories
+//-----------------------------------
 const CATEGORIES = [
-    { value: 'frozen_fruit', label: 'Frozen Fruit', color: '#6B21A8' },
-    { value: 'supplements', label: 'Supplements', color: '#A855F7' },
-    { value: 'liquids', label: 'Liquids', color: '#22D3EE' },
-    { value: 'fresh_produce', label: 'Fresh Produce', color: '#10B981' },
-    { value: 'dry_stock', label: 'Dry Stock', color: '#FACC15' },
-    { value: 'cp_juices', label: 'CP Juices', color: '#EC4899' },
-    { value: 'shots', label: 'Shots', color: '#D8B4FE' },
-    { value: 'packaging', label: 'Packaging', color: '#6B21A8' },
-    { value: 'supplies', label: 'Supplies', color: '#22D3EE' },
-    { value: 'misc_items', label: 'Misc. Items', color: '#A855F7' },
-    { value: 'other', label: 'Other', color: '#9CA3AF' },
+    { value: 'frozen_fruit', label: 'Frozen Fruit' },
+    { value: 'supplements', label: 'Supplements' },
+    { value: 'liquids', label: 'Liquids' },
+    { value: 'fresh_produce', label: 'Fresh Produce' },
+    { value: 'dry_stock', label: 'Dry Stock' },
+    { value: 'cp_juices', label: 'CP Juices' },
+    { value: 'shots', label: 'Shots' },
+    { value: 'packaging', label: 'Packaging' },
+    { value: 'supplies', label: 'Supplies' },
+    { value: 'misc_items', label: 'Misc. Items' },
+    { value: 'other', label: 'Other' },
 ];
 
-
-
-
+//-----------------------------------
+// :: CatalogDesign Component
+//-----------------------------------
 const CatalogDesign = ({
     items,
     modalOpen,
@@ -59,32 +55,12 @@ const CatalogDesign = ({
     vendors,
     brands,
     frequencies,
-    units,
 }) => {
-
-
-    //-----------------------------------
-    // :: getCategoryColor Function
-    //-----------------------------------
-
-    /*
-    This function returns the colour associated with a given category value from the `CATEGORIES` list, and defaults to
-     `#64748b` if the category is not found.
-    */
-
-    const getCategoryColor = (cat) =>
-        CATEGORIES.find((c) => c.value === cat)?.color || '#9CA3AF';
-
+    const getCategoryColor = (cat) => CATEGORIES.find((c) => c.value === cat)?.color || '#64748b';
 
     //-----------------------------------
-    // :: Columns List
+    // :: Table Columns
     //-----------------------------------
-
-    /*
-    This code defines the table columns for the inventory list, including a custom-rendered item column with category-based styling
-    and a status chip indicating whether each item is active.
-    */
-
     const columns = [
         {
             header: 'Item',
@@ -105,14 +81,11 @@ const CatalogDesign = ({
                     </Box>
                     <Box>
                         <Box fontWeight={600}>{row.name}</Box>
-                        <Box fontSize={13} color="text.secondary">
-                            {row.category_display}
-                        </Box>
+                        <Box fontSize={13} color="text.secondary">{row.category_display}</Box>
                     </Box>
                 </Box>
             ),
         },
-        { header: 'Unit', accessor: 'unit_display', align: 'center' },
         { header: 'Count Unit', accessor: 'count_unit', align: 'center' },
         { header: 'Order Unit', accessor: 'order_unit', align: 'center' },
         { header: 'Par Level', accessor: 'par_level', align: 'center' },
@@ -130,302 +103,120 @@ const CatalogDesign = ({
         },
     ];
 
+    //-----------------------------------
+    // :: Form Update Handler
+    //-----------------------------------
+    const updateForm = (key) => (e) => setFormData({ ...formData, [key]: e.target?.value ?? e });
 
     //-----------------------------------
-    // :: Return Code
+    // :: Render
     //-----------------------------------
-
-    /*
-    This code renders a searchable inventory table with add/edit actions and a modal dialog 
-    containing a form for creating or updating inventory items.
-    */
-
     return (
-        <MotionBox
-            component="div"
-            initial="hidden"
-            animate="visible"
-            variants={containerVariants}
-        >
+        <motion.div {...fadeIn}>
+            {/* Inventory Table */}
             <TableView
                 title="Inventory Items"
                 subtitle={`Total items: ${items.length}`}
                 columns={columns}
                 data={items}
                 actions={(row) => (
-                    <MotionButton
-                        component={Button}
-                        size="small"
-                        onClick={() => openEditModal(row)}
-                        variant="outlined"
-                        color="primary"
-                        {...hoverProps}
-                    >
-                        Edit
-                    </MotionButton>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <IconButton size="small" color="primary" onClick={() => openEditModal(row)}>
+                            <Edit fontSize="small" />
+                        </IconButton>
+                    </motion.div>
                 )}
                 extraHeaderActions={
-                    <MotionButton
-                        component={Button}
-                        variant="contained"
-                        color="primary"
-                        startIcon={<Add />}
-                        onClick={openAddModal}
-                        {...hoverProps}
-                    >
-                        Add Item
-                    </MotionButton>
+                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={openAddModal}
+                            sx={{ background: 'linear-gradient(90deg,#6366f1,#9333ea)', boxShadow: 3 }}
+                        >
+                            Add Item
+                        </Button>
+                    </motion.div>
                 }
                 searchable
                 showRefresh
             />
-            <Dialog
-                open={modalOpen}
-                onClose={() => setModalOpen(false)}
-                maxWidth="sm"
-                fullWidth
-                PaperProps={{
-                    component: MotionBox,
-                    variants: modalVariants,
-                    initial: "hidden",
-                    animate: "visible",
-                    exit: "exit"
-                }}
-            >
-                <DialogTitle>
-                    <Typography variant="h6" component="div">
-                        {currentItem ? 'Edit Item' : 'Add Item'}
-                    </Typography>
-                    <IconButton
-                        onClick={() => setModalOpen(false)}
-                        sx={{ position: 'absolute', right: 8, top: 8 }}
-                        {...hoverProps}
-                    >
-                        <Close />
-                    </IconButton>
-                </DialogTitle>
 
-                <DialogContent dividers>
-                    <MotionBox
-                        component={Grid}
-                        container
-                        spacing={2}
-                        mt={1}
-                        initial="hidden"
-                        animate="visible"
-                        variants={containerVariants}
-                    >
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                                required
-                            />
-                        </Grid>
+            {/* Add/Edit Dialog */}
+            <AnimatePresence>
+                {modalOpen && (
+                    <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
+                        <motion.div {...scaleIn}>
+                            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Box sx={{ fontWeight: 'bold', background: 'linear-gradient(90deg,#4f46e5,#8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                                    {currentItem ? 'Edit Item' : 'Add Item'}
+                                </Box>
+                                <IconButton onClick={() => setModalOpen(false)} size="small">
+                                    <Close />
+                                </IconButton>
+                            </DialogTitle>
 
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                select
-                                label="Category"
-                                value={formData.category}
-                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            >
-                                {CATEGORIES.map((c) => (
-                                    <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
+                            <DialogContent dividers>
+                                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={2}>
+                                    <TextField
+                                        label="Name"
+                                        value={formData.name}
+                                        onChange={updateForm('name')}
+                                        fullWidth
+                                        sx={{ gridColumn: '1 / -1' }}
+                                    />
+                                    <TextField select label="Category" value={formData.category} onChange={updateForm('category')}>
+                                        {CATEGORIES.map(c => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
+                                    </TextField>
+                                    <TextField select label="Location" value={formData.location} onChange={updateForm('location')}>
+                                        {(locations || []).map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
+                                    </TextField>
+                                    <TextField label="Count Unit" value={formData.count_unit} onChange={updateForm('count_unit')} />
+                                    <TextField label="Order Unit" value={formData.order_unit} onChange={updateForm('order_unit')} />
+                                    <TextField select label="Inventory List" value={formData.frequency || ''} onChange={updateForm('frequency')}>
+                                        <MenuItem value="">— Select Inventory List —</MenuItem>
+                                        {(frequencies || []).map(f => <MenuItem key={f.id} value={f.id}>{f.frequency_name}</MenuItem>)}
+                                    </TextField>
+                                    <TextField select label="Vendor" value={formData.vendor || ''} onChange={(e) => {
+                                        const vendorId = e.target.value;
+                                        setFormData(prev => ({ ...prev, vendor: vendorId, default_vendor: vendorId }));
+                                    }}>
+                                        <MenuItem value="">— Select Vendor —</MenuItem>
+                                        {(vendors || []).map(v => <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>)}
+                                    </TextField>
+                                    <TextField select label="Brand" value={formData.brand || ''} onChange={updateForm('brand')}>
+                                        <MenuItem value="">— Select Brand —</MenuItem>
+                                        {(brands || []).map(b => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
+                                    </TextField>
+                                    <TextField label="Par Level" type="number" value={formData.par_level} onChange={updateForm('par_level')} />
+                                    <TextField label="Order Point" type="number" value={formData.order_point} onChange={updateForm('order_point')} />
+                                    <TextField label="Storage Location" value={formData.storage_location} onChange={updateForm('storage_location')} />
+                                    <TextField
+                                        label="Notes"
+                                        value={formData.notes || ''}
+                                        onChange={updateForm('notes')}
+                                        fullWidth
+                                        multiline
+                                        rows={3}
+                                        sx={{ gridColumn: '1 / -1' }}
+                                    />
+                                </Box>
+                            </DialogContent>
 
-                        <Grid item xs={12} sm={6}>
-                            <UnitSelect
-                                label="Unit"
-                                value={formData.unit}
-                                onChange={(value) => setFormData({ ...formData, unit: value })}
-                                required
-                            />
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                select
-                                label="Location"
-                                value={formData.location}
-                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            >
-                                {(locations || []).map((l) => (
-                                    <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                label="Count Unit"
-                                value={formData.count_unit}
-                                onChange={(e) => setFormData({ ...formData, count_unit: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                label="Order Unit"
-                                value={formData.order_unit}
-                                onChange={(e) => setFormData({ ...formData, order_unit: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                select
-                                label="Inventory List"
-                                value={formData.frequency || ''}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, frequency: e.target.value })
-                                }
-                                fullWidth
-                                variant="outlined"
-                            >
-                                <MenuItem value="">— Select Inventory List —</MenuItem>
-                                {(frequencies || []).map((f) => (
-                                    <MenuItem key={f.id} value={f.id}>
-                                        {f.frequency_name}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                select
-                                label="Vendor"
-                                value={formData.vendor || ''}
-                                onChange={(e) => {
-                                    const vendorId = e.target.value;
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        vendor: vendorId,
-                                        default_vendor: vendorId,
-                                    }));
-                                }}
-                                fullWidth
-                                variant="outlined"
-                            >
-                                <MenuItem value="">— Select Vendor —</MenuItem>
-                                {(vendors || []).map(v => (
-                                    <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                select
-                                label="Brand"
-                                value={formData.brand || ''}
-                                onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            >
-                                <MenuItem value="">— Select Brand —</MenuItem>
-                                {(brands || []).map(b => (
-                                    <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                label="Par Level"
-                                type="number"
-                                value={formData.par_level}
-                                onChange={(e) => setFormData({ ...formData, par_level: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                            <TextField
-                                label="Order Point"
-                                type="number"
-                                value={formData.order_point}
-                                onChange={(e) => setFormData({ ...formData, order_point: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Storage Location"
-                                value={formData.storage_location}
-                                onChange={(e) => setFormData({ ...formData, storage_location: e.target.value })}
-                                fullWidth
-                                variant="outlined"
-                            />
-                        </Grid>
-
-                        <Grid item xs={12}>
-                            <TextField
-                                label="Notes"
-                                value={formData.notes || ''}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, notes: e.target.value })
-                                }
-                                fullWidth
-                                multiline
-                                rows={3}
-                                variant="outlined"
-                            />
-                        </Grid>
-                    </MotionBox>
-                </DialogContent>
-
-                <DialogActions sx={{ p: 3 }}>
-                    <MotionButton
-                        component={Button}
-                        onClick={() => setModalOpen(false)}
-                        variant="outlined"
-                        color="secondary"
-                        {...hoverProps}
-                    >
-                        Cancel
-                    </MotionButton>
-                    <MotionButton
-                        component={Button}
-                        variant="contained"
-                        color="primary"
-                        onClick={handleSave}
-                        disabled={saving}
-                        {...hoverProps}
-                    >
-                        {currentItem ? 'Update' : 'Create'}
-                    </MotionButton>
-                </DialogActions>
-            </Dialog>
-        </MotionBox>
+                            <DialogActions>
+                                <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <Button variant="contained" onClick={handleSave} disabled={saving}>
+                                        {currentItem ? 'Update' : 'Create'}
+                                    </Button>
+                                </motion.div>
+                            </DialogActions>
+                        </motion.div>
+                    </Dialog>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
-
-
-//-----------------------------------
-// :: Export CatalogDesign
-//-----------------------------------
-
-/*
-This line exports the `CatalogDesign` component as the default export from the file, allowing it to be 
-imported and used in other parts of the application.
-*/
 
 export default CatalogDesign;

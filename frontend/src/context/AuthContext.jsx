@@ -1,4 +1,4 @@
-import api from '../api/axiosConfig';
+import api, { setAuthCallbacks } from '../api/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector} from 'react-redux';
 import { createContext, useContext, useEffect, useCallback ,useMemo } from 'react';
@@ -9,6 +9,8 @@ import {
   logoutUser,
   loginUser,
 } from '../pages/loginView/authSlice';
+
+import { showNotification } from '../api/uiSlice';
 
 
 
@@ -88,6 +90,36 @@ export const AuthProvider = ({ children }) => {
     delete api.defaults.headers['Authorization'];
     navigate('/login', { replace: true });
   }, [dispatch, navigate]);
+
+
+  //---------------------------------------
+  // :: Show Notification function
+  //---------------------------------------
+
+  /*
+  Defines a `showNotificationAction` function that dispatches the `showNotification` action to display notifications.
+  */
+
+  const showNotificationAction = useCallback((notification) => {
+    dispatch(showNotification(notification));
+  }, [dispatch]);
+
+
+  //---------------------------------------
+  // :: Setup Auth Callbacks
+  //---------------------------------------
+
+  /*
+  Sets up the axios interceptor callbacks on mount to enable proper error handling and notifications.
+  */
+
+  useEffect(() => {
+    setAuthCallbacks({
+      refreshTokenAction: null, // Not used in current implementation
+      logoutAction: logout,
+      showNotificationAction: showNotificationAction,
+    });
+  }, [logout, showNotificationAction]);
 
 
   //---------------------------------------

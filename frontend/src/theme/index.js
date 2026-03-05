@@ -62,15 +62,75 @@ success, warning, error, info colors, background, text, and divider styles.
 let theme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: '#7c3aed', light: '#a78bfa', dark: '#5b21b6', contrastText: '#fff' },
-    secondary: { main: '#06b6d4', light: '#67e8f9', dark: '#0891b2', contrastText: '#fff' },
+    primary: { main: '#6d28d9', light: '#8b5cf6', dark: '#4c1d95', contrastText: '#fff' },
+    secondary: { main: '#ffffff', light: '#f9fafb', dark: '#f3f4f6', contrastText: '#1f2937' },
     success: { main: '#10b981', light: '#34d399', dark: '#059669' },
     warning: { main: '#f59e0b', light: '#fbbf24', dark: '#d97706' },
     error: { main: '#ef4444', light: '#f87171', dark: '#dc2626' },
     info: { main: '#3b82f6', light: '#60a5fa', dark: '#2563eb' },
-    background: { default: '#f1f5f9', paper: '#ffffff' },
-    text: { primary: '#0f172a', secondary: '#475569' },
-    divider: '#e2e8f0',
+    background: { default: '#f3f4f6', paper: '#ffffff' },
+    text: { primary: '#111827', secondary: '#4b5563' },
+    divider: '#e5e7eb',
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontWeight: 600,
+          padding: '10px 24px',
+          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+        },
+        containedPrimary: {
+          background: 'linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%)',
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 16,
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          border: '1px solid #e5e7eb',
+          backgroundImage: 'linear-gradient(to bottom right, #ffffff, #f9fafb)',
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(12px)',
+          color: '#111827',
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+          borderBottom: '1px solid #e5e7eb',
+        },
+      },
+    },
+  },
+
+
+  //---------------------------------------
+  // :: Responsive Breakpoints
+  //---------------------------------------
+
+  /*
+  Defines custom responsive breakpoints for mobile, tablet, and desktop layouts.
+  Mobile: < 768px, Tablet: 768px - 1023px, Desktop: >= 1024px
+  */
+
+  breakpoints: {
+    values: {
+      xs: 0,
+      sm: 768,   // mobile/tablet breakpoint
+      md: 1024,  // tablet/desktop breakpoint
+      lg: 1440,
+      xl: 1920,
+    },
   },
 
 

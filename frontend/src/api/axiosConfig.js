@@ -1,5 +1,4 @@
 import axios from "axios";
-import { showNotification } from "./uiSlice";
 
 //-----------------------------------
 // :: Base URL Configuration
@@ -10,7 +9,8 @@ This reads the API base URL from a Vite environment variable.
 If not provided, it falls back to the local development server.
 */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT) || 15000;
 
 //-----------------------------------
 // :: Token Refresh State
@@ -34,19 +34,22 @@ These callbacks are injected from outside (e.g., AuthProvider).
 They allow Axios to:
 - Refresh tokens
 - Logout the user when authentication fails
+- Show notifications to the user
 */
 
 let refreshTokenCallback = null;
 let logoutCallback = null;
+let notificationCallback = null;
 
 /*
 Registers authentication-related callbacks.
 Called once during app initialization.
 */
 
-export const setAuthCallbacks = ({ refreshTokenAction, logoutAction }) => {
+export const setAuthCallbacks = ({ refreshTokenAction, logoutAction, showNotificationAction }) => {
   refreshTokenCallback = refreshTokenAction;
   logoutCallback = logoutAction;
+  notificationCallback = showNotificationAction;
 };
 
 //-----------------------------------
@@ -78,7 +81,7 @@ Creates a preconfigured Axios instance with:
 
 const api = axios.create({
   baseURL: `${BASE_URL}/api`,
-  timeout: 15000,
+  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },
@@ -133,10 +136,12 @@ api.interceptors.response.use(
       ["User not found", "User deleted", "Invalid user"].includes(data?.detail)
     ) {
       if (logoutCallback) logoutCallback();
-      showNotification({
-        message: "Account issue. Logging out...",
-        type: "error",
-      });
+      if (notificationCallback) {
+        notificationCallback({
+          message: "Account issue. Logging out...",
+          type: "error",
+        });
+      }
       return Promise.reject(error);
     }
 
@@ -187,10 +192,12 @@ api.interceptors.response.use(
         localStorage.removeItem("refresh_token");
         if (logoutCallback) logoutCallback();
 
-        showNotification({
-          message: "Session expired. Please login again.",
-          type: "error",
-        });
+        if (notificationCallback) {
+          notificationCallback({
+            message: "Session expired. Please login again.",
+            type: "error",
+          });
+        }
 
         return Promise.reject(refreshError);
       } finally {
@@ -210,6 +217,7 @@ api.interceptors.response.use(
     const getErrorMessage = () => {
       if (data?.detail) return data.detail;
       if (data?.message) return data.message;
+      if (data?.error) return data.error;
       if (data?.non_field_errors?.[0]) return data.non_field_errors[0];
       if (data?.username?.[0]) return `Username: ${data.username[0]}`;
       if (data?.email?.[0]) return `Email: ${data.email[0]}`;
@@ -219,10 +227,12 @@ api.interceptors.response.use(
       return "Something went wrong. Please try again.";
     };
 
-    showNotification({
-      message: getErrorMessage(),
-      type: "error",
-    });
+    if (notificationCallback) {
+      notificationCallback({
+        message: getErrorMessage(),
+        type: "error",
+      });
+    }
 
     return Promise.reject(error);
   }

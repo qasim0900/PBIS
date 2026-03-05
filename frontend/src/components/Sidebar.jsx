@@ -31,109 +31,76 @@ import {
 import { selectSidebarCollapsed, setSidebarCollapsed } from '../api/uiSlice';
 import { selectIsManager, selectIsAdmin } from '../pages/loginView/authSlice';
 
-
-//---------------------------------------
-// :: DRAWER_WIDTH/ COLLAPSED_WIDTH
-//---------------------------------------
-
-/*
-Defines constants for the sidebar widths: `DRAWER_WIDTH` for the expanded state and `COLLAPSED_WIDTH` for the collapsed state.
-*/
-
 const DRAWER_WIDTH = 250;
 const COLLAPSED_WIDTH = 70;
 
+/* ---------------- Sidebar Menu Item ---------------- */
 
-//---------------------------------------
-// :: Sidebar Menu Item Function
-//---------------------------------------
+const SidebarMenuItem = React.memo(
+  ({ item, collapsed, isMobile, selected, onClick }) => (
+    <ListItemButton
+      onClick={onClick}
+      disableRipple
+      sx={{
+        px: collapsed && !isMobile ? 1 : 2,
+        justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+        borderRadius: 1,
+        mb: 0.5,
+        minHeight: 46,
+        alignItems: 'center',
+        transition: 'all 0.2s ease',
+        backgroundColor: selected ? 'rgba(255,255,255,0.06)' : 'transparent',
 
-/*
-A memoized sidebar menu item that displays an icon, text, and optional badge, adapting layout and tooltip based on collapse state
-and screen size, with hover and selection styling.
-*/
-
-const SidebarMenuItem = React.memo(({ item, collapsed, isMobile, selected, onClick }) => (
-  <ListItemButton
-    onClick={onClick}
-    selected={selected}
-    sx={{
-      px: collapsed && !isMobile ? 1 : 2,
-      justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
-      borderRadius: '16px',
-      mx: 1,
-      mb: 0.5,
-      minHeight: 48,
-      alignItems: 'center',
-      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-      position: 'relative',
-      color: selected ? '#FFFFFF' : '#EDE9FE',
-      backgroundColor: selected ? '#6B21A8' : 'transparent',
-      '&:hover': {
-        backgroundColor: 'rgba(168, 85, 247, 0.2)',
-        transform: 'translateX(8px) scale(1.02)',
-        '& .MuiListItemIcon-root': { color: '#22D3EE' },
-      },
-      '&.Mui-selected': {
-        backgroundColor: '#6B21A8',
-        color: '#FFFFFF',
-        boxShadow: '0 10px 15px -3px rgba(107, 70, 193, 0.3)',
         '&:hover': {
-          backgroundColor: '#A855F7',
+          backgroundColor: 'rgba(255,255,255,0.08)',
         },
-      },
-    }}
-  >
-    <Tooltip title={collapsed && !isMobile ? item.text : ''} placement="right">
-      <ListItemIcon
-        sx={{
-          color: selected ? '#22D3EE' : 'rgba(237, 233, 254, 0.7)',
-          minWidth: collapsed && !isMobile ? 0 : 40,
-          justifyContent: 'center',
-          transition: 'color 0.3s ease',
-        }}
-      >
-        {item.icon}
-      </ListItemIcon>
-    </Tooltip>
-
-    {(!collapsed || isMobile) && (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-        <ListItemText
-          primary={item.text}
-          primaryTypographyProps={{
-            fontSize: 14,
-            fontWeight: selected ? 600 : 500,
-            color: selected ? '#F9FAFB' : '#D1D5DB',
-            whiteSpace: 'nowrap',
+      }}
+    >
+      <Tooltip title={collapsed && !isMobile ? item.text : ''} placement="right">
+        <ListItemIcon
+          sx={{
+            color: selected ? '#FFFFFF' : 'rgba(255,255,255,0.6)',
+            minWidth: collapsed && !isMobile ? 0 : 38,
+            justifyContent: 'center',
+            transition: 'color 0.2s ease',
           }}
-        />
-        {item.badge && (
-          <Chip
-            label={item.badge}
-            size="small"
-            sx={{
-              height: 20,
-              fontSize: '0.65rem',
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              color: 'white',
-              borderRadius: 0,
+        >
+          {item.icon}
+        </ListItemIcon>
+      </Tooltip>
+
+      {(!collapsed || isMobile) && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+          <ListItemText
+            primary={item.text}
+            primaryTypographyProps={{
+              fontSize: 14,
+              fontWeight: selected ? 600 : 500,
+              color: selected ? '#FFFFFF' : '#D1D5DB',
+              whiteSpace: 'nowrap',
             }}
           />
-        )}
-      </Box>
-    )}
-  </ListItemButton>
-));
 
-//---------------------------------------
-// :: Sidebar Function
-//---------------------------------------
+          {item.badge && (
+            <Chip
+              label={item.badge}
+              size="small"
+              sx={{
+                height: 18,
+                fontSize: '0.65rem',
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.85)',
+                borderRadius: 1,
+              }}
+            />
+          )}
+        </Box>
+      )}
+    </ListItemButton>
+  )
+);
 
-/*
-A sidebar component that sets up responsive state, user roles, and memoized menu items with icons, 
-paths, and role-based access badges.
-*/
+/* ---------------- Sidebar Component ---------------- */
 
 const Sidebar = () => {
   const location = useLocation();
@@ -145,13 +112,7 @@ const Sidebar = () => {
   const isManager = useSelector(selectIsManager);
   const isAdmin = useSelector(selectIsAdmin);
 
-  //---------------------------------------
-  // :: menu Items 
-  //---------------------------------------
-
-  /*
-  A memoized array defining the sidebar menu items, each with text, icon, route path, allowed roles, and an optional badge.
-  */
+  /* -------- Menu Items -------- */
 
   const menuItems = useMemo(
     () => [
@@ -167,33 +128,20 @@ const Sidebar = () => {
     []
   );
 
-
-  //---------------------------------------
-  // :: has Access Function
-  //---------------------------------------
-
-  /*
-  A callback that checks if the current user has access to a menu item based on their role and the item’s allowed roles.
-  */
+  /* -------- Role Access -------- */
 
   const hasAccess = useCallback(
     (roles) => {
       if (roles.includes('all')) return true;
-      if (roles.includes('manager') && isManager) return true;
       if (roles.includes('admin') && isAdmin) return true;
+      if (roles.includes('manager') && isManager) return true;
+      if (roles.includes('user')) return true;
       return false;
     },
     [isManager, isAdmin]
   );
 
-
-  //---------------------------------------
-  // :: Handle Navigate Function
-  //---------------------------------------
-
-  /*
-  A callback that navigates to a given path and collapses the sidebar on mobile devices.
-  */
+  /* -------- Navigation -------- */
 
   const handleNavigate = useCallback(
     (path) => {
@@ -203,41 +151,15 @@ const Sidebar = () => {
     [navigate, isMobile, dispatch]
   );
 
-
-  //---------------------------------------
-  // :: Handle Close Function
-  //---------------------------------------
-
-  /*
-  A callback that blurs the currently focused element and collapses the sidebar.
-  */
-
   const handleClose = useCallback(() => {
-    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     dispatch(setSidebarCollapsed(true));
   }, [dispatch]);
 
+  const handleOpen = useCallback(() => {
+    dispatch(setSidebarCollapsed(false));
+  }, [dispatch]);
 
-  //---------------------------------------
-  // :: Handle Open Function
-  //---------------------------------------
-
-  /*
-  A callback that expands the sidebar by setting its collapsed state to `false`.
-  */
-
-  const handleOpen = useCallback(() => dispatch(setSidebarCollapsed(false)), [dispatch]);
-
-
-
-  //---------------------------------------
-  // :: Drawer Content Function
-  //---------------------------------------
-
-  /*
-  A memoized JSX block that renders the sidebar content, including a mobile header with close button, a filtered list of 
-  accessible menu items, and dividers, with padding and collapse handling.
-  */
+  /* -------- Drawer Content -------- */
 
   const drawerContent = (
     <>
@@ -252,7 +174,7 @@ const Sidebar = () => {
         </Box>
       )}
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
 
       <Box sx={{ flex: 1, py: 2, px: collapsed && !isMobile ? 1 : 2 }}>
         <List disablePadding>
@@ -273,14 +195,7 @@ const Sidebar = () => {
     </>
   );
 
-  //---------------------------------------
-  // :: Mobile View
-  //---------------------------------------
-
-  /*
-  Renders a `SwipeableDrawer` for mobile devices that opens or closes based on the sidebar 
-  state, with custom styling and the memoized drawer content.
-  */
+  /* -------- Mobile -------- */
 
   if (isMobile) {
     return (
@@ -289,16 +204,13 @@ const Sidebar = () => {
         open={!collapsed}
         onClose={handleClose}
         onOpen={handleOpen}
-        disableBackdropTransition={false}
-        disableDiscovery={false}
         ModalProps={{ keepMounted: true }}
         sx={{
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
-            background: 'linear-gradient(180deg, #6B21A8 0%, #4C1D95 100%)',
+            backgroundColor: '#1C2541',
             color: 'white',
             border: 'none',
-            transition: 'transform 0.35s ease-out',
           },
         }}
       >
@@ -307,14 +219,7 @@ const Sidebar = () => {
     );
   }
 
-  //---------------------------------------
-  // :: Return Code
-  //---------------------------------------
-
-  /*
-  Renders a permanent sidebar `Drawer` for desktop, adjusting its width based on 
-  collapse state with smooth transitions and styled background.
-  */
+  /* -------- Desktop -------- */
 
   return (
     <Drawer
@@ -323,11 +228,11 @@ const Sidebar = () => {
         width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
         '& .MuiDrawer-paper': {
           width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
-          background: 'linear-gradient(180deg, #6B21A8 0%, #4C1D95 100%)',
+          backgroundColor: '#1C2541',
           color: 'white',
           border: 'none',
           overflowX: 'hidden',
-          transition: 'width 0.35s ease-out',
+          transition: 'width 0.35s ease',
           mt: '64px',
         },
       }}
@@ -336,14 +241,5 @@ const Sidebar = () => {
     </Drawer>
   );
 };
-
-
-//---------------------------------------
-// :: Export Memo SideBar
-//---------------------------------------
-
-/*
-Exports the `Sidebar` component wrapped in `React.memo` to prevent unnecessary re-renders and optimise performance.
-*/
 
 export default React.memo(Sidebar);

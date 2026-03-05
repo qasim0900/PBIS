@@ -1,27 +1,33 @@
 import store from './index';
+import theme from './theme';
 import { Provider } from 'react-redux';
 import AppRoutes from './routes/AppRoutes';
 import Notification from './components/Notification';
+import { ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider as MuiThemeProvider, CssBaseline, Box } from '@mui/material';
-import theme from './theme/index.js';
+
+
+//--------------------------------
+// :: App Function
+//--------------------------------
+
+/*
+This defines the `App` component that **wraps the application with Redux for state management, 
+MUI Theme Provider for consistent styling, React Router for routing, renders all routes, 
+and includes a global notification system**.
+*/
 
 const App = () => (
   <Provider store={store}>
-      <MuiThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <AuthProvider>
-            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-              <Box sx={{ flex: 1 }}>
-                <AppRoutes />
-              </Box>
-            </Box>
-            <Notification />
-          </AuthProvider>
-        </Router>
-      </MuiThemeProvider>
+    <ThemeProvider theme={theme}>
+      <Router>
+        <AuthProvider>
+          <AppRoutes />
+          <Notification />
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   </Provider>
 );
 

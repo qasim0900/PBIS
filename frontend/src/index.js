@@ -22,7 +22,6 @@ import catalogReducer from "./pages/catalogView/catalogSlice";
 import inventoryReducer from "./pages/catalogView/catalogSlice";
 import locationsReducer from "./pages/locationView/locationsSlice";
 import frequencyReducer from "./pages/FrequencyView/frequencySlice";
-import unitsReducer from "./pages/catalogView/unitsSlice";
 
 //-----------------------------------
 // :: auth Persist Config Function
@@ -61,7 +60,6 @@ const appReducer = combineReducers({
     inventory: inventoryReducer,
     locations: locationsReducer,
     frequencies: frequencyReducer,
-    units: unitsReducer,
 });
 
 
@@ -106,7 +104,7 @@ const store = configureStore({
                 ],
             },
         }),
-    devTools: process.env.NODE_ENV !== "production",
+    devTools: import.meta.env.MODE !== "production",
 });
 
 //----------------------------------

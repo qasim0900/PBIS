@@ -1,6 +1,7 @@
+import { motion } from "framer-motion";
 import { Refresh } from "@mui/icons-material";
 import {
-    AppBar,
+    Paper,
     Box,
     IconButton,
     Toolbar,
@@ -34,57 +35,63 @@ const PageHeader = ({ title, subtitle, children, showRefresh, onRefresh }) => {
     */
 
     return (
-        <Box sx={{ mb: 0 }}>
-            <AppBar
-                position="static"
-                color="transparent"
+        <Box className="mb-6">
+            <Paper
                 elevation={0}
                 sx={{
-                    borderBottom: 1,
-                    borderColor: "divider",
-                    bgcolor: "background.paper",
+                    p: 3,
+                    borderRadius: 4,
+                    bgcolor: 'white',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    flexDirection: { xs: "column", md: "row" },
+                    alignItems: { xs: "flex-start", md: "center" },
+                    gap: 3,
                 }}
             >
-                <Toolbar
-                    sx={{
-                        flexDirection: { xs: "column", sm: "row" },
-                        alignItems: { xs: "flex-start", sm: "center" },
-                        py: 2,
-                        gap: 2,
-                    }}
-                >
-                    <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Typography
-                                variant={isMobile ? "h5" : "h4"}
-                                sx={{ fontWeight: 700, color: "text.primary" }}
-                            >
-                                {title}
-                            </Typography>
+                <Box sx={{ flexGrow: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        <Typography
+                            variant={isMobile ? "h5" : "h4"}
+                            sx={{ 
+                                fontWeight: 800, 
+                                color: "primary.main",
+                                letterSpacing: '-0.02em'
+                            }}
+                        >
+                            {title}
+                        </Typography>
 
-                            {showRefresh && (
-                                <IconButton onClick={onRefresh} size="small">
-                                    <Refresh fontSize="small" />
-                                </IconButton>
-                            )}
-                        </Box>
-
-                        {subtitle && (
-                            <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{ mt: 0.5 }}
+                        {showRefresh && (
+                            <IconButton 
+                                onClick={onRefresh} 
+                                size="small"
+                                sx={{ 
+                                    bgcolor: 'rgba(124, 58, 237, 0.05)',
+                                    '&:hover': { bgcolor: 'rgba(124, 58, 237, 0.1)' }
+                                }}
                             >
-                                {subtitle}
-                            </Typography>
+                                <Refresh fontSize="small" color="primary" />
+                            </IconButton>
                         )}
                     </Box>
 
-                    {children && (
-                        <Box sx={{ width: { xs: "100%", sm: "auto" } }}>{children}</Box>
+                    {subtitle && (
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ mt: 0.5, fontWeight: 500 }}
+                        >
+                            {subtitle}
+                        </Typography>
                     )}
-                </Toolbar>
-            </AppBar>
+                </Box>
+
+                {children && (
+                    <Box sx={{ width: { xs: "100%", md: "auto" } }}>{children}</Box>
+                )}
+            </Paper>
         </Box>
     );
 };

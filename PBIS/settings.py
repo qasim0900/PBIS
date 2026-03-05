@@ -27,14 +27,14 @@ except Exception as e:
     raise RuntimeError(f"Error DEBUG: {e}")
 
 try:
-    ALLOWED_HOSTS = ["*"]
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
 try:
-    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = os.getenv(
-        "CORS_ALLOWED_ORIGIN", "http://localhost:5000"
+        "CORS_ALLOWED_ORIGIN", "http://localhost:5001,http://localhost:3000"
     ).split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting CORS_ALLOWED_ORIGINS: {e}")
@@ -230,9 +230,10 @@ except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = [
-        "http://localhost:5000",
-    ]
+    csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5001,http://localhost:3000").split(",")
+    CSRF_TRUSTED_ORIGINS = csrf_origins
+    
+    # Add Replit domains if available
     replit_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
     if replit_domain:
         CSRF_TRUSTED_ORIGINS.append(f"https://{replit_domain}")
@@ -242,4 +243,4 @@ try:
         CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}.{replit_owner}.repl.co")
         CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}-00-{replit_owner}.repl.co")
 except Exception as e:
-    CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:5001"]

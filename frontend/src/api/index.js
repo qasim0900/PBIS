@@ -116,15 +116,25 @@ Manages inventory items by providing endpoints for
 listing items, creating new inventory records,
 retrieving item details, updating items,
 and deleting inventory entries.
+
+Also includes custom actions for quantity management:
+- addStock: Add stock to an item with optional unit conversion
+- updateQuantity: Update item quantity with optional unit conversion
+- processOrder: Process an order (deduct stock) with optional unit conversion
 */
 
 export const inventoryAPI = {
-  list: () => api.get("/inventory-items/"),
+  list: (params) => api.get("/inventory-items/", { params }),
   create: (data) => api.post("/inventory-items/create/", data),
   retrieve: (id) => api.get(`/inventory-items/${id}/`),
   update: (id, data) => api.put(`/inventory-items/${id}/update/`, data),
   patch: (id, data) => api.patch(`/inventory-items/${id}/update/`, data),
   remove: (id) => api.delete(`/inventory-items/${id}/delete/`),
+  
+  // Custom actions for quantity management
+  addStock: (id, data) => api.post(`/inventory-items/${id}/add-stock/`, data),
+  updateQuantity: (id, data) => api.post(`/inventory-items/${id}/update-quantity/`, data),
+  processOrder: (id, data) => api.post(`/inventory-items/${id}/process-order/`, data),
 };
 
 // -------------------------
@@ -142,25 +152,6 @@ export const frequenciesAPI = {
   create: (data) => api.post("/frequencies/create/", data),
   update: (id, data) => api.put(`/frequencies/${id}/update/`, data),
   patch: (id, data) => api.patch(`/frequencies/${id}/update/`, data),
-};
-
-// -------------------------
-// :: Units APIs
-// -------------------------
-
-/*
-Handles unit-related operations such as listing units,
-creating a unit, retrieving unit details,
-updating unit information, and deleting units.
-*/
-
-export const unitsAPI = {
-  list: () => api.get("/units/"),
-  create: (data) => api.post("/units/create/", data),
-  retrieve: (id) => api.get(`/units/${id}/`),
-  update: (id, data) => api.put(`/units/${id}/update/`, data),
-  patch: (id, data) => api.patch(`/units/${id}/update/`, data),
-  remove: (id) => api.delete(`/units/${id}/delete/`),
 };
 
 // -------------------------
@@ -208,5 +199,4 @@ export default {
   locationsAPI,
   inventoryAPI,
   frequenciesAPI,
-  unitsAPI,
 };

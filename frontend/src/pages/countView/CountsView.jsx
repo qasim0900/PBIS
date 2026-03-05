@@ -28,38 +28,36 @@ import {
   submitCountSheet,
 } from "./countsSlice";
 
-
 //-----------------------------------
 // :: CountsView Function
 //-----------------------------------
 
 /*
-A dashboard view that loads inventory sheets by location and frequency, tracks completion progress, 
+A dashboard view that loads inventory sheets by location and frequency, tracks completion progress,
 and submits completed counts to the report.
 */
 
 const CountsView = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const [locations, setLocations] = useState([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [localLoading, setLocalLoading] = useState(false);
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Local state
+  const [locations, setLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedFrequency, setSelectedFrequency] = useState("");
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  // Redux state
   const { entries, selectedSheet, loading } = useSelector((s) => s.counts);
   const { frequencies, loading: freqLoading } = useSelector((s) => s.frequencies);
 
-
   //-----------------------------------
-  // :: useEffect dispatch Function
+  // :: Fetch Locations & Frequencies
   //-----------------------------------
-
-  /*
-  Fetches locations and frequencies on load, updating state or showing an error notification on failure.
-  */
 
   useEffect(() => {
     dispatch(fetchLocations())
@@ -74,27 +72,20 @@ const CountsView = () => {
     );
   }, [dispatch]);
 
-
   //-----------------------------------
-  // :: handleLoadData Function
+  // :: Load Sheet Data
   //-----------------------------------
-
-  /*
-  Loads filtered inventory data, updates the sheet state, and shows success or error notifications.
-  */
 
   const handleLoadData = useCallback(async () => {
     if (!selectedLocation || !selectedFrequency) return;
     setLocalLoading(true);
+
     try {
       const items = await dispatch(
         fetchFilter({ location: selectedLocation, dateRange: selectedFrequency })
       ).unwrap();
 
-      const entriesWithItem = items.map((i) => ({
-        ...i,
-        item: i.id || null,
-      }));
+      const entriesWithItem = items.map((i) => ({ ...i, item: i.id || null }));
 
       dispatch(clearEntries());
       dispatch(setEntries(entriesWithItem));
@@ -109,57 +100,41 @@ const CountsView = () => {
         })
       );
 
-      dispatch(showNotification({ message: "Inventory sheet successfully synchronized.", type: "success" }));
+      dispatch(
+        showNotification({ message: "Inventory sheet successfully synchronized.", type: "success" })
+      );
       setIsLoaded(true);
     } catch {
-      dispatch(showNotification({ message: "Unable to synchronize inventory sheet. Please try again.", type: "error" }));
+      dispatch(
+        showNotification({
+          message: "Unable to synchronize inventory sheet. Please try again.",
+          type: "error",
+        })
+      );
     } finally {
       setLocalLoading(false);
     }
-  }, [dispatch, selectedFrequency, selectedLocation]);
-
+  }, [dispatch, selectedLocation, selectedFrequency]);
 
   //-----------------------------------
-  // :: progress Function
+  // :: Progress Calculation
   //-----------------------------------
-
-  /*
-  Calculates the completion percentage of inventory entries with a recorded count
-  */
 
   const progress = useMemo(() => {
     if (!entries.length) return 0;
-    return Math.round((entries.filter((e) => e.on_hand_quantity > 0).length / entries.length) * 100);
+    return Math.round(
+      (entries.filter((e) => e.on_hand_quantity > 0).length / entries.length) * 100
+    );
   }, [entries]);
 
-
-
   //-----------------------------------
-  // :: canSubmit Function
+  // :: Submit Logic
   //-----------------------------------
-
-  /*
-  Enables submission only when the sheet is loaded and every entry has a valid count entered.
-  */
 
   const canSubmit = useMemo(() => {
     if (!isLoaded || !selectedSheet || !entries.length) return false;
-
-    const hasMissingCount = entries.some(
-      (e) => !e.on_hand_quantity || Number(e.on_hand_quantity) <= 0
-    );
-
-    return !hasMissingCount;
+    return entries.every((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0);
   }, [isLoaded, selectedSheet, entries]);
-
-
-  //-----------------------------------
-  // :: handleSubmit Function
-  //-----------------------------------
-
-  /*
-  Submits the count sheet if all entries are completed, then reloads the sheet and shows a success or error notification
-  */
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) {
@@ -168,7 +143,6 @@ const CountsView = () => {
     }
 
     setSubmitting(true);
-
     try {
       await dispatch(submitCountSheet()).unwrap();
 
@@ -186,35 +160,24 @@ const CountsView = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [dispatch, canSubmit, handleLoadData]);
-
+  }, [canSubmit, dispatch, handleLoadData]);
 
   //-----------------------------------
-  // :: Cont Veriables
+  // :: Helper variables
   //-----------------------------------
-
-  /*
-  Enables loading the sheet only when a location and frequency are selected.Displays the 
-  count sheet card only after data is successfully loaded
-  */
 
   const canLoad = selectedLocation && selectedFrequency;
-  const showCard = isLoaded && selectedSheet
-
+  const showCard = isLoaded && selectedSheet;
 
   //-----------------------------------
-  // :: Return Code
+  // :: Render
   //-----------------------------------
-
-  /*
-  Renders the inventory count UI with location/frequency selection, 
-  load/submit actions, confirmation dialog, and the sheet progress card.
-  */
 
   return (
-    <Box sx={{ pt: { xs: 0.5, sm: 1 }, px: { xs: 1, sm: 2, md: 3 }, pb: { xs: 1, sm: 2 }, maxWidth: 1400, mx: "auto" }}>
+    <Box sx={{ pt: { xs: 1, sm: 2 }, px: { xs: 1, sm: 3 }, pb: 3, maxWidth: 1400, mx: "auto" }}>
       <PageHeader title="Survey Count" subtitle="Enter current inventory counts">
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, flexWrap: "wrap", gap: 2, width: { xs: "100%", md: "auto" }, alignItems: { xs: "stretch", sm: "center" } }}>
+        <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, flexWrap: "wrap", gap: 2, alignItems: { xs: "stretch", sm: "center" } }}>
+          {/* Location Select */}
           <TextField
             select
             size="small"
@@ -225,16 +188,15 @@ const CountsView = () => {
               setSelectedFrequency("");
               setIsLoaded(false);
             }}
-            sx={{ minWidth: { xs: "100%", sm: 200 }, flex: { xs: "1 1 100%", sm: "none" } }}
+            sx={{ minWidth: { xs: "100%", sm: 200 }, flex: { xs: 1, sm: "none" } }}
           >
             <MenuItem value="">Select Location</MenuItem>
             {locations.map((l) => (
-              <MenuItem key={l.id} value={l.id}>
-                {l.name}
-              </MenuItem>
+              <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>
             ))}
           </TextField>
 
+          {/* Inventory List Select */}
           <TextField
             select
             size="small"
@@ -244,17 +206,16 @@ const CountsView = () => {
               setSelectedFrequency(e.target.value);
               setIsLoaded(false);
             }}
-            sx={{ minWidth: { xs: "100%", sm: 180 }, flex: { xs: "1 1 100%", sm: "none" } }}
+            sx={{ minWidth: { xs: "100%", sm: 180 }, flex: { xs: 1, sm: "none" } }}
             disabled={freqLoading || !selectedLocation}
           >
             <MenuItem value="">Select Inventory List</MenuItem>
             {frequencies.map((f) => (
-              <MenuItem key={f.id} value={f.value || f.id}>
-                {f.frequency_name}
-              </MenuItem>
+              <MenuItem key={f.id} value={f.value || f.id}>{f.frequency_name}</MenuItem>
             ))}
           </TextField>
 
+          {/* Action Buttons */}
           <Box sx={{ display: "flex", gap: 2, width: { xs: "100%", sm: "auto" } }}>
             <Button
               variant="contained"
@@ -264,7 +225,6 @@ const CountsView = () => {
             >
               {localLoading ? "Loading..." : "Load Sheet"}
             </Button>
-
             <Button
               variant="contained"
               color="success"
@@ -278,8 +238,9 @@ const CountsView = () => {
         </Box>
       </PageHeader>
 
+      {/* Confirmation Dialog */}
       <Dialog open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)}>
-        <DialogTitle>Are you sure to submit?</DialogTitle>
+        <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Once submitted, these counts will be added to the report for this location and frequency.
@@ -287,29 +248,21 @@ const CountsView = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} color="success" variant="contained">
-            Confirm
-          </Button>
+          <Button onClick={handleSubmit} variant="contained" color="success">Confirm</Button>
         </DialogActions>
       </Dialog>
 
-      {isLoaded && selectedSheet && (
+      {/* Progress & CardView */}
+      {showCard && (
         <>
           <LinearProgress
             variant="determinate"
             value={progress}
             color={progress === 100 ? "success" : "error"}
-            sx={{ height: 4, borderRadius: 1, bgcolor: "#e0e0e0", mt: 1, mb: 2 }}
+            sx={{ height: 6, borderRadius: 1, bgcolor: "#e0e0e0", mt: 2, mb: 2 }}
           />
-
-          <Paper
-            elevation={0}
-            sx={{ p: 1, borderRadius: 2, border: 1, borderColor: "divider" }}
-          >
-            <CardView
-              data={selectedSheet?.entries || []}
-              loading={loading || localLoading}
-            />
+          <Paper sx={{ p: 2, borderRadius: 2, border: 1, borderColor: "divider" }} elevation={0}>
+            <CardView data={selectedSheet.entries} loading={loading || localLoading} />
           </Paper>
         </>
       )}
@@ -320,10 +273,5 @@ const CountsView = () => {
 //-----------------------------------
 // :: Export CountsView
 //-----------------------------------
-
-/*
-"CountsView manages inventory count sheets, allowing users to load, 
-edit, and submit counts for a selected location and frequency.
-*/
 
 export default CountsView;

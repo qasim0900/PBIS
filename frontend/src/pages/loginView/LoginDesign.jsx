@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Footer from './Footer.jsx';
-import { Visibility, VisibilityOff, Person, Lock } from '@mui/icons-material';
+import { Visibility, VisibilityOff, Person, Lock, Login as LoginIcon } from '@mui/icons-material';
 import {
     Box,
     Card,
@@ -11,19 +11,28 @@ import {
     CircularProgress,
     InputAdornment,
     IconButton,
+    Stack,
     useMediaQuery,
     useTheme,
 } from '@mui/material';
 
+const fadeIn = { 
+    initial: { opacity: 0 }, 
+    animate: { opacity: 1 }, 
+    transition: { duration: 0.6 } 
+};
 
-//---------------------------------------
-// :: LoginDesign Function 
-//---------------------------------------
+const slideUp = { 
+    initial: { opacity: 0, y: 30 }, 
+    animate: { opacity: 1, y: 0 }, 
+    transition: { duration: 0.5, ease: "easeOut" } 
+};
 
-
-/*
-A responsive login screen with a gradient background, branded card layout, username/password inputs with visibility toggle, and a submit button.
-*/
+const scaleIn = { 
+    initial: { scale: 0, opacity: 0 }, 
+    animate: { scale: 1, opacity: 1 }, 
+    transition: { type: 'spring', duration: 0.6, delay: 0.2 } 
+};
 
 export default function LoginDesign({
     username,
@@ -38,173 +47,148 @@ export default function LoginDesign({
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-
-    //---------------------------------------
-    // :: inputProps Function 
-    //---------------------------------------
-
-
-    /*
-    A helper that configures TextField adornments, including an optional password visibility toggle icon.
-    */
-
-
     const inputProps = (icon, showToggle = false) => ({
         startAdornment: <InputAdornment position="start">{icon}</InputAdornment>,
         endAdornment: showToggle && (
             <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size={isMobile ? 'small' : 'medium'}>
+                <IconButton 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    edge="end" 
+                    size={isMobile ? 'small' : 'medium'}
+                >
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                 </IconButton>
             </InputAdornment>
         ),
     });
 
-
-    //---------------------------------------
-    // :: buttonSx Function 
-    //---------------------------------------
-
-
-    /*
-    Styling configuration for the login button, adjusting padding, typography, and gradient background for normal and hover states based on screen size.
-    */
-
-
-    const buttonSx = {
-        py: isMobile ? 1 : 1.5,
-        fontSize: isMobile ? '0.9rem' : '1rem',
-        fontWeight: 700,
-        borderRadius: '12px',
-        backgroundColor: '#7c3aed',
-        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-        '&:hover': { 
-            backgroundColor: '#6d28d9',
-            transform: 'translateY(-2px)',
-            boxShadow: '0 10px 15px -3px rgba(124, 58, 237, 0.3)'
-        },
-    };
-
-
-    //---------------------------------------
-    // :: Return Code
-    //---------------------------------------
-
-
-    /*
-    A responsive login layout with a gradient background, centered card, logo badge, and a form for username/password entry.
-    */
-
-
     return (
-        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
+        <Box 
+            sx={{ 
+                minHeight: '100vh', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                background: 'linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%)',
+                position: 'relative',
+                overflow: 'hidden'
+            }}
+        >
             <Box
                 sx={{
-                    position: 'fixed',
+                    position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)',
-                    opacity: 0.05,
                     pointerEvents: 'none',
+                    opacity: 0.05,
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
                 }}
             />
 
-            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: isMobile ? 2 : 3, position: 'relative', zIndex: 1 }}>
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ type: 'spring', duration: 0.8, bounce: 0.3 }}
-                    style={{ width: '100%', maxWidth: isMobile ? '100%' : 440 }}
-                >
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, p: 2 }}>
+                <motion.div initial="initial" animate="animate" variants={slideUp} style={{ width: '100%', maxWidth: 400 }}>
                     <Card
                         sx={{
                             width: '100%',
-                            borderRadius: 4,
-                            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-                            position: 'relative',
+                            borderRadius: isMobile ? 3 : 5,
+                            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
                             overflow: 'visible',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            background: 'rgba(255, 255, 255, 0.9)',
-                            backdropFilter: 'blur(20px)',
+                            position: 'relative',
+                            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                            backdropFilter: 'blur(10px)',
                         }}
                     >
-                    <Box
-                        sx={{
-                            position: 'absolute',
-                            top: isMobile ? -30 : -40,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            width: isMobile ? 64 : 80,
-                            height: isMobile ? 64 : 80,
-                            borderRadius: 3,
-                            bgcolor: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                            overflow: 'hidden',
-                            border: '1px solid',
-                            borderColor: 'divider',
-                        }}
-                    >
-                        <img
-                            src="https://d2s742iet3d3t1.cloudfront.net/restaurant_service/restaurants/8179d542-9c1c-4dd4-8446-813b268b5d49/Restaurant/adc7a5c5-c043-4f3a-9b02-94acc38b0095.png?size=small"
-                            alt="Logo"
-                            style={{ width: '80%', height: '80%', objectFit: 'contain' }}
-                        />
-                    </Box>
-
-                    <CardContent sx={{ pt: isMobile ? 6 : 8, px: isMobile ? 3 : 5, pb: isMobile ? 4 : 5 }}>
-
-                        <Box sx={{ textAlign: 'center', mb: isMobile ? 3 : 4 }}>
-                            <Typography
-                                variant={isMobile ? 'h5' : 'h4'}
+                        <motion.div initial="initial" animate="animate" variants={scaleIn}>
+                            <Box
                                 sx={{
-                                    fontWeight: 800,
-                                    letterSpacing: '-0.025em',
-                                    background: 'linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    mb: 1,
+                                    position: 'absolute',
+                                    left: '50%',
+                                    transform: 'translateX(-50%)',
+                                    top: isMobile ? -30 : -40,
+                                    width: isMobile ? 60 : 80,
+                                    height: isMobile ? 60 : 80,
+                                    bgcolor: 'white',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
                                 }}
                             >
-                                PBIS PORTAL
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                                Professional Inventory Management
-                            </Typography>
-                        </Box>
+                                <Box 
+                                    component="img"
+                                    src="https://d2s742iet3d3t1.cloudfront.net/restaurant_service/restaurants/8179d542-9c1c-4dd4-8446-813b268b5d49/Restaurant/adc7a5c5-c043-4f3a-9b02-94acc38b0095.png?size=small"
+                                    alt="Logo"
+                                    sx={{ width: '80%', height: '80%', objectFit: 'contain' }}
+                                />
+                            </Box>
+                        </motion.div>
 
+                        <CardContent sx={{ pt: isMobile ? 6 : 8, px: { xs: 3, sm: 5 }, pb: 5 }}>
+                            <Box sx={{ textAlign: 'center', mb: 4 }}>
+                                <Typography
+                                    variant={isMobile ? 'h4' : 'h3'}
+                                    sx={{ 
+                                        fontWeight: 800, 
+                                        color: '#7c3aed', 
+                                        letterSpacing: '-0.02em',
+                                        mb: 1
+                                    }}
+                                >
+                                    PBIS
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                    Inventory Management System
+                                </Typography>
+                            </Box>
 
-                        <form onSubmit={handleSubmit}>
-                            <TextField
-                                fullWidth
-                                label="Username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                                autoFocus
-                                size={isMobile ? 'small' : 'medium'}
-                                sx={{ mb: 2 }}
-                                InputProps={inputProps(<Person color="action" />)}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Password"
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                size={isMobile ? 'small' : 'medium'}
-                                sx={{ mb: 2 }}
-                                InputProps={inputProps(<Lock color="action" />, true)}
-                            />
-                            <Button type="submit" fullWidth variant="contained" disabled={loading} size={isMobile ? 'medium' : 'large'} sx={buttonSx}>
-                                {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
+                            <form onSubmit={handleSubmit}>
+                                <Stack spacing={2.5}>
+                                    <TextField
+                                        fullWidth
+                                        label="Username"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        required
+                                        autoFocus
+                                        InputProps={inputProps(<Person sx={{ color: '#7c3aed' }} />)}
+                                    />
+
+                                    <TextField
+                                        fullWidth
+                                        label="Password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        InputProps={inputProps(<Lock sx={{ color: '#7c3aed' }} />, true)}
+                                    />
+
+                                    <Button 
+                                        type="submit" 
+                                        fullWidth 
+                                        variant="contained" 
+                                        disabled={loading} 
+                                        size="large"
+                                        startIcon={!loading && <LoginIcon />}
+                                        sx={{
+                                            py: 1.5,
+                                            fontSize: '1rem',
+                                            fontWeight: 700,
+                                            borderRadius: 2.5,
+                                            backgroundColor: '#7c3aed',
+                                            boxShadow: '0 10px 15px -3px rgba(124, 58, 237, 0.4)',
+                                            textTransform: 'none',
+                                            '&:hover': {
+                                                backgroundColor: '#6d28d9',
+                                                boxShadow: '0 20px 25px -5px rgba(124, 58, 237, 0.4)',
+                                            }
+                                        }}
+                                    >
+                                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+                                    </Button>
+                                </Stack>
+                            </form>
+                        </CardContent>
+                    </Card>
                 </motion.div>
             </Box>
 

@@ -24,7 +24,6 @@ import {
   useTheme,
 } from '@mui/material';
 import { Refresh, CheckCircle } from '@mui/icons-material';
-import { MotionBox, MotionCard, MotionTableRow, tableRowHoverProps, fadeInVariants } from './MotionComponents.jsx';
 
 
 //---------------------------------------
@@ -103,9 +102,9 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
   */
 
   const headerCellStyle = {
-    backgroundColor: '#6B21A8',
-    color: '#FFFFFF',
-    fontWeight: 700,
+    background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 100%)',
+    color: 'white',
+    fontWeight: 600,
     fontSize: { xs: '0.8rem', sm: '0.875rem', md: '1rem' },
     padding: { xs: 1, sm: 1.5, md: 2 },
   };
@@ -133,30 +132,10 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
 
   if (isMobile) {
     return (
-      <MotionBox
-        component={Box}
-        sx={{ width: '100%', overflow: 'hidden', p: 1 }}
-        initial="hidden"
-        animate="visible"
-        variants={fadeInVariants}
-      >
+      <Box sx={{ width: '100%', overflow: 'hidden', p: 1 }}>
         <Stack spacing={2}>
           {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, idx) => (
-            <MotionCard
-              key={row.id || idx}
-              variant="outlined"
-              component={Card}
-              initial="hidden"
-              animate="visible"
-              variants={fadeInVariants}
-              transition={{ delay: idx * 0.1 }}
-              sx={{
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 8px 25px rgba(107, 70, 193, 0.15)',
-                },
-              }}
-            >
+            <Card key={row.id || idx} variant="outlined">
               <CardContent sx={{ pb: 1 }}>
                 <Stack spacing={2}>
                   {columns.map(({ header, accessor, render }, colIdx) => (
@@ -172,7 +151,7 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
                   {actions && <Box sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>{actions(row)}</Box>}
                 </Stack>
               </CardContent>
-            </MotionCard>
+            </Card>
           ))}
         </Stack>
 
@@ -186,7 +165,7 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
           onRowsPerPageChange={handleChangeRowsPerPage}
           sx={{ mt: 2 }}
         />
-      </MotionBox>
+      </Box>
     );
   }
 
@@ -201,13 +180,7 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
   */
 
   return (
-    <MotionBox
-      component={Paper}
-      sx={{ width: '100%', overflow: 'hidden', p: { xs: 0.5, sm: 1 }, borderRadius: 2 }}
-      initial="hidden"
-      animate="visible"
-      variants={fadeInVariants}
-    >
+    <Paper sx={{ width: '100%', overflow: 'hidden', p: { xs: 0.5, sm: 1 } }}>
       <TableContainer sx={{ maxHeight: 540, overflowX: 'auto' }}>
         <TableMUI stickyHeader aria-label="dynamic table" size={isMobile ? 'small' : 'medium'}>
           <TableHead>
@@ -224,38 +197,19 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
           <TableBody>
             {filteredData.length > 0 ? (
               filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, idx) => (
-                <MotionTableRow
-                  key={row.id || `${page}-${idx}`}
-                  initial="hidden"
-                  animate="visible"
-                  variants={fadeInVariants}
-                  transition={{ delay: idx * 0.05 }}
-                  {...tableRowHoverProps}
-                  sx={{
-                    '&:nth-of-type(even)': {
-                      backgroundColor: '#D8B4FE15',
-                    },
-                    '&:hover': {
-                      backgroundColor: '#C084FC40 !important',
-                      cursor: 'pointer',
-                    },
-                    transition: 'background-color 0.2s',
-                  }}
-                >
+                <TableRow hover key={row.id || `${page}-${idx}`}>
                   {columns.map(({ accessor, render, align }, colIdx) => (
                     <TableCell key={accessor || colIdx} align={align} sx={cellStyle}>
                       {render ? render(row) : getNestedValue(row, accessor)}
                     </TableCell>
                   ))}
                   {actions && <TableCell sx={cellStyle}>{actions(row)}</TableCell>}
-                </MotionTableRow>
+                </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length + (actions ? 1 : 0)} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    No data found
-                  </Typography>
+                  No data found
                 </TableCell>
               </TableRow>
             )}
@@ -272,19 +226,10 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{ 
-            mt: 1,
-            '& .MuiTablePagination-toolbar': {
-              borderTop: '1px solid rgba(107, 70, 193, 0.1)',
-              pt: 2,
-            },
-            '& .MuiTablePagination-select': {
-              borderColor: 'primary.main',
-            },
-          }}
+          sx={{ mt: 1 }}
         />
       )}
-    </MotionBox>
+    </Paper>
   );
 };
 

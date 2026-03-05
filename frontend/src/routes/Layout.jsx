@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 
 import Sidebar from '../components/Sidebar';
@@ -41,15 +41,11 @@ const Layout = ({ children, hideSidebar = false }) => {
                     }}
                 >
                     <AnimatePresence mode="wait">
-                        <motion.div
+                        <div
                             key={location.pathname}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
                         >
                             {children}
-                        </motion.div>
+                        </div>
                     </AnimatePresence>
                 </Box>
             </Box>

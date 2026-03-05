@@ -1,87 +1,159 @@
-import { Box, Skeleton, Container, Stack } from '@mui/material';
-
-//-----------------------------------
-// :: App Loading Function
-//-----------------------------------
+import {
+  Box,
+  Container,
+  Stack,
+  Typography,
+  CircularProgress,
+  Chip,
+} from '@mui/material';
+import { useEffect, useState } from 'react';
 
 /*
-`AppLoading` is a full-screen skeleton loader component showing a circular loader, 
-title, form fields, and footer placeholders with a gradient background while content is loading.
+Professional Enterprise Loading Screen for PBIS
+Clean • Corporate • Dark Theme • Minimal Animation
 */
 
 export default function AppLoading() {
+  const [loadingStep, setLoadingStep] = useState(0);
 
-  //-----------------------------------
-  // :: skeleton Bg Function
-  //-----------------------------------
+  const loadingSteps = [
+    'Initializing system...',
+    'Loading inventory modules...',
+    'Preparing dashboard...',
+    'Finalizing setup...',
+  ];
 
-  /*
-  This defines a **semi-transparent white colour** used as the background for the skeleton loader elements.
-  */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => (prev + 1) % loadingSteps.length);
+    }, 1000);
 
-  const skeletonBg = 'rgba(255,255,255,0.3)';
-
-
-  //-----------------------------------
-  // :: Return Code
-  //-----------------------------------
-
-  /*
-  This JSX renders a **full-screen loading skeleton** with a gradient background, including a circular loader, title placeholder,
-   form field placeholders, and footer skeletons, all centred on the screen.
-  */
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(180deg, #0B1220 0%, #1C2541 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Container maxWidth="xs">
-        <Stack spacing={3} alignItems="center">
+      <Container maxWidth="sm">
+        <Stack spacing={4} alignItems="center">
 
+          {/* PBIS Logo Box */}
           <Box
             sx={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)',
+              width: 120,
+              height: 120,
+              borderRadius: 3,
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              backdropFilter: 'blur(8px)',
+              animation: 'fadeInScale 0.6s ease-out',
             }}
           >
-            <Skeleton
-              variant="circular"
-              width={60}
-              height={60}
-              sx={{ bgcolor: skeletonBg }}
-            />
+            <Typography
+              sx={{
+                fontSize: '32px',
+                fontWeight: 700,
+                letterSpacing: 2,
+                color: '#FFFFFF',
+              }}
+            >
+              PBIS
+            </Typography>
           </Box>
 
+          {/* Title */}
+          <Stack spacing={1} alignItems="center">
+            <Typography
+              variant="h4"
+              sx={{
+                color: '#FFFFFF',
+                fontWeight: 700,
+                animation: 'fadeInUp 0.6s ease-out 0.2s both',
+              }}
+            >
+              PBIS
+            </Typography>
 
-          <Skeleton
-            variant="text"
-            width={200}
-            height={50}
-            sx={{ bgcolor: skeletonBg }}
+            <Typography
+              variant="subtitle1"
+              sx={{
+                color: 'rgba(255,255,255,0.7)',
+                fontWeight: 400,
+                animation: 'fadeInUp 0.6s ease-out 0.3s both',
+              }}
+            >
+              Pharmacy Billing & Inventory System
+            </Typography>
+          </Stack>
+
+          {/* Loading Text */}
+          <Chip
+            label={loadingSteps[loadingStep]}
+            sx={{
+              backgroundColor: 'rgba(255,255,255,0.08)',
+              color: '#E5E7EB',
+              fontSize: '0.85rem',
+              px: 2,
+              animation: 'fadeIn 0.4s ease-out',
+            }}
           />
 
+          {/* Loader */}
+          <CircularProgress
+            size={50}
+            thickness={4}
+            sx={{
+              color: '#6366F1',
+              animation: 'fadeIn 0.6s ease-out 0.4s both',
+            }}
+          />
 
-          {[...Array(4)].map((_, idx) => (
-            <Skeleton key={idx} variant="rounded" width="100%" height={56} />
-          ))}
-
-          <Box sx={{ mt: 4, width: '100%' }}>
-            <Skeleton variant="text" width="80%" />
-            <Skeleton variant="text" width="60%" />
-          </Box>
         </Stack>
       </Container>
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes fadeInScale {
+          from {
+            opacity: 0;
+            transform: scale(0.8);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(15px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
     </Box>
   );
 }
