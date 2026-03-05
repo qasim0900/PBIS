@@ -3,37 +3,6 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
 
-class Unit(models.Model):
-    name = models.CharField(
-        max_length=50,
-        unique=True,
-        help_text="Unit name (e.g., case, carton, tub, bag)"
-    )
-    quantity = models.PositiveIntegerField(
-        help_text="Number of items in this unit"
-    )
-    description = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        help_text="Optional description of unit"
-    )
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ("name",)
-        verbose_name = _("Unit")
-        verbose_name_plural = _("Units")
-
-    def __str__(self):
-        return f"{self.name} ({self.quantity} items)"
-
-    @property
-    def display_name(self):
-        return f"{self.name} ({self.quantity})"
-
 
 class InventoryItemQuerySet(models.QuerySet):
     def active(self):
@@ -79,14 +48,6 @@ class InventoryItem(models.Model):
         choices=ItemCategory.choices,
         default='other',
         help_text="Item category for classification"
-    )
-    unit = models.ForeignKey(
-        'inventory.Unit',
-        on_delete=models.SET_NULL,
-        related_name="inventory_items",
-        null=True,
-        blank=True,
-        help_text="Unit for this inventory item"
     )
     count_unit = models.CharField(
         max_length=32,

@@ -1,31 +1,9 @@
-from .models import InventoryItem, Unit
+from .models import InventoryItem
 from rest_framework import viewsets, filters
-from .serializers import InventoryItemSerializer, UnitSerializer
+from .serializers import InventoryItemSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 
-class UnitViewSet(viewsets.ModelViewSet):
-    serializer_class = UnitSerializer
-    permission_classes = (IsAuthenticated,)
-    parser_classes = (FormParser, MultiPartParser, JSONParser)
-    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-
-    search_fields = (
-        "name",
-        "description",
-    )
-
-    ordering_fields = (
-        "name",
-        "quantity",
-        "created_at",
-        "updated_at",
-    )
-
-    ordering = ("name",)
-
-    def get_queryset(self):
-        return Unit.objects.filter(is_active=True)
 
 class InventoryItemViewSet(viewsets.ModelViewSet):
     serializer_class = InventoryItemSerializer

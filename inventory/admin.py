@@ -1,44 +1,7 @@
 from django.contrib import admin
-from .models import InventoryItem, Unit
+from .models import InventoryItem
 from django.utils.html import format_html
 
-@admin.register(Unit)
-class UnitAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "quantity",
-        "description",
-        "is_active",
-        "created_at",
-    )
-    list_filter = (
-        "is_active",
-        "created_at",
-    )
-    search_fields = (
-        "name",
-        "description",
-    )
-    ordering = ("name",)
-    readonly_fields = (
-        "created_at",
-        "updated_at",
-    )
-    
-    fieldsets = (
-        ("Unit Info", {
-            "fields": (
-                "name",
-                "quantity",
-                "description",
-                "is_active",
-            )
-        }),
-        ("Timestamps", {
-            "fields": ("created_at", "updated_at"),
-            "classes": ("collapse",)
-        }),
-    )
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):

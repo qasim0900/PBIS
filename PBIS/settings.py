@@ -58,6 +58,7 @@ try:
         "vendor",
         "brand",
         "users",
+        "Unit",
     ]
 except Exception as e:
     raise RuntimeError(f"Error setting INSTALLED_APPS: {e}")

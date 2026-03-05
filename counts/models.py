@@ -168,7 +168,7 @@ class CountEntry(models.Model):
             highlight = self.HIGHLIGHT_YELLOW
 
         return OrderCalculation(
-            qty_to_order=deficit,
+            qty_to_order=order_units * pack_size,
             order_units=order_units,
             highlight_state=highlight
         )
