@@ -1,0 +1,90 @@
+from .models import User, UserRole
+from rest_framework import serializers
+
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+    role_display = serializers.CharField(
+        source="get_role_display",
+        read_only=True,
+        help_text="Human-readable role of the user."
+    )
+    is_manager = serializers.SerializerMethodField(
+        help_text="Boolean flag indicating if the user is a manager (Admin or Manager)."
+    )
+    is_staff_user = serializers.SerializerMethodField(
+        help_text="Boolean flag indicating if the user is a standard staff user."
+    )
+    username = serializers.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "role",
+            "role_display",
+            "is_active",
+            "is_manager",
+            "is_staff_user",
+            "password",
+        )
+
+    def get_is_manager(self, obj):
+        return obj.is_manager()
+
+    def get_is_staff_user(self, obj):
+        return obj.is_staff_user()
+
+class UserRegisterSerializer(serializers.ModelSerializer):
+
+    password = serializers.CharField(
+        write_only=True,
+        min_length=8,
+        help_text="Password must be at least 8 characters."
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "username",
+            "email",
+            "password",
+            "first_name",
+            "last_name",
+            "role",
+            "is_active",
+        )
+
+        extra_kwargs = {
+            "is_active": {"default": True},
+            "role": {"default": UserRole.STAFF},
+            "email": {"required": True},
+            "username": {"required": True},
+        }
+
+    def create(self, validated_data):
+        try:
+            password = validated_data.pop("password")
+            user = User(**validated_data)
+            user.set_password(password)
+            user.save()
+            return user
+        except Exception as e:
+            raise serializers.ValidationError({
+                "detail": f"Account creation failed. Please ensure all details are correct or contact support if the issue persists."
+            })
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+        return instance
