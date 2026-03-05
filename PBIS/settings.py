@@ -33,9 +33,27 @@ except Exception as e:
 
 try:
     CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = os.getenv(
-        "CORS_ALLOWED_ORIGIN", "http://localhost:5001,http://localhost:3000,http://72.60.66.213,http://72.60.66.213:5000"
-    ).split(",")
+    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGIN", "http://localhost:5000").split(",")
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOW_HEADERS = [
+        "accept",
+        "accept-encoding",
+        "authorization",
+        "content-type",
+        "dnt",
+        "origin",
+        "user-agent",
+        "x-csrftoken",
+        "x-requested-with",
+    ]
+    CORS_ALLOW_METHODS = [
+        "DELETE",
+        "GET",
+        "OPTIONS",
+        "PATCH",
+        "POST",
+        "PUT",
+    ]
 except Exception as e:
     raise RuntimeError(f"Error setting CORS_ALLOWED_ORIGINS: {e}")
 
@@ -132,6 +150,14 @@ try:
     database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE")
     if database_url:
         DATABASES = {"default": dj_database_url.parse(database_url)}
+        
+        # Production database optimizations
+        if not DEBUG:
+            DATABASES["default"]["CONN_MAX_AGE"] = 60
+            DATABASES["default"]["OPTIONS"] = {
+                "connect_timeout": 10,
+                "options": "-c default_transaction_isolation=read_committed"
+            }
     else:
         DATABASES = {
             "default": {
@@ -166,8 +192,16 @@ try:
     frontend_dist = BASE_DIR / "frontend" / "dist"
     STATICFILES_DIRS = [frontend_dist] if frontend_dist.exists() else []
 
+    # Media files configuration
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "mediafiles"
+
     if not DEBUG:
         STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        
+        # Production media file serving (if not using CDN)
+        # For production, consider using AWS S3 or similar for media files
+        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 except Exception as e:
     raise RuntimeError(f"Error configuring static files: {e}")
 
@@ -211,7 +245,7 @@ try:
         "loggers": {
             "django": {
                 "handlers": ["console"],
-                "level": "INFO",
+                "level": "INFO" if DEBUG else "WARNING",
                 "propagate": False,
             },
             "django.request": {
@@ -226,22 +260,34 @@ try:
             },
         },
     }
+    
+    # Production logging configuration
+    if not DEBUG:
+        LOGGING["handlers"]["file"] = {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": "/var/log/django/app.log",
+            "formatter": "verbose",
+        }
+        LOGGING["loggers"]["django"]["handlers"].append("file")
+        LOGGING["loggers"]["django.request"]["handlers"].append("file")
 except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = [
-        "http://localhost:5000",
-        "http://72.60.66.213",
-        "http://72.60.66.213:5000",
-    ]
-    replit_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
-    if replit_domain:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_domain}")
-    replit_slug = os.getenv("REPLIT_SLUG", "")
-    replit_owner = os.getenv("REPLIT_OWNER", "")
-    if replit_slug and replit_owner:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}.{replit_owner}.repl.co")
-        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}-00-{replit_owner}.repl.co")
+    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5000").split(",")
+    
+    # Production security settings
+    if not DEBUG:
+        SECURE_BROWSER_XSS_FILTER = True
+        SECURE_CONTENT_TYPE_NOSNIFF = True
+        SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+        SECURE_HSTS_SECONDS = 31536000  # 1 year
+        SECURE_HSTS_PRELOAD = True
+        SECURE_REDIRECT_EXEMPT = []
+        SECURE_SSL_REDIRECT = True
+        SESSION_COOKIE_SECURE = True
+        CSRF_COOKIE_SECURE = True
+        X_FRAME_OPTIONS = 'DENY'
 except Exception as e:
     CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]
