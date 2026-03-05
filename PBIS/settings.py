@@ -155,9 +155,9 @@ try:
         if not DEBUG:
             DATABASES["default"]["CONN_MAX_AGE"] = 60
             DATABASES["default"]["OPTIONS"] = {
-            "connect_timeout": 10,
-            "options": "-c default_transaction_isolation='read committed'"
-        }
+                "connect_timeout": 10,
+                "options": "-c default_transaction_isolation=read_committed"
+            }
 
 except Exception as e:
     raise RuntimeError(f"Error configuring DATABASES: {e}")
