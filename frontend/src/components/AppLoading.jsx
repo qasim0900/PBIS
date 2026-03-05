@@ -6,6 +6,7 @@ import {
   CircularProgress,
   Chip,
 } from '@mui/material';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 /*
@@ -45,115 +46,101 @@ export default function AppLoading() {
         <Stack spacing={4} alignItems="center">
 
           {/* PBIS Logo Box */}
-          <Box
-            sx={{
-              width: 120,
-              height: 120,
-              borderRadius: 3,
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(8px)',
-              animation: 'fadeInScale 0.6s ease-out',
-            }}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.6 }}
           >
-            <Typography
+            <Box
               sx={{
-                fontSize: '32px',
-                fontWeight: 700,
-                letterSpacing: 2,
-                color: '#FFFFFF',
+                width: 120,
+                height: 120,
+                borderRadius: 3,
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(8px)',
               }}
             >
-              PBIS
-            </Typography>
-          </Box>
+              <Typography
+                sx={{
+                  fontSize: '32px',
+                  fontWeight: 700,
+                  letterSpacing: 2,
+                  color: '#FFFFFF',
+                }}
+              >
+                PBIS
+              </Typography>
+            </Box>
+          </motion.div>
 
           {/* Title */}
-          <Stack spacing={1} alignItems="center">
-            <Typography
-              variant="h4"
-              sx={{
-                color: '#FFFFFF',
-                fontWeight: 700,
-                animation: 'fadeInUp 0.6s ease-out 0.2s both',
-              }}
-            >
-              PBIS
-            </Typography>
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Stack spacing={1} alignItems="center">
+              <Typography
+                variant="h4"
+                sx={{
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                }}
+              >
+                PBIS
+              </Typography>
 
-            <Typography
-              variant="subtitle1"
-              sx={{
-                color: 'rgba(255,255,255,0.7)',
-                fontWeight: 400,
-                animation: 'fadeInUp 0.6s ease-out 0.3s both',
-              }}
-            >
-              Pharmacy Billing & Inventory System
-            </Typography>
-          </Stack>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  color: 'rgba(255,255,255,0.7)',
+                  fontWeight: 400,
+                }}
+              >
+                Pharmacy Billing & Inventory System
+              </Typography>
+            </Stack>
+          </motion.div>
 
           {/* Loading Text */}
-          <Chip
-            label={loadingSteps[loadingStep]}
-            sx={{
-              backgroundColor: 'rgba(255,255,255,0.08)',
-              color: '#E5E7EB',
-              fontSize: '0.85rem',
-              px: 2,
-              animation: 'fadeIn 0.4s ease-out',
-            }}
-          />
+          <motion.div
+            key={loadingStep}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Chip
+              label={loadingSteps[loadingStep]}
+              sx={{
+                backgroundColor: 'rgba(255,255,255,0.08)',
+                color: '#E5E7EB',
+                fontSize: '0.85rem',
+                px: 2,
+              }}
+            />
+          </motion.div>
 
           {/* Loader */}
-          <CircularProgress
-            size={50}
-            thickness={4}
-            sx={{
-              color: '#6366F1',
-              animation: 'fadeIn 0.6s ease-out 0.4s both',
-            }}
-          />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <CircularProgress
+              size={50}
+              thickness={4}
+              sx={{
+                color: '#6366F1',
+              }}
+            />
+          </motion.div>
 
         </Stack>
       </Container>
-
-      {/* CSS Animations */}
-      <style jsx>{`
-        @keyframes fadeInScale {
-          from {
-            opacity: 0;
-            transform: scale(0.8);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(15px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-      `}</style>
     </Box>
   );
 }
