@@ -147,17 +147,13 @@ except Exception as e:
     raise RuntimeError(f"Error setting WSGI_APPLICATION: {e}")
 
 try:
-    database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE")
+    database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE", 'postgresql://postgres:Teeli%40322@localhost:5432/pbis')
     if database_url:
         DATABASES = {"default": dj_database_url.parse(database_url)}
         
         # Production database optimizations
         if not DEBUG:
             DATABASES["default"]["CONN_MAX_AGE"] = 60
-            DATABASES["default"]["OPTIONS"] = {
-                "connect_timeout": 10,
-                "options": "-c default_transaction_isolation=read_committed"
-            }
 
 except Exception as e:
     raise RuntimeError(f"Error configuring DATABASES: {e}")
