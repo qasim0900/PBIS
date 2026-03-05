@@ -1,34 +1,7 @@
 from django.urls import path
-from .views import InventoryItemViewSet, UnitViewSet
+from .views import InventoryItemViewSet
 
 urlpatterns = [
-    path(
-        "units/",
-        UnitViewSet.as_view({"get": "list"}),
-        name="unit-list",
-    ),
-    path(
-        "units/create/",
-        UnitViewSet.as_view({"post": "create"}),
-        name="unit-create",
-    ),
-    path(
-        "units/<int:pk>/",
-        UnitViewSet.as_view({"get": "retrieve"}),
-        name="unit-retrieve",
-    ),
-    path(
-        "units/<int:pk>/update/",
-        UnitViewSet.as_view(
-            {"put": "update", "patch": "partial_update"}),
-        name="unit-update",
-    ),
-    path(
-        "units/<int:pk>/delete/",
-        UnitViewSet.as_view({"delete": "destroy"}),
-        name="unit-delete",
-    ),
-    
     path(
         "inventory-items/",
         InventoryItemViewSet.as_view({"get": "list"}),

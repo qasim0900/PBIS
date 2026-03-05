@@ -75,13 +75,13 @@ export default function LoginDesign({
         py: isMobile ? 1 : 1.5,
         fontSize: isMobile ? '0.9rem' : '1rem',
         fontWeight: 700,
-        borderRadius: '16px',
-        backgroundColor: '#A855F7',
+        borderRadius: '12px',
+        backgroundColor: '#7c3aed',
         transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
         '&:hover': { 
-            backgroundColor: '#C084FC',
-            transform: 'scale(1.05)',
-            boxShadow: '0 20px 25px -5px rgba(168, 85, 247, 0.4)'
+            backgroundColor: '#6d28d9',
+            transform: 'translateY(-2px)',
+            boxShadow: '0 10px 15px -3px rgba(124, 58, 237, 0.3)'
         },
     };
 
@@ -97,34 +97,35 @@ export default function LoginDesign({
 
 
     return (
-        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#F9FAFB' }}>
+        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
             <Box
                 sx={{
                     position: 'fixed',
                     inset: 0,
-                    background: 'linear-gradient(135deg, #A855F7 0%, #D8B4FE 100%)',
-                    opacity: 0.15,
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)',
+                    opacity: 0.05,
                     pointerEvents: 'none',
                 }}
             />
 
             <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: isMobile ? 2 : 3, position: 'relative', zIndex: 1 }}>
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ type: 'spring', duration: 0.8, bounce: 0.4 }}
+                    transition={{ type: 'spring', duration: 0.8, bounce: 0.3 }}
                     style={{ width: '100%', maxWidth: isMobile ? '100%' : 440 }}
                 >
                     <Card
                         sx={{
                             width: '100%',
-                            borderRadius: 6,
-                            boxShadow: '0 25px 50px -12px rgba(107, 70, 193, 0.25)',
+                            borderRadius: 4,
+                            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
                             position: 'relative',
                             overflow: 'visible',
-                            border: '1px solid rgba(216, 180, 254, 0.3)',
-                            backdropFilter: 'blur(10px)',
-                            background: 'rgba(255, 255, 255, 0.95)',
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            background: 'rgba(255, 255, 255, 0.9)',
+                            backdropFilter: 'blur(20px)',
                         }}
                     >
                     <Box
@@ -133,15 +134,17 @@ export default function LoginDesign({
                             top: isMobile ? -30 : -40,
                             left: '50%',
                             transform: 'translateX(-50%)',
-                            width: isMobile ? 60 : 80,
-                            height: isMobile ? 60 : 80,
-                            borderRadius: '50%',
+                            width: isMobile ? 64 : 80,
+                            height: isMobile ? 64 : 80,
+                            borderRadius: 3,
                             bgcolor: 'white',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
                             overflow: 'hidden',
+                            border: '1px solid',
+                            borderColor: 'divider',
                         }}
                     >
                         <img
@@ -151,22 +154,24 @@ export default function LoginDesign({
                         />
                     </Box>
 
-                    <CardContent sx={{ pt: isMobile ? 5 : 7, px: isMobile ? 2 : 4, pb: isMobile ? 3 : 4 }}>
+                    <CardContent sx={{ pt: isMobile ? 6 : 8, px: isMobile ? 3 : 5, pb: isMobile ? 4 : 5 }}>
 
-                        <Box sx={{ textAlign: 'center', mb: isMobile ? 2 : 4 }}>
+                        <Box sx={{ textAlign: 'center', mb: isMobile ? 3 : 4 }}>
                             <Typography
                                 variant={isMobile ? 'h5' : 'h4'}
                                 sx={{
                                     fontWeight: 800,
-                                    color: '#6B21A8',
+                                    letterSpacing: '-0.025em',
+                                    background: 'linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
                                     mb: 1,
-                                    letterSpacing: '-0.025em'
                                 }}
                             >
-                                PBIS
+                                PBIS PORTAL
                             </Typography>
-                            <Typography variant={isMobile ? 'body2' : 'body1'} color="text.secondary">
-                                Inventory Management System
+                            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                                Professional Inventory Management
                             </Typography>
                         </Box>
 

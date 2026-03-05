@@ -62,14 +62,14 @@ success, warning, error, info colors, background, text, and divider styles.
 let theme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: '#6366f1', light: '#818cf8', dark: '#4f46e5', contrastText: '#fff' },
-    secondary: { main: '#8b5cf6', light: '#a78bfa', dark: '#7c3aed', contrastText: '#fff' },
+    primary: { main: '#7c3aed', light: '#a78bfa', dark: '#5b21b6', contrastText: '#fff' },
+    secondary: { main: '#06b6d4', light: '#67e8f9', dark: '#0891b2', contrastText: '#fff' },
     success: { main: '#10b981', light: '#34d399', dark: '#059669' },
     warning: { main: '#f59e0b', light: '#fbbf24', dark: '#d97706' },
     error: { main: '#ef4444', light: '#f87171', dark: '#dc2626' },
     info: { main: '#3b82f6', light: '#60a5fa', dark: '#2563eb' },
-    background: { default: '#f8fafc', paper: '#fff' },
-    text: { primary: '#1e293b', secondary: '#64748b' },
+    background: { default: '#f1f5f9', paper: '#ffffff' },
+    text: { primary: '#0f172a', secondary: '#475569' },
     divider: '#e2e8f0',
   },
 

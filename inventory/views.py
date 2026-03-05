@@ -14,7 +14,6 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
     search_fields = (
         "name",
         "notes",
-        "helper_text",
         "storage_location",
     )
 
@@ -29,17 +28,14 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = InventoryItem.objects.active().select_related(
-            'vendor', 'brand', 'location', 'frequency', 'default_vendor', 'unit'
+            'vendor', 'brand', 'location', 'frequency', 'default_vendor'
         )
         location_id = self.request.query_params.get("location")
         frequency_id = self.request.query_params.get("dateRange")
-        unit_id = self.request.query_params.get("unit")
         
         if location_id and location_id.isdigit():
             qs = qs.filter(location_id=int(location_id))
         if frequency_id and frequency_id.isdigit():
             qs = qs.filter(frequency_id=int(frequency_id))
-        if unit_id and unit_id.isdigit():
-            qs = qs.filter(unit_id=int(unit_id))
             
         return qs

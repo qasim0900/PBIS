@@ -5,24 +5,10 @@ import Notification from './components/Notification';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider as MuiThemeProvider, CssBaseline, Box } from '@mui/material';
-import { ThemeProvider } from './context/ThemeContext';
-import theme from './theme/theme.js';
-
-
-//--------------------------------
-// :: App Function
-//--------------------------------
-
-/*
-This defines the `App` component that **wraps the application with Redux for state management, 
-React Router for routing, professional theme system, renders all routes, and includes a global notification system**.
-*/
-
-import Footer from './components/Footer';
+import theme from './theme/index.js';
 
 const App = () => (
   <Provider store={store}>
-    <ThemeProvider>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
         <Router>
@@ -36,7 +22,6 @@ const App = () => (
           </AuthProvider>
         </Router>
       </MuiThemeProvider>
-    </ThemeProvider>
   </Provider>
 );
 

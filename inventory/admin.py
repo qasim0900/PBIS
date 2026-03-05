@@ -8,7 +8,6 @@ class InventoryItemAdmin(admin.ModelAdmin):
 
     list_display = (
         "name",
-        "unit_display",
         "location_display",
         "category_display",
         "vendor_display",
@@ -20,7 +19,6 @@ class InventoryItemAdmin(admin.ModelAdmin):
     )
 
     list_filter = (
-        "unit",
         "location",
         "category",
         "vendor",
@@ -32,7 +30,6 @@ class InventoryItemAdmin(admin.ModelAdmin):
         "name",
         "vendor__name",
         "storage_location",
-        "helper_text",
         "notes",
     )
 
@@ -48,7 +45,6 @@ class InventoryItemAdmin(admin.ModelAdmin):
         ("Basic Info", {
             "fields": (
                 "name",
-                "unit",
                 "location",
                 "category",
                 "vendor",
@@ -62,7 +58,6 @@ class InventoryItemAdmin(admin.ModelAdmin):
                 "order_unit",
                 "pack_size",
                 "pack_ratio_display",
-                "helper_text",
             )
         }),
         ("Stock Levels", {
@@ -109,7 +104,7 @@ class InventoryItemAdmin(admin.ModelAdmin):
 
     def pack_ratio(self, obj):
         if not obj.pack_size or obj.pack_size == 1:
-            return f"1 {obj.order_unit}"
+            return f"1 {obj.order_unit}" if obj.order_unit else "-"
         plural = "s" if obj.pack_size != 1 else ""
         return f"1 {obj.order_unit} = {obj.pack_size} {obj.count_unit}{plural}"
     pack_ratio.short_description = "Pack Ratio"
@@ -117,8 +112,3 @@ class InventoryItemAdmin(admin.ModelAdmin):
     def pack_ratio_display(self, obj):
         return self.pack_ratio(obj)
     pack_ratio_display.short_description = "Pack Ratio"
-
-    def unit_display(self, obj):
-        return obj.unit.display_name if obj.unit else "-"
-    unit_display.short_description = "Unit"
-    unit_display.admin_order_field = "unit__name"

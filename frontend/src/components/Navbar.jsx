@@ -125,17 +125,18 @@ const MenuAppBar = () => {
 
   const logoutButtonStyles = useMemo(
     () => ({
-      color: 'white',
-      borderRadius: 8,
+      color: '#475569',
+      borderRadius: 2,
       fontSize: isMobile ? '0.8rem' : '0.875rem',
-      borderColor: 'rgba(214, 188, 250, 0.7)',
-      background: 'rgba(107, 70, 193, 0.2)',
+      borderColor: '#e2e8f0',
+      background: 'transparent',
+      fontWeight: 600,
       '&:hover': {
-        backgroundColor: 'rgba(214, 188, 250, 0.3)',
-        color: 'white',
-        borderColor: 'rgba(214, 188, 250, 0.9)',
+        backgroundColor: 'rgba(239, 68, 68, 0.05)',
+        color: '#ef4444',
+        borderColor: '#fecaca',
         transform: 'translateY(-1px)',
-        boxShadow: '0 4px 12px rgba(107, 70, 193, 0.3)',
+        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
       },
       transition: 'all 0.2s ease-in-out',
     }),
@@ -156,11 +157,14 @@ const MenuAppBar = () => {
     <AppBar
       position="fixed"
       sx={{
-        background: 'linear-gradient(135deg, #6B21A8 0%, #A855F7 100%)',
-        color: 'white',
-        boxShadow: '0 4px 12px rgba(107, 33, 168, 0.3)',
+        background: 'rgba(255, 255, 255, 0.8)',
+        backdropFilter: 'blur(12px)',
+        color: '#1e293b',
+        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
         zIndex: 1200,
         borderRadius: 0,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
       }}
     >
       <Toolbar sx={{ px: isSmallMobile ? 1 : 2 }}>
@@ -173,11 +177,12 @@ const MenuAppBar = () => {
             onClick={handleMenuClick}
             sx={{
               mr: isSmallMobile ? 1 : 2,
-              borderRadius: 8,
+              borderRadius: 2,
               transition: 'all 0.2s ease-in-out',
               '&:hover': { 
-                backgroundColor: 'rgba(214, 188, 250, 0.2)',
-                transform: 'scale(1.1)',
+                backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                color: '#7c3aed',
+                transform: 'translateX(2px)',
               },
             }}
             {...hoverProps}
@@ -187,11 +192,18 @@ const MenuAppBar = () => {
         )}
 
         <Typography
-          variant={isSmallMobile ? 'h5' : 'h4'}
+          variant={isSmallMobile ? 'h6' : 'h5'}
           component="div"
-          sx={{ flexGrow: 1, fontWeight: 700 }}
+          sx={{ 
+            flexGrow: 1, 
+            fontWeight: 800,
+            letterSpacing: '-0.025em',
+            background: 'linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
         >
-          PBIS
+          PBIS PORTAL
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: isSmallMobile ? 0.5 : 1 }}>
@@ -217,12 +229,13 @@ const MenuAppBar = () => {
             <IconButton
               onClick={handleLogout}
               sx={{ 
-                color: 'white', 
-                borderRadius: 8,
+                color: '#64748b', 
+                borderRadius: 2,
                 transition: 'all 0.2s ease-in-out',
                 '&:hover': { 
-                  backgroundColor: 'rgba(214, 188, 250, 0.2)',
-                  transform: 'scale(1.1)',
+                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                  color: '#ef4444',
+                  transform: 'scale(1.05)',
                 },
               }}
               aria-label="Logout"
