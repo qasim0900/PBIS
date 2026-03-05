@@ -27,33 +27,15 @@ except Exception as e:
     raise RuntimeError(f"Error DEBUG: {e}")
 
 try:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "72.60.66.213,localhost,127.0.0.1,www.pbinventory.cloud,pbinventory.cloud").split(",")
+    ALLOWED_HOSTS = ["*"]
 except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
 try:
-    CORS_ALLOW_ALL_ORIGINS = False
-    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGIN", "http://72.60.66.213:5000").split(",")
-    CORS_ALLOW_CREDENTIALS = True
-    CORS_ALLOW_HEADERS = [
-        "accept",
-        "accept-encoding",
-        "authorization",
-        "content-type",
-        "dnt",
-        "origin",
-        "user-agent",
-        "x-csrftoken",
-        "x-requested-with",
-    ]
-    CORS_ALLOW_METHODS = [
-        "DELETE",
-        "GET",
-        "OPTIONS",
-        "PATCH",
-        "POST",
-        "PUT",
-    ]
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = os.getenv(
+        "CORS_ALLOWED_ORIGIN", "http://localhost:5000"
+    ).split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting CORS_ALLOWED_ORIGINS: {e}")
 
@@ -76,7 +58,6 @@ try:
         "vendor",
         "brand",
         "users",
-        
     ]
 except Exception as e:
     raise RuntimeError(f"Error setting INSTALLED_APPS: {e}")
@@ -147,14 +128,16 @@ except Exception as e:
     raise RuntimeError(f"Error setting WSGI_APPLICATION: {e}")
 
 try:
-    database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE", 'postgresql://postgres:Teeli%40322@localhost:5432/pbis')
+    database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE")
     if database_url:
         DATABASES = {"default": dj_database_url.parse(database_url)}
-        
-        # Production database optimizations
-        if not DEBUG:
-            DATABASES["default"]["CONN_MAX_AGE"] = 60
-
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": BASE_DIR / "db.sqlite3",
+            }
+        }
 except Exception as e:
     raise RuntimeError(f"Error configuring DATABASES: {e}")
 
@@ -182,16 +165,8 @@ try:
     frontend_dist = BASE_DIR / "frontend" / "dist"
     STATICFILES_DIRS = [frontend_dist] if frontend_dist.exists() else []
 
-    # Media files configuration
-    MEDIA_URL = "/media/"
-    MEDIA_ROOT = BASE_DIR / "mediafiles"
-
     if not DEBUG:
         STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-        
-        # Production media file serving (if not using CDN)
-        # For production, consider using AWS S3 or similar for media files
-        DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 except Exception as e:
     raise RuntimeError(f"Error configuring static files: {e}")
 
@@ -235,7 +210,7 @@ try:
         "loggers": {
             "django": {
                 "handlers": ["console"],
-                "level": "INFO" if DEBUG else "WARNING",
+                "level": "INFO",
                 "propagate": False,
             },
             "django.request": {
@@ -250,30 +225,20 @@ try:
             },
         },
     }
-    
-    # Production logging configuration
-    if not DEBUG:
-        log_dir = BASE_DIR / "logs"
-        log_dir.mkdir(exist_ok=True)
-        
-        LOGGING["handlers"]["file"] = {
-            "level": "INFO",
-            "class": "logging.FileHandler",
-            "filename": str(log_dir / "app.log"),
-            "formatter": "verbose",
-        }
-        LOGGING["loggers"]["django"]["handlers"].append("file")
-        LOGGING["loggers"]["django.request"]["handlers"].append("file")
 except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5001,http://127.0.0.1:5001,http://72.60.66.213,http://www.pbinventory.cloud,http://pbinventory.cloud").split(",")
-    
-    # Production security settings (HTTP only - no HTTPS enforcement)
-    if not DEBUG:
-        SECURE_BROWSER_XSS_FILTER = True
-        SECURE_CONTENT_TYPE_NOSNIFF = True
-        X_FRAME_OPTIONS = 'DENY'
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost:5000",
+    ]
+    replit_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
+    if replit_domain:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_domain}")
+    replit_slug = os.getenv("REPLIT_SLUG", "")
+    replit_owner = os.getenv("REPLIT_OWNER", "")
+    if replit_slug and replit_owner:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}.{replit_owner}.repl.co")
+        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}-00-{replit_owner}.repl.co")
 except Exception as e:
-    CSRF_TRUSTED_ORIGINS = ["http://localhost:5001"]
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]
