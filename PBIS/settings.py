@@ -27,7 +27,7 @@ except Exception as e:
     raise RuntimeError(f"Error DEBUG: {e}")
 
 try:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "http://72.60.66.213").split(",")
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "72.60.66.213,localhost,127.0.0.1,www.pbinventory.cloud,pbinventory.cloud").split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
@@ -155,9 +155,9 @@ try:
         if not DEBUG:
             DATABASES["default"]["CONN_MAX_AGE"] = 60
             DATABASES["default"]["OPTIONS"] = {
-                "connect_timeout": 10,
-                "options": "-c default_transaction_isolation=read_committed"
-            }
+            "connect_timeout": 10,
+            "options": "-c default_transaction_isolation='read committed'"
+        }
 
 except Exception as e:
     raise RuntimeError(f"Error configuring DATABASES: {e}")
@@ -272,7 +272,7 @@ except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = 'http://72.60.66.213:5000'
+    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5001,http://127.0.0.1:5001,http://72.60.66.213,https://www.pbinventory.cloud,https://pbinventory.cloud").split(",")
     
     # Production security settings
     if not DEBUG:
@@ -287,4 +287,4 @@ try:
         CSRF_COOKIE_SECURE = True
         X_FRAME_OPTIONS = 'DENY'
 except Exception as e:
-    CSRF_TRUSTED_ORIGINS = ["http://72.60.66.213:5000"]
+    CSRF_TRUSTED_ORIGINS = ["http://localhost:5001"]
