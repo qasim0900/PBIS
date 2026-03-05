@@ -79,11 +79,11 @@ export const MotionDialogContent = motion.div;
 // Hover animation props
 export const hoverProps = {
   whileHover: { 
-    scale: 1.02,
-    transition: { duration: 0.2 }
+    scale: 1.05,
+    transition: { type: 'spring', stiffness: 400, damping: 10 }
   },
   whileTap: { 
-    scale: 0.98,
+    scale: 0.95,
     transition: { duration: 0.1 }
   }
 };
@@ -91,7 +91,7 @@ export const hoverProps = {
 // Table row hover animation
 export const tableRowHoverProps = {
   whileHover: { 
-    backgroundColor: '#D6BCFA',
+    backgroundColor: 'rgba(216, 180, 254, 0.15)',
     transition: { duration: 0.2 }
   }
 };
@@ -99,9 +99,9 @@ export const tableRowHoverProps = {
 // Card hover animation
 export const cardHoverProps = {
   whileHover: { 
-    y: -4,
-    boxShadow: '0 12px 24px rgba(107, 70, 193, 0.2)',
-    transition: { duration: 0.2 }
+    y: -8,
+    boxShadow: '0 25px 50px -12px rgba(168, 85, 247, 0.25)',
+    transition: { type: 'spring', stiffness: 300, damping: 20 }
   }
 };
 

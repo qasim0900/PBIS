@@ -74,9 +74,15 @@ export default function LoginDesign({
     const buttonSx = {
         py: isMobile ? 1 : 1.5,
         fontSize: isMobile ? '0.9rem' : '1rem',
-        fontWeight: 600,
-        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-        '&:hover': { background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' },
+        fontWeight: 700,
+        borderRadius: '16px',
+        backgroundColor: '#A855F7',
+        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+        '&:hover': { 
+            backgroundColor: '#C084FC',
+            transform: 'scale(1.05)',
+            boxShadow: '0 20px 25px -5px rgba(168, 85, 247, 0.4)'
+        },
     };
 
 
@@ -91,28 +97,36 @@ export default function LoginDesign({
 
 
     return (
-        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#F9FAFB' }}>
             <Box
                 sx={{
                     position: 'fixed',
                     inset: 0,
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                    background: 'linear-gradient(135deg, #A855F7 0%, #D8B4FE 100%)',
+                    opacity: 0.15,
                     pointerEvents: 'none',
                 }}
             />
 
             <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', p: isMobile ? 2 : 3, position: 'relative', zIndex: 1 }}>
-                <Card
-                    sx={{
-                        maxWidth: isMobile ? '100%' : 440,
-                        width: '100%',
-                        borderRadius: isMobile ? 2 : 4,
-                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-                        mx: isMobile ? 1 : 0,
-                        position: 'relative',
-                        overflow: 'visible',
-                    }}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: 'spring', duration: 0.8, bounce: 0.4 }}
+                    style={{ width: '100%', maxWidth: isMobile ? '100%' : 440 }}
                 >
+                    <Card
+                        sx={{
+                            width: '100%',
+                            borderRadius: 6,
+                            boxShadow: '0 25px 50px -12px rgba(107, 70, 193, 0.25)',
+                            position: 'relative',
+                            overflow: 'visible',
+                            border: '1px solid rgba(216, 180, 254, 0.3)',
+                            backdropFilter: 'blur(10px)',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                        }}
+                    >
                     <Box
                         sx={{
                             position: 'absolute',
@@ -143,11 +157,10 @@ export default function LoginDesign({
                             <Typography
                                 variant={isMobile ? 'h5' : 'h4'}
                                 sx={{
-                                    fontWeight: 700,
-                                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
+                                    fontWeight: 800,
+                                    color: '#6B21A8',
                                     mb: 1,
+                                    letterSpacing: '-0.025em'
                                 }}
                             >
                                 PBIS
@@ -187,6 +200,7 @@ export default function LoginDesign({
                         </form>
                     </CardContent>
                 </Card>
+                </motion.div>
             </Box>
 
             <Footer />

@@ -126,7 +126,6 @@ class InventoryItemSerializer(serializers.ModelSerializer):
 
             'display_order',
             'is_active',
-            'notes',
             'created_at',
             'updated_at',
         ]
@@ -140,7 +139,6 @@ class InventoryItemSerializer(serializers.ModelSerializer):
             'pack_ratio_display',
             'vendor_name',
             'brand_name',
-            'notes',
             'created_at',
             'updated_at',
         ]

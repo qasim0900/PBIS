@@ -156,9 +156,9 @@ const MenuAppBar = () => {
     <AppBar
       position="fixed"
       sx={{
-        background: 'linear-gradient(135deg, #6B46C1 0%, #553C9A 100%)',
+        background: 'linear-gradient(135deg, #6B21A8 0%, #A855F7 100%)',
         color: 'white',
-        boxShadow: '0 2px 8px rgba(107, 70, 193, 0.3)',
+        boxShadow: '0 4px 12px rgba(107, 33, 168, 0.3)',
         zIndex: 1200,
         borderRadius: 0,
       }}

@@ -12,6 +12,7 @@ import {
     FormControlLabel,
     Box,
 } from "@mui/material";
+import UnitSelect from "./UnitSelect.jsx";
 
 
 //-----------------------------------
@@ -152,6 +153,14 @@ export default function CatalogModal({ open, onClose, onSave, item, categories, 
                             </MenuItem>
                         ))}
                     </TextField>
+
+                    <Box sx={{ mb: 3 }}>
+                        <UnitSelect
+                            value={formData.unit}
+                            onChange={val => handleChange("unit", val)}
+                            required
+                        />
+                    </Box>
 
                     <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
                         <TextField

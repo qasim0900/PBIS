@@ -60,29 +60,26 @@ const SidebarMenuItem = React.memo(({ item, collapsed, isMobile, selected, onCli
     sx={{
       px: collapsed && !isMobile ? 1 : 2,
       justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
-      borderRadius: 2,
+      borderRadius: '16px',
+      mx: 1,
       mb: 0.5,
       minHeight: 48,
-      alignItems: 'center', // fix vertical alignment
-      transition: 'all 0.3s ease',
+      alignItems: 'center',
+      transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       position: 'relative',
+      color: selected ? '#FFFFFF' : '#EDE9FE',
+      backgroundColor: selected ? '#6B21A8' : 'transparent',
       '&:hover': {
-        backgroundColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+        transform: 'translateX(8px) scale(1.02)',
+        '& .MuiListItemIcon-root': { color: '#22D3EE' },
       },
       '&.Mui-selected': {
-        backgroundColor: 'rgba(99,102,241,0.18)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: '4px',
-          backgroundColor: '#6366F1',
-          borderRadius: '0 4px 4px 0',
-        },
+        backgroundColor: '#6B21A8',
+        color: '#FFFFFF',
+        boxShadow: '0 10px 15px -3px rgba(107, 70, 193, 0.3)',
         '&:hover': {
-          backgroundColor: 'rgba(99,102,241,0.25)',
+          backgroundColor: '#A855F7',
         },
       },
     }}
@@ -90,7 +87,7 @@ const SidebarMenuItem = React.memo(({ item, collapsed, isMobile, selected, onCli
     <Tooltip title={collapsed && !isMobile ? item.text : ''} placement="right">
       <ListItemIcon
         sx={{
-          color: selected ? '#6366F1' : 'rgba(255,255,255,0.7)',
+          color: selected ? '#22D3EE' : 'rgba(237, 233, 254, 0.7)',
           minWidth: collapsed && !isMobile ? 0 : 40,
           justifyContent: 'center',
           transition: 'color 0.3s ease',
@@ -298,7 +295,7 @@ const Sidebar = () => {
         sx={{
           '& .MuiDrawer-paper': {
             width: DRAWER_WIDTH,
-            background: 'linear-gradient(180deg, #0B1220 0%, #1C2541 100%)',
+            background: 'linear-gradient(180deg, #6B21A8 0%, #4C1D95 100%)',
             color: 'white',
             border: 'none',
             transition: 'transform 0.35s ease-out',
@@ -326,7 +323,7 @@ const Sidebar = () => {
         width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
         '& .MuiDrawer-paper': {
           width: collapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH,
-          background: 'linear-gradient(180deg, #0B1220 0%, #1C2541 100%)',
+          background: 'linear-gradient(180deg, #6B21A8 0%, #4C1D95 100%)',
           color: 'white',
           border: 'none',
           overflowX: 'hidden',

@@ -4,7 +4,7 @@ import AppRoutes from './routes/AppRoutes';
 import Notification from './components/Notification';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider, CssBaseline } from '@mui/material';
+import { ThemeProvider, CssBaseline, Box } from '@mui/material';
 import theme from './theme/theme.js';
 
 
@@ -17,13 +17,20 @@ This defines the `App` component that **wraps the application with Redux for sta
 React Router for routing, renders all routes, and includes a global notification system**.
 */
 
+import Footer from './components/Footer';
+
 const App = () => (
   <Provider store={store}>
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
         <AuthProvider>
-          <AppRoutes />
+          <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            <Box sx={{ flex: 1 }}>
+              <AppRoutes />
+            </Box>
+            <Footer />
+          </Box>
           <Notification />
         </AuthProvider>
       </Router>

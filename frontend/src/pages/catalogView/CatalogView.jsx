@@ -141,7 +141,7 @@ const CatalogView = () => {
     setFormData({
       name: item.name,
       category: item.category,
-      unit: item.unit || '',
+      unit: item.unit,
       count_unit: item.count_unit,
       order_unit: item.order_unit,
       pack_size: item.pack_size,
@@ -151,7 +151,7 @@ const CatalogView = () => {
       default_vendor: item.default_vendor || item.vendor,
       par_level: item.par_level,
       order_point: item.order_point,
-      frequency_name: item.frequency_name,
+      frequency: item.frequency,
       notes: item.notes || '',
       is_active: item.is_active,
     });

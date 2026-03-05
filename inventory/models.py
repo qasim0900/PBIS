@@ -54,8 +54,7 @@ class InventoryItemQuerySet(models.QuerySet):
 
 class InventoryItem(models.Model):
     ItemCategory = models.TextChoices(
-        'category',
-        'Category',
+        'ItemCategory',
         [
             ('frozen_fruit', 'Frozen Fruit'),
             ('supplements', 'Supplements'),
@@ -83,7 +82,7 @@ class InventoryItem(models.Model):
     )
     unit = models.ForeignKey(
         'inventory.Unit',
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="inventory_items",
         null=True,
         blank=True,

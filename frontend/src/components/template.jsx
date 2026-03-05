@@ -103,9 +103,9 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
   */
 
   const headerCellStyle = {
-    background: 'linear-gradient(135deg, #6B46C1 0%, #553C9A 100%)',
-    color: 'white',
-    fontWeight: 600,
+    backgroundColor: '#6B21A8',
+    color: '#FFFFFF',
+    fontWeight: 700,
     fontSize: { xs: '0.8rem', sm: '0.875rem', md: '1rem' },
     padding: { xs: 1, sm: 1.5, md: 2 },
   };
@@ -225,14 +225,22 @@ const ReusableTable = ({ columns, data = [], searchable = true, actions }) => {
             {filteredData.length > 0 ? (
               filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, idx) => (
                 <MotionTableRow
-                  hover
                   key={row.id || `${page}-${idx}`}
-                  component={TableRow}
                   initial="hidden"
                   animate="visible"
                   variants={fadeInVariants}
                   transition={{ delay: idx * 0.05 }}
                   {...tableRowHoverProps}
+                  sx={{
+                    '&:nth-of-type(even)': {
+                      backgroundColor: '#D8B4FE15',
+                    },
+                    '&:hover': {
+                      backgroundColor: '#C084FC40 !important',
+                      cursor: 'pointer',
+                    },
+                    transition: 'background-color 0.2s',
+                  }}
                 >
                   {columns.map(({ accessor, render, align }, colIdx) => (
                     <TableCell key={accessor || colIdx} align={align} sx={cellStyle}>

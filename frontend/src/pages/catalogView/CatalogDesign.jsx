@@ -28,17 +28,17 @@ typically used for UI elements such as dropdowns or tags.
 */
 
 const CATEGORIES = [
-    { value: 'frozen_fruit', label: 'Frozen Fruit' },
-    { value: 'supplements', label: 'Supplements' },
-    { value: 'liquids', label: 'Liquids' },
-    { value: 'fresh_produce', label: 'Fresh Produce' },
-    { value: 'dry_stock', label: 'Dry Stock' },
-    { value: 'cp_juices', label: 'CP Juices' },
-    { value: 'shots', label: 'Shots' },
-    { value: 'packaging', label: 'Packaging' },
-    { value: 'supplies', label: 'Supplies' },
-    { value: 'misc_items', label: 'Misc. Items' },
-    { value: 'other', label: 'Other' },
+    { value: 'frozen_fruit', label: 'Frozen Fruit', color: '#6B21A8' },
+    { value: 'supplements', label: 'Supplements', color: '#A855F7' },
+    { value: 'liquids', label: 'Liquids', color: '#22D3EE' },
+    { value: 'fresh_produce', label: 'Fresh Produce', color: '#10B981' },
+    { value: 'dry_stock', label: 'Dry Stock', color: '#FACC15' },
+    { value: 'cp_juices', label: 'CP Juices', color: '#EC4899' },
+    { value: 'shots', label: 'Shots', color: '#D8B4FE' },
+    { value: 'packaging', label: 'Packaging', color: '#6B21A8' },
+    { value: 'supplies', label: 'Supplies', color: '#22D3EE' },
+    { value: 'misc_items', label: 'Misc. Items', color: '#A855F7' },
+    { value: 'other', label: 'Other', color: '#9CA3AF' },
 ];
 
 
@@ -73,7 +73,7 @@ const CatalogDesign = ({
     */
 
     const getCategoryColor = (cat) =>
-        CATEGORIES.find((c) => c.value === cat)?.color || '#64748b';
+        CATEGORIES.find((c) => c.value === cat)?.color || '#9CA3AF';
 
 
     //-----------------------------------
