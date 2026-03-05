@@ -268,20 +268,12 @@ except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5001,http://127.0.0.1:5001,http://72.60.66.213,https://www.pbinventory.cloud,https://pbinventory.cloud").split(",")
+    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:5001,http://127.0.0.1:5001,http://72.60.66.213,http://www.pbinventory.cloud,http://pbinventory.cloud").split(",")
     
-    # Production security settings
+    # Production security settings (HTTP only - no HTTPS enforcement)
     if not DEBUG:
         SECURE_BROWSER_XSS_FILTER = True
         SECURE_CONTENT_TYPE_NOSNIFF = True
-        # Disable HTTPS enforcement for HTTP-only deployment
-        # SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-        # SECURE_HSTS_SECONDS = 31536000  # 1 year
-        # SECURE_HSTS_PRELOAD = True
-        # SECURE_REDIRECT_EXEMPT = []
-        # SECURE_SSL_REDIRECT = True
-        # SESSION_COOKIE_SECURE = True
-        # CSRF_COOKIE_SECURE = True
         X_FRAME_OPTIONS = 'DENY'
 except Exception as e:
     CSRF_TRUSTED_ORIGINS = ["http://localhost:5001"]
