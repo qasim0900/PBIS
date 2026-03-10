@@ -22,22 +22,18 @@ class InventoryItemQuerySet(models.QuerySet):
 
 
 class InventoryItem(models.Model):
-    ItemCategory = models.TextChoices(
-        'ItemCategory',
-        [
-            ('frozen_fruit', 'Frozen Fruit'),
-            ('supplements', 'Supplements'),
-            ('liquids', 'Liquids'),
-            ('fresh_produce', 'Fresh Produce'),
-            ('dry_stock', 'Dry Stock'),
-            ('cp_juices', 'CP Juices'),
-            ('shots', 'Shots'),
-            ('packaging', 'Packaging'),
-            ('supplies', 'Supplies'),
-            ('misc_items', 'Misc. Items'),
-            ('other', 'Other'),
-        ],
-    )
+    class ItemCategory(models.TextChoices):
+        FROZEN_FRUIT = 'frozen_fruit', 'Frozen Fruit'
+        SUPPLEMENTS = 'supplements', 'Supplements'
+        LIQUIDS = 'liquids', 'Liquids'
+        FRESH_PRODUCE = 'fresh_produce', 'Fresh Produce'
+        DRY_STOCK = 'dry_stock', 'Dry Stock'
+        CP_JUICES = 'cp_juices', 'CP Juices'
+        SHOTS = 'shots', 'Shots'
+        PACKAGING = 'packaging', 'Packaging'
+        SUPPLIES = 'supplies', 'Supplies'
+        MISC_ITEMS = 'misc_items', 'Misc. Items'
+        OTHER = 'other', 'Other'
 
     name = models.CharField(
         max_length=255,

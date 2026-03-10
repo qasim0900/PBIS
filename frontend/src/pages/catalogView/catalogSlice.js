@@ -84,7 +84,30 @@ export const createItem = createAsyncThunk(
       const { data } = await inventoryAPI.create(itemData);
       return data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      // Enhanced error handling with detailed field-level errors
+      const errorData = err.response?.data;
+      
+      if (errorData && typeof errorData === 'object') {
+        // Format field-specific errors
+        const fieldErrors = {};
+        Object.keys(errorData).forEach(field => {
+          const messages = Array.isArray(errorData[field]) 
+            ? errorData[field] 
+            : [errorData[field]];
+          fieldErrors[field] = messages.join(', ');
+        });
+        
+        return rejectWithValue({
+          fieldErrors,
+          message: 'Validation failed. Please check the form for errors.',
+          rawError: errorData
+        });
+      }
+      
+      return rejectWithValue({
+        message: err.message || 'Failed to create item',
+        rawError: err.response?.data
+      });
     }
   }
 );
@@ -108,7 +131,30 @@ export const updateItem = createAsyncThunk(
       const { data: updated } = await inventoryAPI.update(id, data);
       return updated;
     } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
+      // Enhanced error handling with detailed field-level errors
+      const errorData = err.response?.data;
+      
+      if (errorData && typeof errorData === 'object') {
+        // Format field-specific errors
+        const fieldErrors = {};
+        Object.keys(errorData).forEach(field => {
+          const messages = Array.isArray(errorData[field]) 
+            ? errorData[field] 
+            : [errorData[field]];
+          fieldErrors[field] = messages.join(', ');
+        });
+        
+        return rejectWithValue({
+          fieldErrors,
+          message: 'Validation failed. Please check the form for errors.',
+          rawError: errorData
+        });
+      }
+      
+      return rejectWithValue({
+        message: err.message || 'Failed to update item',
+        rawError: err.response?.data
+      });
     }
   }
 );

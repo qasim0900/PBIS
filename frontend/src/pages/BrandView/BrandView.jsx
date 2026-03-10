@@ -31,8 +31,28 @@ const BrandView = () => {
   // :: Initial Fetch
   //---------------------------------------
   useEffect(() => {
-    dispatch(fetchBrands());
-    dispatch(fetchVendors());
+    dispatch(fetchBrands())
+      .unwrap()
+      .catch((err) => {
+        console.error('Fetch brands error:', err);
+        const errorMessage = err?.message || 
+                            err?.detail || 
+                            'Failed to load brands. Please refresh the page.';
+        dispatch(showNotification({ 
+          message: errorMessage, 
+          type: 'error' 
+        }));
+      });
+    
+    dispatch(fetchVendors())
+      .unwrap()
+      .catch((err) => {
+        console.error('Fetch vendors error:', err);
+        dispatch(showNotification({ 
+          message: 'Failed to load vendors', 
+          type: 'warning' 
+        }));
+      });
   }, [dispatch]);
 
   //---------------------------------------
@@ -58,34 +78,88 @@ const BrandView = () => {
   // :: Form Submit Handler
   //---------------------------------------
   const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      dispatch(showNotification({ message: 'Brand name is required', type: 'error' }));
+    // Comprehensive validation
+    if (!formData.name || !formData.name.trim()) {
+      dispatch(showNotification({ 
+        message: 'Brand name is required', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (formData.name.trim().length < 2) {
+      dispatch(showNotification({ 
+        message: 'Brand name must be at least 2 characters long', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (formData.name.trim().length > 100) {
+      dispatch(showNotification({ 
+        message: 'Brand name must be 100 characters or less', 
+        type: 'error' 
+      }));
       return;
     }
 
     if (!formData.vendor) {
-      dispatch(showNotification({ message: 'Vendor is required', type: 'error' }));
+      dispatch(showNotification({ 
+        message: 'Vendor is required', 
+        type: 'error' 
+      }));
       return;
     }
 
     const payload = {
-      name: formData.name,
-      description: formData.description || '',
+      name: formData.name.trim(),
+      description: formData.description?.trim() || '',
       vendor: formData.vendor,
     };
 
     try {
       if (editing) {
         await dispatch(updateBrand({ id: editing.id, data: payload })).unwrap();
-        dispatch(showNotification({ message: 'Brand updated successfully', type: 'success' }));
+        dispatch(showNotification({ 
+          message: `✓ Brand "${payload.name}" updated successfully`, 
+          type: 'success' 
+        }));
       } else {
         await dispatch(createBrand(payload)).unwrap();
-        dispatch(showNotification({ message: 'Brand added successfully', type: 'success' }));
+        dispatch(showNotification({ 
+          message: `✓ Brand "${payload.name}" added successfully`, 
+          type: 'success' 
+        }));
       }
 
       closeDialog();
-    } catch {
-      dispatch(showNotification({ message: 'Unable to save brand. Please try again.', type: 'error' }));
+    } catch (err) {
+      console.error('Brand save error:', err);
+      
+      // Handle field-specific errors
+      if (err.fieldErrors) {
+        const errorMessages = Object.entries(err.fieldErrors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join('\n');
+        
+        dispatch(showNotification({
+          message: errorMessages || 'Validation failed',
+          type: 'error'
+        }));
+      } else {
+        // Handle general errors
+        const errorMessage = 
+          err?.message ||
+          err?.name?.[0] ||
+          err?.vendor?.[0] ||
+          err?.detail ||
+          'Unable to save brand. Please try again.';
+        
+        dispatch(showNotification({
+          message: errorMessage,
+          type: 'error'
+        }));
+      }
     }
   };
 

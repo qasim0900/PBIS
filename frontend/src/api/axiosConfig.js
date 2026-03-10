@@ -9,7 +9,7 @@ This reads the API base URL from a Vite environment variable.
 If not provided, it falls back to the local development server.
 */
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://72.60.66.213:8000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT) || 15000;
 
 //-----------------------------------

@@ -15,7 +15,19 @@ class BrandSerializer(serializers.ModelSerializer):
         ]
 
     def validate_name(self, value):
+        """Validate brand name"""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Brand name cannot be empty.")
+        
         value = value.strip().title()
+        
+        if len(value) < 2:
+            raise serializers.ValidationError("Brand name must be at least 2 characters long.")
+        
+        if len(value) > 100:
+            raise serializers.ValidationError("Brand name must be 100 characters or less.")
+        
+        # Check for duplicate names (case-insensitive)
         queryset = Brand.objects.filter(name__iexact=value)
 
         if self.instance:
@@ -23,7 +35,19 @@ class BrandSerializer(serializers.ModelSerializer):
 
         if queryset.exists():
             raise serializers.ValidationError(
-                "Brand with this name already exists."
+                f"A brand with the name '{value}' already exists."
             )
 
         return value
+
+    def validate_vendor(self, value):
+        """Validate vendor"""
+        if not value:
+            raise serializers.ValidationError("Vendor is required.")
+        return value
+
+    def validate_description(self, value):
+        """Validate description"""
+        if value and len(value) > 500:
+            raise serializers.ValidationError("Description must be 500 characters or less.")
+        return value.strip() if value else ""

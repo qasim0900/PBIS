@@ -55,6 +55,7 @@ const CatalogDesign = ({
     vendors,
     brands,
     frequencies,
+    fieldErrors = {},
 }) => {
     const getCategoryColor = (cat) => CATEGORIES.find((c) => c.value === cat)?.color || '#64748b';
 
@@ -106,7 +107,10 @@ const CatalogDesign = ({
     //-----------------------------------
     // :: Form Update Handler
     //-----------------------------------
-    const updateForm = (key) => (e) => setFormData({ ...formData, [key]: e.target?.value ?? e });
+    const updateForm = (key) => (e) => {
+        const value = e.target?.value ?? e;
+        setFormData(key, value);
+    };
 
     //-----------------------------------
     // :: Render
@@ -163,34 +167,133 @@ const CatalogDesign = ({
                                         value={formData.name}
                                         onChange={updateForm('name')}
                                         fullWidth
+                                        required
+                                        error={!!fieldErrors.name}
+                                        helperText={fieldErrors.name}
                                         sx={{ gridColumn: '1 / -1' }}
                                     />
-                                    <TextField select label="Category" value={formData.category} onChange={updateForm('category')}>
+                                    <TextField 
+                                        select 
+                                        label="Category" 
+                                        value={formData.category} 
+                                        onChange={updateForm('category')}
+                                        required
+                                        error={!!fieldErrors.category}
+                                        helperText={fieldErrors.category}
+                                    >
                                         {CATEGORIES.map(c => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
                                     </TextField>
-                                    <TextField select label="Location" value={formData.location} onChange={updateForm('location')}>
+                                    <TextField 
+                                        select 
+                                        label="Location" 
+                                        value={formData.location || ''} 
+                                        onChange={updateForm('location')}
+                                        required
+                                        error={!!fieldErrors.location}
+                                        helperText={fieldErrors.location}
+                                    >
+                                        <MenuItem value="">— Select Location —</MenuItem>
                                         {(locations || []).map(l => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
                                     </TextField>
-                                    <TextField label="Count Unit" value={formData.count_unit} onChange={updateForm('count_unit')} />
-                                    <TextField label="Order Unit" value={formData.order_unit} onChange={updateForm('order_unit')} />
-                                    <TextField select label="Inventory List" value={formData.frequency || ''} onChange={updateForm('frequency')}>
+                                    <TextField 
+                                        label="Count Unit" 
+                                        value={formData.count_unit} 
+                                        onChange={updateForm('count_unit')}
+                                        required
+                                        error={!!fieldErrors.count_unit}
+                                        helperText={fieldErrors.count_unit || "e.g., cartons, bottles, bags"}
+                                        placeholder="e.g., cartons"
+                                    />
+                                    <TextField 
+                                        label="Order Unit" 
+                                        value={formData.order_unit} 
+                                        onChange={updateForm('order_unit')}
+                                        required
+                                        error={!!fieldErrors.order_unit}
+                                        helperText={fieldErrors.order_unit || "e.g., case, box, bundle"}
+                                        placeholder="e.g., case"
+                                    />
+                                    <TextField 
+                                        label="Pack Size" 
+                                        type="number" 
+                                        value={formData.pack_size} 
+                                        onChange={updateForm('pack_size')}
+                                        required
+                                        error={!!fieldErrors.pack_size}
+                                        helperText={fieldErrors.pack_size || "How many count units = 1 order unit (e.g., 6 cartons = 1 case, enter 6)"}
+                                        sx={{ gridColumn: '1 / -1' }}
+                                        InputProps={{ inputProps: { min: 1, step: 1 } }}
+                                    />
+                                    <TextField 
+                                        select 
+                                        label="Inventory List" 
+                                        value={formData.frequency || ''} 
+                                        onChange={updateForm('frequency')}
+                                        required
+                                        error={!!fieldErrors.frequency}
+                                        helperText={fieldErrors.frequency}
+                                    >
                                         <MenuItem value="">— Select Inventory List —</MenuItem>
                                         {(frequencies || []).map(f => <MenuItem key={f.id} value={f.id}>{f.frequency_name}</MenuItem>)}
                                     </TextField>
-                                    <TextField select label="Vendor" value={formData.vendor || ''} onChange={(e) => {
-                                        const vendorId = e.target.value;
-                                        setFormData(prev => ({ ...prev, vendor: vendorId, default_vendor: vendorId }));
-                                    }}>
-                                        <MenuItem value="">— Select Vendor —</MenuItem>
+                                    <TextField 
+                                        select 
+                                        label="Vendor (Optional)" 
+                                        value={formData.vendor || ''} 
+                                        onChange={(e) => {
+                                            const vendorId = e.target.value || null;
+                                            setFormData('vendor', vendorId);
+                                            setFormData('default_vendor', vendorId);
+                                        }}
+                                        error={!!fieldErrors.vendor}
+                                        helperText={fieldErrors.vendor}
+                                    >
+                                        <MenuItem value="">None / Generic</MenuItem>
                                         {(vendors || []).map(v => <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>)}
                                     </TextField>
-                                    <TextField select label="Brand" value={formData.brand || ''} onChange={updateForm('brand')}>
-                                        <MenuItem value="">— Select Brand —</MenuItem>
+                                    <TextField 
+                                        select 
+                                        label="Brand (Optional)" 
+                                        value={formData.brand || ''} 
+                                        onChange={(e) => {
+                                            const brandId = e.target.value || null;
+                                            setFormData('brand', brandId);
+                                        }}
+                                        error={!!fieldErrors.brand}
+                                        helperText={fieldErrors.brand}
+                                    >
+                                        <MenuItem value="">None / Generic</MenuItem>
                                         {(brands || []).map(b => <MenuItem key={b.id} value={b.id}>{b.name}</MenuItem>)}
                                     </TextField>
-                                    <TextField label="Par Level" type="number" value={formData.par_level} onChange={updateForm('par_level')} />
-                                    <TextField label="Order Point" type="number" value={formData.order_point} onChange={updateForm('order_point')} />
-                                    <TextField label="Storage Location" value={formData.storage_location} onChange={updateForm('storage_location')} />
+                                    <TextField 
+                                        label="Par Level" 
+                                        type="number" 
+                                        value={formData.par_level} 
+                                        onChange={updateForm('par_level')}
+                                        required
+                                        error={!!fieldErrors.par_level}
+                                        helperText={fieldErrors.par_level || "Maximum inventory level"}
+                                        InputProps={{ inputProps: { min: 0, step: 1 } }}
+                                    />
+                                    <TextField 
+                                        label="Order Point" 
+                                        type="number" 
+                                        value={formData.order_point} 
+                                        onChange={updateForm('order_point')}
+                                        required
+                                        error={!!fieldErrors.order_point}
+                                        helperText={fieldErrors.order_point || "Reorder when stock reaches this level"}
+                                        InputProps={{ inputProps: { min: 0, step: 1 } }}
+                                    />
+                                    <TextField 
+                                        label="Storage Location" 
+                                        value={formData.storage_location || ''} 
+                                        onChange={updateForm('storage_location')}
+                                        error={!!fieldErrors.storage_location}
+                                        helperText={fieldErrors.storage_location || "e.g., Shelf A3, Freezer 2"}
+                                        placeholder="e.g., Shelf A3"
+                                        sx={{ gridColumn: '1 / -1' }}
+                                    />
                                     <TextField
                                         label="Notes"
                                         value={formData.notes || ''}
@@ -198,16 +301,18 @@ const CatalogDesign = ({
                                         fullWidth
                                         multiline
                                         rows={3}
+                                        error={!!fieldErrors.notes}
+                                        helperText={fieldErrors.notes}
                                         sx={{ gridColumn: '1 / -1' }}
                                     />
                                 </Box>
                             </DialogContent>
 
                             <DialogActions>
-                                <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+                                <Button onClick={() => setModalOpen(false)} disabled={saving}>Cancel</Button>
                                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                     <Button variant="contained" onClick={handleSave} disabled={saving}>
-                                        {currentItem ? 'Update' : 'Create'}
+                                        {saving ? 'Saving...' : (currentItem ? 'Update' : 'Create')}
                                     </Button>
                                 </motion.div>
                             </DialogActions>

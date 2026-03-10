@@ -55,8 +55,31 @@ const Locations = () => {
   */
 
   useEffect(() => {
-    dispatch(fetchLocations());
-    dispatch(fetchFrequencies());
+    dispatch(fetchLocations())
+      .unwrap()
+      .catch((err) => {
+        console.error('Fetch locations error:', err);
+        const errorMessage = err?.message || 
+                            err?.detail || 
+                            'Failed to load locations. Please refresh the page.';
+        dispatch(showNotification({ 
+          message: errorMessage, 
+          type: 'error' 
+        }));
+      });
+    
+    dispatch(fetchFrequencies())
+      .unwrap()
+      .catch((err) => {
+        console.error('Fetch frequencies error:', err);
+        const errorMessage = err?.message || 
+                            err?.detail || 
+                            'Failed to load Inventory Lists. Please refresh the page.';
+        dispatch(showNotification({ 
+          message: errorMessage, 
+          type: 'error' 
+        }));
+      });
   }, [dispatch]);
 
 
@@ -97,25 +120,122 @@ const Locations = () => {
   */
 
   const handleSubmit = useCallback(async () => {
-    if (!formData.frequency) {
-      dispatch(
-        showNotification({ message: 'Please select a Inventory List', type: 'error' })
-      );
+    // Comprehensive validation
+    if (!formData.name || !formData.name.trim()) {
+      dispatch(showNotification({ 
+        message: 'Location name is required', 
+        type: 'error' 
+      }));
       return;
     }
 
+    if (formData.name.trim().length < 2) {
+      dispatch(showNotification({ 
+        message: 'Location name must be at least 2 characters long', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (formData.name.trim().length > 255) {
+      dispatch(showNotification({ 
+        message: 'Location name must be 255 characters or less', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (!formData.code || !formData.code.trim()) {
+      dispatch(showNotification({ 
+        message: 'Location code is required', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (formData.code.trim().length < 2) {
+      dispatch(showNotification({ 
+        message: 'Location code must be at least 2 characters long', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (formData.code.trim().length > 32) {
+      dispatch(showNotification({ 
+        message: 'Location code must be 32 characters or less', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (!formData.frequency) {
+      dispatch(showNotification({ 
+        message: 'Inventory List is required', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (!formData.timezone) {
+      dispatch(showNotification({ 
+        message: 'Timezone is required', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    const cleanPayload = {
+      name: formData.name.trim(),
+      code: formData.code.trim().toUpperCase(),
+      timezone: formData.timezone,
+      frequency: formData.frequency,
+    };
+
     try {
       if (editing) {
-        await dispatch(updateLocation({ id: editing.id, data: formData })).unwrap();
-        dispatch(showNotification({ message: 'Location updated', type: 'success' }));
+        await dispatch(updateLocation({ id: editing.id, data: cleanPayload })).unwrap();
+        dispatch(showNotification({ 
+          message: `✓ Location "${cleanPayload.name}" updated successfully`, 
+          type: 'success' 
+        }));
       } else {
-        await dispatch(createLocation(formData)).unwrap();
-        dispatch(showNotification({ message: 'Location created', type: 'success' }));
+        await dispatch(createLocation(cleanPayload)).unwrap();
+        dispatch(showNotification({ 
+          message: `✓ Location "${cleanPayload.name}" created successfully`, 
+          type: 'success' 
+        }));
       }
       closeDialog();
       dispatch(fetchLocations());
-    } catch {
-      dispatch(showNotification({ message: 'Unable to save location. Please try again.', type: 'error' }));
+    } catch (err) {
+      console.error('Location save error:', err);
+      
+      // Handle field-specific errors
+      if (err.fieldErrors) {
+        const errorMessages = Object.entries(err.fieldErrors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join('\n');
+        
+        dispatch(showNotification({
+          message: errorMessages || 'Validation failed',
+          type: 'error'
+        }));
+      } else {
+        // Handle general errors
+        const errorMessage = 
+          err?.message ||
+          err?.name?.[0] ||
+          err?.code?.[0] ||
+          err?.frequency?.[0] ||
+          err?.detail ||
+          'Unable to save location. Please try again.';
+        
+        dispatch(showNotification({
+          message: errorMessage,
+          type: 'error'
+        }));
+      }
     }
   }, [dispatch, editing, formData, closeDialog]);
 

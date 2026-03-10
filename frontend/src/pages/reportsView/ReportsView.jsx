@@ -120,8 +120,25 @@ const ReportsView = () => {
   // Load Reports
   // ----------------------
   const handleLoadReports = useCallback(async () => {
+    // Validation
+    if (!selectedLocation) {
+      dispatch(showNotification({
+        message: "Please select a location first",
+        type: "warning"
+      }));
+      return;
+    }
+
+    if (!selectedFrequency) {
+      dispatch(showNotification({
+        message: "Please select an Inventory List first",
+        type: "warning"
+      }));
+      return;
+    }
+
     try {
-      await dispatch(
+      const result = await dispatch(
         listReports({
           location: selectedLocation,
           frequency: selectedFrequency,
@@ -129,13 +146,29 @@ const ReportsView = () => {
         })
       ).unwrap();
 
-      dispatch(showNotification({
-        message: "Latest report synchronization complete.",
-        type: "success"
-      }));
+      // Check if result has data
+      const reportCount = result?.results?.length || result?.length || 0;
+      
+      if (reportCount === 0) {
+        dispatch(showNotification({
+          message: "No reports found for the selected location and inventory list",
+          type: "info"
+        }));
+      } else {
+        dispatch(showNotification({
+          message: `✓ Loaded ${reportCount} report(s) successfully`,
+          type: "success"
+        }));
+      }
     } catch (err) {
+      console.error('Load reports error:', err);
+      
+      const errorMessage = err?.message || 
+                          err?.error || 
+                          "Failed to load reports. Please check your connection and try again.";
+      
       dispatch(showNotification({
-        message: "Synchronisation failed. Please verify your connection and try again.",
+        message: errorMessage,
         type: "error"
       }));
     }
@@ -156,25 +189,39 @@ const ReportsView = () => {
       if (entryToDelete.sheetId && entryToDelete.id) {
         // Individual entry delete
         await dispatch(deleteCountEntry(entryToDelete.id)).unwrap();
-        dispatch(showNotification({ message: "Entry deleted successfully", type: "success" }));
+        dispatch(showNotification({ 
+          message: `✓ Entry "${entryToDelete.item}" deleted successfully`, 
+          type: "success" 
+        }));
       } else if (entryToDelete.sheetId) {
-        // Full report delete
-        if (!selectedLocation || !selectedFrequency) {
+        // Full report delete - validate first
+        if (!selectedLocation) {
           dispatch(showNotification({
-            message: "Select a location and Inventory List first",
-            type: "error"
+            message: "Please select a location first",
+            type: "warning"
           }));
           setDeleteConfirmOpen(false);
           setEntryToDelete(null);
           return;
         }
+        
+        if (!selectedFrequency) {
+          dispatch(showNotification({
+            message: "Please select an Inventory List first",
+            type: "warning"
+          }));
+          setDeleteConfirmOpen(false);
+          setEntryToDelete(null);
+          return;
+        }
+        
         await dispatch(deleteReport({
           location_id: selectedLocation,
           frequency_id: selectedFrequency
         })).unwrap();
-        dispatch(showNotification({ message: "Report deleted successfully", type: "success" }));
       }
 
+      // Reload reports after deletion
       await dispatch(listReports({
         location: selectedLocation,
         frequency: selectedFrequency,
@@ -185,10 +232,17 @@ const ReportsView = () => {
       setEntryToDelete(null);
 
     } catch (err) {
+      console.error('Delete error:', err);
+      
+      const errorMessage = err?.message || 
+                          err?.error || 
+                          "Delete operation failed. Please try again.";
+      
       dispatch(showNotification({
-        message: err || "Action failed",
+        message: errorMessage,
         type: "error",
       }));
+      
       setDeleteConfirmOpen(false);
       setEntryToDelete(null);
     }
@@ -205,26 +259,62 @@ const ReportsView = () => {
   const confirmEditEntry = async () => {
     if (!editRow) return;
 
+    // Validation
+    if (!editRow.itemId) {
+      dispatch(showNotification({
+        message: "Please select an item",
+        type: "warning"
+      }));
+      return;
+    }
+
+    if (editRow.currentCount === null || editRow.currentCount === undefined || editRow.currentCount === '') {
+      dispatch(showNotification({
+        message: "Please enter a current count",
+        type: "warning"
+      }));
+      return;
+    }
+
+    const count = Number(editRow.currentCount);
+    if (isNaN(count) || count < 0) {
+      dispatch(showNotification({
+        message: "Current count must be a non-negative number",
+        type: "error"
+      }));
+      return;
+    }
+
+    // Validate against par level
+    if (editRow.par_level && count > editRow.par_level) {
+      dispatch(showNotification({
+        message: `Current count (${count}) cannot exceed Par Level (${editRow.par_level})`,
+        type: "error"
+      }));
+      return;
+    }
+
     try {
       await dispatch(
         updateCountEntry({
           id: editRow.id,
           data: {
             item: editRow.itemId,
-            on_hand_quantity: editRow.currentCount,
-            notes: editRow.notes
+            on_hand_quantity: count,
+            notes: editRow.notes || ''
           }
         })
       ).unwrap();
 
+      // Update local state
       setRows(prevRows =>
         prevRows.map(row =>
-          row.id === editRow.id ? { ...row, ...editRow } : row
+          row.id === editRow.id ? { ...row, ...editRow, currentCount: count } : row
         )
       );
 
       dispatch(showNotification({
-        message: "Count updated successfully",
+        message: `✓ Count for "${editRow.item}" updated successfully`,
         type: "success"
       }));
 
@@ -233,8 +323,14 @@ const ReportsView = () => {
       setEditRow(null);
 
     } catch (err) {
+      console.error('Edit error:', err);
+      
+      const errorMessage = err?.message || 
+                          err?.error || 
+                          "Update failed. Please try again.";
+      
       dispatch(showNotification({
-        message: err || "Update failed",
+        message: errorMessage,
         type: "error",
       }));
     }
@@ -303,18 +399,58 @@ const ReportsView = () => {
   // CSV & Print
   // ----------------------
   const handleDownloadCSV = useCallback(() => {
-    downloadCSVReport(rows, dispatch, showNotification);
+    try {
+      if (!rows || rows.length === 0) {
+        dispatch(showNotification({
+          message: "No data available to download. Please load a report first.",
+          type: "warning"
+        }));
+        return;
+      }
+      
+      downloadCSVReport(rows, dispatch, showNotification);
+    } catch (err) {
+      console.error('CSV download error:', err);
+      dispatch(showNotification({
+        message: "Failed to download CSV. Please try again.",
+        type: "error"
+      }));
+    }
   }, [rows, dispatch]);
 
   const handlePrint = useCallback(() => {
-    printReport(
-      rows,
-      locations,
-      selectedLocation,
-      username,
-      dispatch,
-      showNotification
-    );
+    try {
+      if (!rows || rows.length === 0) {
+        dispatch(showNotification({
+          message: "No data available to print. Please load a report first.",
+          type: "warning"
+        }));
+        return;
+      }
+      
+      if (!selectedLocation) {
+        dispatch(showNotification({
+          message: "Please select a location first",
+          type: "warning"
+        }));
+        return;
+      }
+      
+      printReport(
+        rows,
+        locations,
+        selectedLocation,
+        username,
+        dispatch,
+        showNotification
+      );
+    } catch (err) {
+      console.error('Print error:', err);
+      dispatch(showNotification({
+        message: "Failed to generate print view. Please try again.",
+        type: "error"
+      }));
+    }
   }, [rows, locations, selectedLocation, username, dispatch]);
 
   // Show loading screen when initial data is being fetched
@@ -373,7 +509,7 @@ const ReportsView = () => {
       </Dialog>
 
       {/* EDIT FORM DIALOG */}
-      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
+      <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Edit Entry</DialogTitle>
         <DialogContent>
           <TextField
@@ -385,7 +521,11 @@ const ReportsView = () => {
               setEditRow(prev => ({ ...prev, itemId: e.target.value }))
             }
             margin="dense"
+            required
+            error={editRow && !editRow.itemId}
+            helperText={editRow && !editRow.itemId ? "Item is required" : ""}
           >
+            <MenuItem value="">— Select Item —</MenuItem>
             {itemsDropdown.map(item => (
               <MenuItem key={item.id} value={item.id}>
                 {item.name}
@@ -403,6 +543,7 @@ const ReportsView = () => {
             }
             margin="dense"
           >
+            <MenuItem value="">— No Vendor —</MenuItem>
             {vendorsDropdown.map(v => (
               <MenuItem key={v} value={v}>
                 {v}
@@ -413,11 +554,29 @@ const ReportsView = () => {
           <TextField
             fullWidth
             label="Current Count"
-            value={editRow?.currentCount || ""}
-            onChange={(e) =>
-              setEditRow(prev => ({ ...prev, currentCount: e.target.value }))
-            }
+            type="number"
+            value={editRow?.currentCount ?? ""}
+            onChange={(e) => {
+              const value = e.target.value;
+              setEditRow(prev => ({ ...prev, currentCount: value }));
+            }}
             margin="dense"
+            required
+            error={editRow && (editRow.currentCount === null || editRow.currentCount === undefined || editRow.currentCount === '')}
+            helperText={
+              editRow && (editRow.currentCount === null || editRow.currentCount === undefined || editRow.currentCount === '')
+                ? "Current count is required"
+                : editRow?.par_level
+                ? `Valid range: 0 to ${editRow.par_level}`
+                : "Enter the current inventory count"
+            }
+            InputProps={{ 
+              inputProps: { 
+                min: 0, 
+                max: editRow?.par_level || undefined,
+                step: 1 
+              } 
+            }}
           />
 
           <TextField
@@ -428,6 +587,9 @@ const ReportsView = () => {
               setEditRow(prev => ({ ...prev, notes: e.target.value }))
             }
             margin="dense"
+            multiline
+            rows={3}
+            placeholder="Add any notes or comments..."
           />
         </DialogContent>
         <DialogActions>
@@ -436,6 +598,7 @@ const ReportsView = () => {
             onClick={() => setEditConfirmOpen(true)}
             variant="contained"
             color="primary"
+            disabled={!editRow?.itemId || editRow?.currentCount === null || editRow?.currentCount === undefined || editRow?.currentCount === ''}
           >
             Update
           </Button>

@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useDispatch } from "react-redux";
 import EditIcon from "@mui/icons-material/Edit";
+import WarningIcon from "@mui/icons-material/Warning";
 import { updateSelectedSheetEntry } from "../countsSlice";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { hoverScale } from "../../../utils/animations";
@@ -18,6 +19,7 @@ import {
     Stack,
     TextField,
     Typography,
+    Alert,
 } from "@mui/material";
 
 const InventoryCard = ({ item }) => {
@@ -44,6 +46,7 @@ const InventoryCard = ({ item }) => {
     const [localCount, setLocalCount] = useState(on_hand_quantity);
     const [localNotes, setLocalNotes] = useState(notes || "");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [showWarning, setShowWarning] = useState(false);
 
     const [modalData, setModalData] = useState({
         on_hand_quantity,
@@ -108,26 +111,46 @@ const InventoryCard = ({ item }) => {
     }, [dispatch, id, localCount, localNotes, on_hand_quantity, notes]);
 
     const handleModalSave = useCallback(() => {
+        const countValue = Number(modalData.on_hand_quantity);
+        const parValue = Number(modalData.par_level);
+        
+        // Validation: Count should not exceed par level
+        if (countValue > parValue) {
+            alert(`Current count (${countValue}) cannot exceed Par Level (${parValue})`);
+            return;
+        }
+        
         dispatch(
             updateSelectedSheetEntry({
                 id,
                 data: {
-                    on_hand_quantity: Number(modalData.on_hand_quantity),
+                    on_hand_quantity: countValue,
                     notes: modalData.notes || "",
-                    par_level: Number(modalData.par_level),
+                    par_level: parValue,
                     order_point: Number(modalData.order_point),
                 },
             })
         );
         setIsModalOpen(false);
+        setShowWarning(false);
     }, [dispatch, id, modalData]);
 
     const handleCountChange = (value) => {
+        const numValue = Number(value);
+        const currentPar = Number(modalData.par_level) || Number(par_level) || 0;
+        
+        // STRICT VALIDATION: Don't allow values above par level or below 0
+        if (numValue < 0 || numValue > currentPar) {
+            // Don't update the value at all - reject the input
+            return;
+        }
+        
+        setShowWarning(false);
         setLocalCount(value);
         dispatch(updateSelectedSheetEntry({
             id,
-            data: { 
-                on_hand_quantity: Number(value),
+            data: {
+                on_hand_quantity: numValue,
                 par_level: Number(modalData.par_level),
                 order_point: Number(modalData.order_point)
             }
@@ -135,7 +158,25 @@ const InventoryCard = ({ item }) => {
     };
 
     const handleKeyDown = (e) => {
-        if ([".", ",", "e", "E"].includes(e.key)) e.preventDefault();
+        // Prevent decimal point, comma, minus, and 'e' (scientific notation)
+        if ([".", ",", "e", "E", "-", "+"].includes(e.key)) {
+            e.preventDefault();
+            return;
+        }
+        
+        // Check if the new value would exceed par level
+        if (e.key >= '0' && e.key <= '9') {
+            const currentValue = localCount.toString();
+            const newValue = currentValue + e.key;
+            const numValue = Number(newValue);
+            const currentPar = Number(modalData.par_level) || Number(par_level) || 0;
+            
+            if (numValue > currentPar) {
+                e.preventDefault();
+                return;
+            }
+        }
+        
         if (e.key === "Enter") {
             saveChanges();
             inputRef.current
@@ -150,10 +191,10 @@ const InventoryCard = ({ item }) => {
             <Card
                 variant="outlined"
                 className="transition-all duration-300 card-item"
-                sx={{ 
-                    borderRadius: 4, 
-                    borderColor, 
-                    borderWidth: 2, 
+                sx={{
+                    borderRadius: 4,
+                    borderColor,
+                    borderWidth: 2,
                     bgcolor: bgColor,
                     transition: 'all 0.3s ease'
                 }}
@@ -210,23 +251,44 @@ const InventoryCard = ({ item }) => {
                         <Box textAlign="center" sx={{ flex: 1 }}>
                             <Typography sx={{ color: "text.secondary", fontSize: 11, fontWeight: 600 }}>Order Point</Typography>
                             <Typography sx={{ fontWeight: 700, fontSize: 16, mt: 0.5 }}>{orderPoint.toFixed(1)}</Typography>
-                            <Typography sx={{ color: "text.secondary", fontSize: 11 }}>{count_unit}</Typography>
+                            <Typography sx={{ color: "text.secondary", fontSize: 11 }}>{order_unit}</Typography>
                         </Box>
                     </Stack>
 
                     <Box sx={{ mb: 2 }}>
                         <Typography sx={{ color: "text.secondary", fontSize: 12, fontWeight: 600, mb: 0.75 }}>
-                            Enter Current Count ({count_unit})
+                            Enter Current Count ({order_unit}) - Max: {par.toFixed(1)}
                         </Typography>
                         <TextField
                             fullWidth
                             type="number"
                             value={localCount}
-                            onChange={(e) => handleCountChange(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow empty string for clearing
+                                if (value === '') {
+                                    setLocalCount('');
+                                    return;
+                                }
+                                handleCountChange(value);
+                            }}
                             onBlur={saveChanges}
                             onKeyDown={handleKeyDown}
                             inputRef={inputRef}
-                            inputProps={{ step: "1", min: 0 }}
+                            inputProps={{ 
+                                step: "1", 
+                                min: 0, 
+                                max: par,
+                                onInput: (e) => {
+                                    // Additional check on paste/input
+                                    const value = Number(e.target.value);
+                                    if (value < 0) {
+                                        e.target.value = 0;
+                                    } else if (value > par) {
+                                        e.target.value = par;
+                                    }
+                                }
+                            }}
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     fontSize: "1.2rem",
@@ -238,6 +300,9 @@ const InventoryCard = ({ item }) => {
                                 },
                             }}
                         />
+                        <Typography sx={{ color: "text.secondary", fontSize: 11, mt: 0.5, textAlign: "center" }}>
+                            Valid range: 0 to {par.toFixed(1)} {count_unit}
+                        </Typography>
                     </Box>
 
                     <Box sx={{ mb: 1.5, bgcolor: "rgba(0,0,0,0.02)", p: 1, borderRadius: 1 }}>
@@ -295,7 +360,10 @@ const InventoryCard = ({ item }) => {
                     )}
                 </CardContent>
             </Card>
-            <Dialog open={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Dialog open={isModalOpen} onClose={() => {
+                setIsModalOpen(false);
+                setShowWarning(false);
+            }}>
                 <DialogTitle>Edit Inventory Item</DialogTitle>
                 <DialogContent>
                     <Stack spacing={2} sx={{ mt: 1 }}>
@@ -303,21 +371,96 @@ const InventoryCard = ({ item }) => {
                             label="Current Count"
                             type="number"
                             value={modalData.on_hand_quantity}
-                            onChange={(e) => setLocalCount(e.target.value)}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                // Allow empty string
+                                if (value === '') {
+                                    setModalData({ ...modalData, on_hand_quantity: '' });
+                                    setShowWarning(false);
+                                    return;
+                                }
+                                
+                                const val = Number(value);
+                                const parVal = Number(modalData.par_level);
+                                
+                                // STRICT: Don't allow invalid values
+                                if (val < 0 || val > parVal) {
+                                    return; // Reject the input
+                                }
+                                
+                                setShowWarning(false);
+                                setModalData({ ...modalData, on_hand_quantity: value });
+                            }}
+                            onKeyDown={(e) => {
+                                // Prevent invalid characters
+                                if ([".", ",", "e", "E", "-", "+"].includes(e.key)) {
+                                    e.preventDefault();
+                                    return;
+                                }
+                                
+                                // Check if new value would exceed par
+                                if (e.key >= '0' && e.key <= '9') {
+                                    const currentValue = modalData.on_hand_quantity.toString();
+                                    const newValue = currentValue + e.key;
+                                    const numValue = Number(newValue);
+                                    const parValue = Number(modalData.par_level);
+                                    
+                                    if (numValue > parValue) {
+                                        e.preventDefault();
+                                    }
+                                }
+                            }}
+                            error={showWarning}
+                            helperText={`Valid range: 0 to ${modalData.par_level}`}
+                            inputProps={{ 
+                                min: 0, 
+                                max: modalData.par_level,
+                                onInput: (e) => {
+                                    const value = Number(e.target.value);
+                                    const parVal = Number(modalData.par_level);
+                                    if (value < 0) {
+                                        e.target.value = 0;
+                                    } else if (value > parVal) {
+                                        e.target.value = parVal;
+                                    }
+                                }
+                            }}
                             fullWidth
                         />
                         <TextField
                             label="Par Level"
                             type="number"
                             value={modalData.par_level}
-                            onChange={(e) => setModalData({ ...modalData, par_level: e.target.value })}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || Number(value) >= 0) {
+                                    setModalData({ ...modalData, par_level: value });
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if ([".", ",", "e", "E", "-", "+"].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
+                            inputProps={{ min: 0 }}
                             fullWidth
                         />
                         <TextField
                             label="Order Point"
                             type="number"
                             value={modalData.order_point}
-                            onChange={(e) => setModalData({ ...modalData, order_point: e.target.value })}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || Number(value) >= 0) {
+                                    setModalData({ ...modalData, order_point: value });
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if ([".", ",", "e", "E", "-", "+"].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
+                            inputProps={{ min: 0 }}
                             fullWidth
                         />
                         <TextField
@@ -331,8 +474,15 @@ const InventoryCard = ({ item }) => {
                     </Stack>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-                    <Button onClick={handleModalSave} variant="contained">
+                    <Button onClick={() => {
+                        setIsModalOpen(false);
+                        setShowWarning(false);
+                    }}>Cancel</Button>
+                    <Button 
+                        onClick={handleModalSave} 
+                        variant="contained"
+                        disabled={showWarning}
+                    >
                         OK
                     </Button>
                 </DialogActions>

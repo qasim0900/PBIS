@@ -35,12 +35,12 @@ export const printReport = (
     const orderPoint = Number(e.order_point) || 0;
     const current = Number(e.currentCount) || 0;
 
-    const orderQty = Number(e.orderQuantity) || 0;
+    const orderUnits = Number(e.orderQuantity) || 0;
     const unit = e.orderUnit || "unit";
-    const plural = orderQty === 1 ? "" : "s";
+    const plural = orderUnits === 1 ? "" : "s";
 
-    const orderText = orderQty
-      ? `<strong style="color:#dc2626;">${orderQty} ${unit}${plural}</strong>`
+    const orderText = orderUnits
+      ? `<strong style="color:#dc2626;">${orderUnits} ${unit}${plural}</strong>`
       : "—";
 
     const statusColor =

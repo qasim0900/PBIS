@@ -27,7 +27,7 @@ This `LocationForm` component is a **controlled form for creating or editing a l
 and timezone selection while updating parent state via `onChange`.
 */
 
-const LocationForm = ({ values, onChange }) => {
+const LocationForm = ({ values, onChange, errors = {} }) => {
 
     //-----------------------------------
     // :: Handle Change Function
@@ -59,31 +59,37 @@ const LocationForm = ({ values, onChange }) => {
     return (
         <Box display="flex" flexDirection="column" gap={2.5}>
             <TextField
-                label="Location Name"
+                label="Location Name *"
                 value={values.name}
                 onChange={handleChange('name')}
                 required
                 fullWidth
                 autoFocus
                 placeholder="e.g., Syracuse Store"
+                error={!!errors.name}
+                helperText={errors.name || 'Enter a unique name for this location (2-255 characters)'}
             />
 
             <TextField
-                label="Location Code"
+                label="Location Code *"
                 value={values.code}
                 onChange={handleChange('code')}
                 required
                 fullWidth
-                inputProps={{ maxLength: 10 }}
+                inputProps={{ maxLength: 32 }}
                 placeholder="e.g., SYR"
+                error={!!errors.code}
+                helperText={errors.code || 'Short unique code (2-32 characters, uppercase letters, numbers, hyphens, underscores)'}
             />
 
             <TextField
                 select
-                label="Timezone"
+                label="Timezone *"
                 value={values.timezone}
                 onChange={handleChange('timezone')}
                 fullWidth
+                error={!!errors.timezone}
+                helperText={errors.timezone || 'Select the timezone for this location'}
             >
                 {TIMEZONES.map(({ value, label }) => (
                     <MenuItem key={value} value={value}>

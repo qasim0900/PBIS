@@ -114,14 +114,25 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect, di
 
     return (
         <>
-            <ButtonGroup variant="contained" ref={anchorRef} aria-label="split button">
-                <Button onClick={handleClick}>{buttonLabel || options[selectedIndex]}</Button>
+            <ButtonGroup 
+                variant="contained" 
+                ref={anchorRef} 
+                aria-label="split button"
+                disabled={disabled}
+            >
+                <Button 
+                    onClick={handleClick}
+                    disabled={disabled}
+                >
+                    {buttonLabel || options[selectedIndex]}
+                </Button>
                 <Button
                     size="small"
                     aria-controls={open ? 'split-button-menu' : undefined}
                     aria-expanded={open ? 'true' : undefined}
                     aria-haspopup="menu"
                     onClick={handleToggle}
+                    disabled={disabled}
                 >
                     <ArrowDropDownIcon />
                 </Button>
@@ -133,7 +144,10 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect, di
                 role={undefined}
                 transition
                 disablePortal
-                sx={{ zIndex: 1300 }}
+                placement="bottom-start"
+                sx={{ 
+                    zIndex: 1300,
+                }}
             >
                 {({ TransitionProps, placement }) => (
                     <Grow
@@ -142,14 +156,44 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect, di
                             transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
                         }}
                     >
-                        <Paper>
+                        <Paper 
+                            elevation={8}
+                            sx={{
+                                mt: 0.5,
+                                minWidth: anchorRef.current?.offsetWidth || 120,
+                                bgcolor: 'background.paper',
+                                border: 1,
+                                borderColor: 'divider',
+                                boxShadow: (theme) => theme.shadows[8],
+                            }}
+                        >
                             <ClickAwayListener onClickAway={handleClose}>
-                                <MenuList id="split-button-menu" autoFocusItem>
+                                <MenuList 
+                                    id="split-button-menu" 
+                                    autoFocusItem
+                                    sx={{
+                                        py: 0.5,
+                                    }}
+                                >
                                     {options.map((option, index) => (
                                         <MenuItem
                                             key={option}
                                             selected={index === selectedIndex}
                                             onClick={(event) => handleMenuItemClick(event, index)}
+                                            sx={{
+                                                py: 1,
+                                                px: 2,
+                                                minHeight: 40,
+                                                '&:hover': {
+                                                    bgcolor: 'action.hover',
+                                                },
+                                                '&.Mui-selected': {
+                                                    bgcolor: 'action.selected',
+                                                    '&:hover': {
+                                                        bgcolor: 'action.selected',
+                                                    },
+                                                },
+                                            }}
                                         >
                                             {option}
                                         </MenuItem>

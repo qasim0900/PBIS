@@ -88,7 +88,6 @@ class CountEntry(models.Model):
         on_delete=models.CASCADE,
         related_name="entries"
     )
-
     item = models.ForeignKey(
         'inventory.InventoryItem',
         on_delete=models.PROTECT,
@@ -144,31 +143,24 @@ class CountEntry(models.Model):
         par_level = self.par_level if self.par_level is not None else (self.item.par_level or Decimal("0"))
         order_point = self.order_point if self.order_point is not None else (self.item.order_point or Decimal("0"))
         on_hand = self.on_hand_quantity or Decimal("0")
-        pack_size = self.item.pack_size or Decimal("1")
-
-        deficit = (par_level - on_hand)
-
+        pack_size = Decimal(str(self.item.pack_size)) if self.item.pack_size else Decimal("1")
         if on_hand >= par_level:
             return OrderCalculation(
                 Decimal("0"),
                 Decimal("0"),
                 self.HIGHLIGHT_GREEN
             )
-
-        order_units = (deficit / pack_size).quantize(
+        deficit = par_level - on_hand
+        order_units_needed = (deficit / pack_size).quantize(
             Decimal("1"), rounding=ROUND_CEILING
         )
-        
-        if order_units < 0:
-            order_units = Decimal("0")
-
+        count_units_to_order = order_units_needed * pack_size
         if on_hand <= order_point:
             highlight = self.HIGHLIGHT_RED
         else:
             highlight = self.HIGHLIGHT_YELLOW
-
         return OrderCalculation(
-            qty_to_order=order_units * pack_size,
-            order_units=order_units,
+            qty_to_order=count_units_to_order,
+            order_units=order_units_needed,
             highlight_state=highlight
         )

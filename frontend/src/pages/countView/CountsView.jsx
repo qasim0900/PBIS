@@ -122,9 +122,8 @@ const CountsView = () => {
 
   const progress = useMemo(() => {
     if (!entries.length) return 0;
-    return Math.round(
-      (entries.filter((e) => e.on_hand_quantity > 0).length / entries.length) * 100
-    );
+    const countedEntries = entries.filter((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0).length;
+    return Math.round((countedEntries / entries.length) * 100);
   }, [entries]);
 
   //-----------------------------------
@@ -133,12 +132,19 @@ const CountsView = () => {
 
   const canSubmit = useMemo(() => {
     if (!isLoaded || !selectedSheet || !entries.length) return false;
-    return entries.every((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0);
+    // Allow submit if at least ONE entry has a count > 0
+    return entries.some((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0);
   }, [isLoaded, selectedSheet, entries]);
 
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit) {
-      dispatch(showNotification({ message: "Please enter all counts before submitting", type: "warning" }));
+    // Check if at least one entry has count
+    const hasAtLeastOneCount = entries.some((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0);
+    
+    if (!hasAtLeastOneCount) {
+      dispatch(showNotification({ 
+        message: "Please enter at least one count before submitting", 
+        type: "warning" 
+      }));
       return;
     }
 
@@ -160,7 +166,7 @@ const CountsView = () => {
     } finally {
       setSubmitting(false);
     }
-  }, [canSubmit, dispatch, handleLoadData]);
+  }, [entries, dispatch, handleLoadData]);
 
   //-----------------------------------
   // :: Helper variables
@@ -243,12 +249,22 @@ const CountsView = () => {
         <DialogTitle>Confirm Submission</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Once submitted, these counts will be added to the report for this location and frequency.
+            {progress === 100 ? (
+              "All items have been counted. Once submitted, these counts will be added to the report."
+            ) : (
+              <>
+                <strong>Partial Submission:</strong> You have counted {entries.filter((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0).length} out of {entries.length} items ({progress}%).
+                <br /><br />
+                Items without counts will be excluded from the report. Do you want to continue?
+              </>
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setIsConfirmOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" color="success">Confirm</Button>
+          <Button onClick={handleSubmit} variant="contained" color={progress === 100 ? "success" : "warning"}>
+            {progress === 100 ? "Submit All" : "Submit Partial"}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -258,9 +274,19 @@ const CountsView = () => {
           <LinearProgress
             variant="determinate"
             value={progress}
-            color={progress === 100 ? "success" : "error"}
+            color={progress === 100 ? "success" : progress > 0 ? "primary" : "error"}
             sx={{ height: 6, borderRadius: 1, bgcolor: "#e0e0e0", mt: 2, mb: 2 }}
           />
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box sx={{ fontSize: 14, color: "text.secondary" }}>
+              Progress: {entries.filter((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0).length} / {entries.length} items counted ({progress}%)
+            </Box>
+            {progress < 100 && progress > 0 && (
+              <Box sx={{ fontSize: 12, color: "warning.main", fontWeight: 600 }}>
+                ⚠️ Partial submission allowed
+              </Box>
+            )}
+          </Box>
           <Paper sx={{ p: 2, borderRadius: 2, border: 1, borderColor: "divider" }} elevation={0}>
             <CardView data={selectedSheet.entries} loading={loading || localLoading} />
           </Paper>

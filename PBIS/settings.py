@@ -4,38 +4,41 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 
-try:
-    load_dotenv()
-except Exception as e:
-    print(f"[Warning] Could not load .env file: {e}")
 
 try:
     BASE_DIR = Path(__file__).resolve().parent.parent
 except Exception as e:
     raise RuntimeError(f"Could not resolve BASE_DIR: {e}")
 
+
+try:
+    dotenv_path = BASE_DIR / ".env"
+    if dotenv_path.exists():
+        load_dotenv(dotenv_path)
+except Exception as e:
+    raise RuntimeError(f"[Warning] Could not load .env file: {e}")
+
+
 try:
     SECRET_KEY = os.getenv(
-        "SECRET_KEY", "replit-default-secret-key-12345"
+        "SECRET_KEY",
     )
 except Exception as e:
     raise RuntimeError(f"Could not load SECRET_KEY: {e}")
 
 try:
-    DEBUG = os.getenv("DEBUG", "True") == "True"
+    DEBUG = os.getenv("DEBUG", "False") == "True"
 except Exception as e:
     raise RuntimeError(f"Error DEBUG: {e}")
 
 try:
-    ALLOWED_HOSTS = ["*"]
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting ALLOWED_HOSTS: {e}")
 
 try:
     CORS_ALLOW_ALL_ORIGINS = True
-    CORS_ALLOWED_ORIGINS = os.getenv(
-        "CORS_ALLOWED_ORIGIN", "http://localhost:5000"
-    ).split(",")
+    CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGIN", "").split(",")
 except Exception as e:
     raise RuntimeError(f"Error setting CORS_ALLOWED_ORIGINS: {e}")
 
@@ -128,16 +131,16 @@ except Exception as e:
     raise RuntimeError(f"Error setting WSGI_APPLICATION: {e}")
 
 try:
-    database_url = os.getenv("DATABASE_URL") or os.getenv("DATABASE")
-    if database_url:
-        DATABASES = {"default": dj_database_url.parse(database_url)}
-    else:
-        DATABASES = {
-            "default": {
-                "ENGINE": "django.db.backends.sqlite3",
-                "NAME": BASE_DIR / "db.sqlite3",
-            }
-        }
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL is not set in .env file")
+
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+        )
+    }
 except Exception as e:
     raise RuntimeError(f"Error configuring DATABASES: {e}")
 
@@ -229,16 +232,6 @@ except Exception as e:
     raise RuntimeError(f"Error configuring LOGGING: {e}")
 
 try:
-    CSRF_TRUSTED_ORIGINS = [
-        "http://localhost:5000",
-    ]
-    replit_domain = os.getenv("REPLIT_DEV_DOMAIN", "")
-    if replit_domain:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_domain}")
-    replit_slug = os.getenv("REPLIT_SLUG", "")
-    replit_owner = os.getenv("REPLIT_OWNER", "")
-    if replit_slug and replit_owner:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}.{replit_owner}.repl.co")
-        CSRF_TRUSTED_ORIGINS.append(f"https://{replit_slug}-00-{replit_owner}.repl.co")
+    CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 except Exception as e:
-    CSRF_TRUSTED_ORIGINS = ["http://localhost:5000"]
+    raise RuntimeError(f"Error configuring CSRF_TRUSTED_ORIGINS: {e}")

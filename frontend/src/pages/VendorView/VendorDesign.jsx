@@ -69,13 +69,9 @@ export default function VendorDesign({
     //---------------------------------------
     const validateForm = () => {
         const newErrors = {};
-        if (!formData.name) newErrors.name = "Vendor Name is required";
-        if (!formData.contact_person)
-            newErrors.contact_person = "Contact Person is required";
-        if (!formData.location)
-            newErrors.location = "Please select a location";
-        if (!formData.color) newErrors.color = "Vendor Color is required";
-
+        if (!formData.name || !formData.name.trim()) {
+            newErrors.name = "Vendor Name is required";
+        }
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -207,61 +203,14 @@ export default function VendorDesign({
                                 <DialogContent dividers>
                                     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                         <TextField
-                                            select
-                                            label="Location *"
-                                            value={formData.location || ""}
-                                            onChange={updateForm("location")}
-                                            fullWidth
-                                            error={!!errors.location}
-                                            helperText={errors.location}
-                                        >
-                                            {locations.map(({ id, name }) => (
-                                                <MenuItem key={id} value={id}>
-                                                    {name}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-
-                                        <TextField
                                             label="Vendor Name *"
                                             value={formData.name}
                                             onChange={updateForm("name")}
                                             fullWidth
+                                            required
                                             error={!!errors.name}
-                                            helperText={errors.name}
-                                        />
-
-                                        <TextField
-                                            label="Contact Person *"
-                                            value={formData.contact_person}
-                                            onChange={updateForm("contact_person")}
-                                            fullWidth
-                                            error={!!errors.contact_person}
-                                            helperText={errors.contact_person}
-                                        />
-
-                                        <TextField
-                                            label="Phone"
-                                            value={formData.phone}
-                                            onChange={updateForm("phone")}
-                                            fullWidth
-                                        />
-
-                                        <TextField
-                                            label="Email"
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={updateForm("email")}
-                                            fullWidth
-                                        />
-
-                                        <TextField
-                                            label="Notes"
-                                            multiline
-                                            rows={3}
-                                            value={formData.notes}
-                                            onChange={updateForm("notes")}
-                                            fullWidth
+                                            helperText={errors.name || "Enter vendor name (2-255 characters)"}
+                                            autoFocus
                                         />
 
                                         <TextField
@@ -269,6 +218,7 @@ export default function VendorDesign({
                                             value={formData.color}
                                             onClick={() => setShowColorPicker(true)}
                                             fullWidth
+                                            required
                                             InputProps={{
                                                 readOnly: true,
                                                 startAdornment: (
@@ -279,12 +229,13 @@ export default function VendorDesign({
                                                             bgcolor: formData.color,
                                                             borderRadius: 1,
                                                             mr: 1,
+                                                            border: '1px solid #ccc',
                                                         }}
                                                     />
                                                 ),
                                             }}
                                             error={!!errors.color}
-                                            helperText={errors.color}
+                                            helperText={errors.color || "Click to select a color for this vendor"}
                                         />
 
                                         {showColorPicker && (
@@ -303,6 +254,64 @@ export default function VendorDesign({
                                                 </Box>
                                             </Box>
                                         )}
+
+                                        <TextField
+                                            label="Contact Person"
+                                            value={formData.contact_person}
+                                            onChange={updateForm("contact_person")}
+                                            fullWidth
+                                            error={!!errors.contact_person}
+                                            helperText={errors.contact_person || "Primary contact person name"}
+                                        />
+
+                                        <TextField
+                                            label="Phone"
+                                            value={formData.phone}
+                                            onChange={updateForm("phone")}
+                                            fullWidth
+                                            error={!!errors.phone}
+                                            helperText={errors.phone || "Contact phone number"}
+                                            placeholder="e.g., +1 (555) 123-4567"
+                                        />
+
+                                        <TextField
+                                            label="Email"
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={updateForm("email")}
+                                            fullWidth
+                                            error={!!errors.email}
+                                            helperText={errors.email || "Contact email address"}
+                                            placeholder="e.g., vendor@example.com"
+                                        />
+
+                                        <TextField
+                                            select
+                                            label="Location"
+                                            value={formData.location || ""}
+                                            onChange={updateForm("location")}
+                                            fullWidth
+                                            error={!!errors.location}
+                                            helperText={errors.location || "Optional: Associate vendor with a location"}
+                                        >
+                                            <MenuItem value="">— None —</MenuItem>
+                                            {locations.map(({ id, name }) => (
+                                                <MenuItem key={id} value={id}>
+                                                    {name}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+
+                                        <TextField
+                                            label="Notes"
+                                            multiline
+                                            rows={3}
+                                            value={formData.notes}
+                                            onChange={updateForm("notes")}
+                                            fullWidth
+                                            error={!!errors.notes}
+                                            helperText={errors.notes || "Additional notes or information"}
+                                        />
                                     </Box>
                                 </DialogContent>
 

@@ -161,7 +161,16 @@ export const submitCountSheet = createAsyncThunk(
       const sheetResponse = await countsAPI.createSheet(sheetPayload);
       const sheetId = sheetResponse.data.id;
 
-      const bulkEntries = entries.map(entry => {
+      // Filter out entries without counts (only submit entries with on_hand_quantity > 0)
+      const entriesToSubmit = entries.filter(entry => 
+        entry.on_hand_quantity && Number(entry.on_hand_quantity) > 0
+      );
+
+      if (entriesToSubmit.length === 0) {
+        return rejectWithValue('No entries with counts to submit');
+      }
+
+      const bulkEntries = entriesToSubmit.map(entry => {
         const itemId = entry.item;
 
         if (!itemId) {
@@ -171,7 +180,7 @@ export const submitCountSheet = createAsyncThunk(
         return {
           sheet: sheetId,
           item: itemId,
-          on_hand_quantity: Number(entry.on_hand_quantity) || 0,
+          on_hand_quantity: Number(entry.on_hand_quantity),
           notes: entry.notes || '',
           par_level: entry.par_level,
           order_point: entry.order_point,

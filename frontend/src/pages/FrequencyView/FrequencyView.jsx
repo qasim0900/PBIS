@@ -46,7 +46,18 @@ const FrequencyView = () => {
   */
 
   useEffect(() => {
-    dispatch(fetchFrequencies());
+    dispatch(fetchFrequencies())
+      .unwrap()
+      .catch((err) => {
+        console.error('Fetch frequencies error:', err);
+        const errorMessage = err?.message || 
+                            err?.detail || 
+                            'Failed to load Inventory Lists. Please refresh the page.';
+        dispatch(showNotification({ 
+          message: errorMessage, 
+          type: 'error' 
+        }));
+      });
   }, [dispatch]);
 
 
@@ -96,18 +107,78 @@ const FrequencyView = () => {
   */
 
   const handleSubmit = useCallback(async (payload) => {
+    // Comprehensive validation
+    if (!payload.frequency_name || !payload.frequency_name.trim()) {
+      dispatch(showNotification({ 
+        message: 'Inventory List name is required', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (payload.frequency_name.trim().length < 2) {
+      dispatch(showNotification({ 
+        message: 'Inventory List name must be at least 2 characters long', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    if (payload.frequency_name.trim().length > 100) {
+      dispatch(showNotification({ 
+        message: 'Inventory List name must be 100 characters or less', 
+        type: 'error' 
+      }));
+      return;
+    }
+
+    const cleanPayload = {
+      frequency_name: payload.frequency_name.trim(),
+      description: payload.description?.trim() || '',
+    };
+
     try {
       if (editing) {
-        await dispatch(updateFrequency({ id: editing.id, data: payload })).unwrap();
-        dispatch(showNotification({ message: 'Inventory List updated successfully', type: 'success' }));
+        await dispatch(updateFrequency({ id: editing.id, data: cleanPayload })).unwrap();
+        dispatch(showNotification({ 
+          message: `✓ Inventory List "${cleanPayload.frequency_name}" updated successfully`, 
+          type: 'success' 
+        }));
       } else {
-        await dispatch(createFrequency(payload)).unwrap();
-        dispatch(showNotification({ message: 'Inventory List created successfully', type: 'success' }));
+        await dispatch(createFrequency(cleanPayload)).unwrap();
+        dispatch(showNotification({ 
+          message: `✓ Inventory List "${cleanPayload.frequency_name}" created successfully`, 
+          type: 'success' 
+        }));
       }
       closeDialog();
       dispatch(fetchFrequencies());
-    } catch {
-      dispatch(showNotification({ message: 'Unable to save Inventory List. Please try again.', type: 'error' }));
+    } catch (err) {
+      console.error('Frequency save error:', err);
+      
+      // Handle field-specific errors
+      if (err.fieldErrors) {
+        const errorMessages = Object.entries(err.fieldErrors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join('\n');
+        
+        dispatch(showNotification({
+          message: errorMessages || 'Validation failed',
+          type: 'error'
+        }));
+      } else {
+        // Handle general errors
+        const errorMessage = 
+          err?.message ||
+          err?.frequency_name?.[0] ||
+          err?.detail ||
+          'Unable to save Inventory List. Please try again.';
+        
+        dispatch(showNotification({
+          message: errorMessage,
+          type: 'error'
+        }));
+      }
     }
   }, [dispatch, editing, closeDialog]);
 

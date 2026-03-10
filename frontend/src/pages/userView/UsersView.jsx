@@ -43,50 +43,154 @@ const UsersView = () => {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (!selectedUser && formData.password !== formData.confirmPassword) {
-      return dispatch(showNotification({ message: 'Passwords do not match', type: 'error' }));
+    
+    // Frontend validation
+    if (!formData.username || !formData.username.trim()) {
+      return dispatch(showNotification({ 
+        message: 'Username is required', 
+        type: 'error' 
+      }));
     }
+    
+    if (!formData.email || !formData.email.trim()) {
+      return dispatch(showNotification({ 
+        message: 'Email is required', 
+        type: 'error' 
+      }));
+    }
+    
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      return dispatch(showNotification({ 
+        message: 'Please enter a valid email address', 
+        type: 'error' 
+      }));
+    }
+    
+    if (!selectedUser) {
+      if (!formData.password) {
+        return dispatch(showNotification({ 
+          message: 'Password is required for new users', 
+          type: 'error' 
+        }));
+      }
+      
+      if (formData.password.length < 8) {
+        return dispatch(showNotification({ 
+          message: 'Password must be at least 8 characters long', 
+          type: 'error' 
+        }));
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        return dispatch(showNotification({ 
+          message: 'Passwords do not match', 
+          type: 'error' 
+        }));
+      }
+    }
+    
     const payload = {
-      username: formData.username,
-      email: formData.email,
+      username: formData.username.trim(),
+      email: formData.email.trim(),
       role: formData.role,
       ...(selectedUser ? {} : { password: formData.password })
     };
+    
     try {
       if (selectedUser) {
         await dispatch(updateUser({ id: selectedUser.id, data: payload })).unwrap();
-        dispatch(showNotification({ message: 'User updated successfully', type: 'success' }));
+        dispatch(showNotification({ 
+          message: `✓ User "${payload.username}" updated successfully`, 
+          type: 'success' 
+        }));
       } else {
         await dispatch(createUser(payload)).unwrap();
-        dispatch(showNotification({ message: 'User created successfully', type: 'success' }));
+        dispatch(showNotification({ 
+          message: `✓ User "${payload.username}" created successfully`, 
+          type: 'success' 
+        }));
       }
       closeDialog();
     } catch (err) {
-      const errorMessage = 
-        err?.username?.[0] ||
-        err?.email?.[0] ||
-        err?.password?.[0] ||
-        err?.detail ||
-        err?.message ||
-        'Unable to save user. Please try again.';
-      dispatch(showNotification({
-        message: errorMessage,
-        type: 'error'
-      }));
+      console.error('User save error:', err);
+      
+      // Handle field-specific errors
+      if (err.fieldErrors) {
+        const errorMessages = Object.entries(err.fieldErrors)
+          .map(([field, message]) => `${field}: ${message}`)
+          .join('\n');
+        
+        dispatch(showNotification({
+          message: errorMessages || 'Validation failed',
+          type: 'error'
+        }));
+      } else {
+        // Handle general errors
+        const errorMessage = 
+          err?.message ||
+          err?.username?.[0] ||
+          err?.email?.[0] ||
+          err?.password?.[0] ||
+          err?.detail ||
+          'Unable to save user. Please try again.';
+        
+        dispatch(showNotification({
+          message: errorMessage,
+          type: 'error'
+        }));
+      }
     }
   }, [dispatch, formData, selectedUser, closeDialog]);
 
   const toggleUserStatus = useCallback(async (user) => {
+    if (!user || !user.id) {
+      dispatch(showNotification({ 
+        message: 'Invalid user', 
+        type: 'error' 
+      }));
+      return;
+    }
+    
     try {
-      await dispatch(updateUser({ id: user.id, data: { is_active: !user.is_active } })).unwrap();
-      dispatch(showNotification({ message: 'Status updated', type: 'success' }));
-    } catch {
-      dispatch(showNotification({ message: 'Failed to update status', type: 'error' }));
+      await dispatch(updateUser({ 
+        id: user.id, 
+        data: { is_active: !user.is_active } 
+      })).unwrap();
+      
+      const status = !user.is_active ? 'activated' : 'deactivated';
+      dispatch(showNotification({ 
+        message: `✓ User "${user.username}" ${status} successfully`, 
+        type: 'success' 
+      }));
+    } catch (err) {
+      console.error('Toggle status error:', err);
+      
+      const errorMessage = err?.message || 
+                          err?.detail || 
+                          'Failed to update user status. Please try again.';
+      
+      dispatch(showNotification({ 
+        message: errorMessage, 
+        type: 'error' 
+      }));
     }
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(fetchUsers());
+    dispatch(fetchUsers())
+      .unwrap()
+      .catch((err) => {
+        console.error('Fetch users error:', err);
+        const errorMessage = err?.message || 
+                            err?.detail || 
+                            'Failed to load users. Please refresh the page.';
+        dispatch(showNotification({ 
+          message: errorMessage, 
+          type: 'error' 
+        }));
+      });
   }, [dispatch]);
 
   const stats = useMemo(() => ({

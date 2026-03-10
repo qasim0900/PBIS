@@ -2,6 +2,41 @@ import { locationsAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 //---------------------------------------
+// :: Helper: Parse Error
+//---------------------------------------
+const parseError = (err) => {
+    if (err.response?.data) {
+        const data = err.response.data;
+        
+        // Handle field-specific errors
+        if (typeof data === 'object' && !data.error && !data.detail) {
+            const fieldErrors = {};
+            Object.keys(data).forEach(field => {
+                const messages = Array.isArray(data[field]) ? data[field] : [data[field]];
+                fieldErrors[field] = messages.join(', ');
+            });
+            
+            return {
+                fieldErrors,
+                message: 'Validation failed. Please check your input.',
+                rawError: data
+            };
+        }
+        
+        // Handle error/detail messages
+        return {
+            message: data.error || data.detail || JSON.stringify(data),
+            rawError: data
+        };
+    }
+    
+    return {
+        message: err.message || 'An unexpected error occurred',
+        rawError: err
+    };
+};
+
+//---------------------------------------
 // :: Initial State
 //---------------------------------------
 
@@ -34,7 +69,8 @@ export const fetchLocations = createAsyncThunk(
       const { data } = await locationsAPI.list();
       return data.results || data;
     } catch (err) {
-      return rejectWithValue(err.response?.data?.detail || 'Failed to fetch locations');
+      const error = parseError(err);
+      return rejectWithValue(error);
     }
   }
 );
@@ -54,10 +90,40 @@ export const createLocation = createAsyncThunk(
   'locations/createLocation',
   async (locationData, { rejectWithValue }) => {
     try {
+      // Frontend validation
+      if (!locationData.name || !locationData.name.trim()) {
+        return rejectWithValue({
+          fieldErrors: { name: 'Location name is required' },
+          message: 'Location name is required'
+        });
+      }
+
+      if (!locationData.code || !locationData.code.trim()) {
+        return rejectWithValue({
+          fieldErrors: { code: 'Location code is required' },
+          message: 'Location code is required'
+        });
+      }
+
+      if (!locationData.frequency) {
+        return rejectWithValue({
+          fieldErrors: { frequency: 'Inventory List is required' },
+          message: 'Inventory List is required'
+        });
+      }
+
+      if (!locationData.timezone) {
+        return rejectWithValue({
+          fieldErrors: { timezone: 'Timezone is required' },
+          message: 'Timezone is required'
+        });
+      }
+
       const { data } = await locationsAPI.create(locationData);
       return data;
     } catch (err) {
-      return rejectWithValue(err.response?.data || 'Failed to create location');
+      const error = parseError(err);
+      return rejectWithValue(error);
     }
   }
 );
@@ -76,10 +142,39 @@ export const updateLocation = createAsyncThunk(
   'locations/updateLocation',
   async ({ id, data }, { rejectWithValue }) => {
     try {
+      // Frontend validation
+      if (!id) {
+        return rejectWithValue({
+          message: 'Location ID is required'
+        });
+      }
+
+      if (!data.name || !data.name.trim()) {
+        return rejectWithValue({
+          fieldErrors: { name: 'Location name is required' },
+          message: 'Location name is required'
+        });
+      }
+
+      if (!data.code || !data.code.trim()) {
+        return rejectWithValue({
+          fieldErrors: { code: 'Location code is required' },
+          message: 'Location code is required'
+        });
+      }
+
+      if (!data.frequency) {
+        return rejectWithValue({
+          fieldErrors: { frequency: 'Inventory List is required' },
+          message: 'Inventory List is required'
+        });
+      }
+
       const { data: updated } = await locationsAPI.update(id, data);
       return updated;
     } catch (err) {
-      return rejectWithValue(err.response?.data || 'Failed to update location');
+      const error = parseError(err);
+      return rejectWithValue(error);
     }
   }
 );
@@ -133,19 +228,40 @@ const locationsSlice = createSlice({
       .addCase(fetchLocations.fulfilled, (state, { payload }) => {
         state.loading = false;
         state.locations = payload;
+        state.error = null;
       })
       .addCase(fetchLocations.rejected, (state, { payload }) => {
         state.loading = false;
         state.error = payload;
       })
 
+      .addCase(createLocation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(createLocation.fulfilled, (state, { payload }) => {
+        state.loading = false;
         state.locations.unshift(payload);
+        state.error = null;
+      })
+      .addCase(createLocation.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.error = payload;
       })
 
+      .addCase(updateLocation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateLocation.fulfilled, (state, { payload }) => {
+        state.loading = false;
         const index = state.locations.findIndex(loc => loc.id === payload.id);
         if (index !== -1) state.locations[index] = payload;
+        state.error = null;
+      })
+      .addCase(updateLocation.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.error = payload;
       });
   },
 });

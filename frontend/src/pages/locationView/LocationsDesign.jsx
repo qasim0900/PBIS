@@ -182,7 +182,7 @@ export default function LocationsDesign({
                                             value={formData.frequency || ''}
                                             onChange={updateForm('frequency')}
                                             error={!!errors.frequency}
-                                            helperText={errors.frequency}
+                                            helperText={errors.frequency || 'Select the inventory list for this location'}
                                         >
                                             <MenuItem value="">— Select Inventory List —</MenuItem>
                                             {frequencies?.map((f) => (

@@ -43,6 +43,38 @@ class CountEntrySerializer(serializers.ModelSerializer):
     def validate_on_hand_quantity(self, value):
         if value < 0:
             raise serializers.ValidationError("Quantity cannot be negative.")
+        
+        # Get par_level for validation
+        # During bulk create, we need to get it from the current entry being validated
+        par_level = None
+        
+        # Try to get from the root serializer context (for single creates)
+        if isinstance(self.initial_data, dict):
+            par_level = self.initial_data.get('par_level')
+        
+        # For bulk creates, get from parent's initial_data
+        if not par_level and hasattr(self, 'parent') and self.parent:
+            # Get the index of current item being validated
+            if hasattr(self.parent, 'initial_data') and isinstance(self.parent.initial_data, list):
+                # Find which item in the list we're validating
+                for item_data in self.parent.initial_data:
+                    if isinstance(item_data, dict) and item_data.get('on_hand_quantity') == value:
+                        par_level = item_data.get('par_level')
+                        break
+        
+        # If still not found, try to get from the item instance
+        if not par_level and self.instance:
+            item = self.instance.item if hasattr(self.instance, 'item') else None
+            if item and hasattr(item, 'par_level'):
+                par_level = item.par_level
+        
+        # Only validate if we have a par_level to compare against
+        if par_level and value > par_level:
+            raise serializers.ValidationError(
+                f"Current count ({value}) cannot exceed Par Level ({par_level}). "
+                "Please verify your count or adjust the Par Level if needed."
+            )
+        
         return value
         
     def create(self, validated_data):

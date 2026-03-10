@@ -47,9 +47,9 @@ export const downloadCSVReport = (sheetEntries, dispatch, showNotification) => {
   */
 
   const rows = sheetEntries.map(e => {
-    const qty = Number(e.orderQuantity) || 0;
+    const orderUnits = Number(e.orderQuantity) || 0;
     const unit = e.orderUnit || "";
-    const orderText = qty ? `${qty} ${unit}` : "—";
+    const orderText = orderUnits ? `${orderUnits} ${unit}` : "—";
     return [
       e.item || "—",
       e.vendor || "—",

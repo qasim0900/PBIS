@@ -90,14 +90,96 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         ]
 
     def validate_par_level(self, value):
-        if value and value < 0:
+        if value is not None and value < 0:
             raise serializers.ValidationError("Par level cannot be negative.")
         return value
 
     def validate_order_point(self, value):
-        if value and value < 0:
+        if value is not None and value < 0:
             raise serializers.ValidationError("Order point cannot be negative.")
         return value
+
+    def validate_pack_size(self, value):
+        if value is not None:
+            if value <= 0:
+                raise serializers.ValidationError("Pack size must be greater than 0.")
+            if not isinstance(value, int) and not value.is_integer():
+                raise serializers.ValidationError("Pack size must be a whole number.")
+        return value
+
+    def validate_name(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Item name is required.")
+        
+        value = value.strip()
+        
+        if len(value) < 2:
+            raise serializers.ValidationError("Item name must be at least 2 characters long.")
+        
+        if len(value) > 200:
+            raise serializers.ValidationError("Item name must be 200 characters or less.")
+        
+        return value
+
+    def validate_count_unit(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Count unit is required.")
+        
+        value = value.strip()
+        
+        if len(value) > 50:
+            raise serializers.ValidationError("Count unit must be 50 characters or less.")
+        
+        return value
+
+    def validate_order_unit(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Order unit is required.")
+        
+        value = value.strip()
+        
+        if len(value) > 50:
+            raise serializers.ValidationError("Order unit must be 50 characters or less.")
+        
+        return value
+
+    def validate_location(self, value):
+        """Validate location"""
+        if not value:
+            raise serializers.ValidationError("Location is required.")
+        
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"The selected location '{value.name}' is not active."
+            )
+        
+        return value
+
+    def validate_frequency(self, value):
+        """Validate frequency"""
+        if not value:
+            raise serializers.ValidationError("Inventory List is required.")
+        
+        if not value.is_active:
+            raise serializers.ValidationError(
+                f"The selected Inventory List '{value.frequency_name}' is not active."
+            )
+        
+        return value
+
+    def validate(self, data):
+        """Cross-field validation"""
+        # Validate order_point vs par_level
+        order_point = data.get('order_point')
+        par_level = data.get('par_level')
+        
+        if order_point is not None and par_level is not None:
+            if order_point > par_level:
+                raise serializers.ValidationError({
+                    'order_point': 'Order point should not exceed par level.'
+                })
+        
+        return data
 
     def get_vendor_name(self, obj):
         return obj.vendor.name if obj.vendor else None

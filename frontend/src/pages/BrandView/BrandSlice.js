@@ -2,6 +2,41 @@ import { brandsAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 //---------------------------------------
+// :: Helper: Parse Error
+//---------------------------------------
+const parseError = (err) => {
+    if (err.response?.data) {
+        const data = err.response.data;
+        
+        // Handle field-specific errors
+        if (typeof data === 'object' && !data.error && !data.detail) {
+            const fieldErrors = {};
+            Object.keys(data).forEach(field => {
+                const messages = Array.isArray(data[field]) ? data[field] : [data[field]];
+                fieldErrors[field] = messages.join(', ');
+            });
+            
+            return {
+                fieldErrors,
+                message: 'Validation failed. Please check your input.',
+                rawError: data
+            };
+        }
+        
+        // Handle error/detail messages
+        return {
+            message: data.error || data.detail || JSON.stringify(data),
+            rawError: data
+        };
+    }
+    
+    return {
+        message: err.message || 'An unexpected error occurred',
+        rawError: err
+    };
+};
+
+//---------------------------------------
 // :: Initial State
 //---------------------------------------
 
@@ -32,9 +67,8 @@ export const fetchBrands = createAsyncThunk(
       const response = await brandsAPI.list();
       return response.data.results || response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.detail || 'Failed to fetch brands'
-      );
+      const err = parseError(error);
+      return rejectWithValue(err);
     }
   }
 );
@@ -52,12 +86,26 @@ export const createBrand = createAsyncThunk(
   'brands/createBrand',
   async (brandData, { rejectWithValue }) => {
     try {
+      // Frontend validation
+      if (!brandData.name || !brandData.name.trim()) {
+        return rejectWithValue({
+          fieldErrors: { name: 'Brand name is required' },
+          message: 'Brand name is required'
+        });
+      }
+      
+      if (!brandData.vendor) {
+        return rejectWithValue({
+          fieldErrors: { vendor: 'Vendor is required' },
+          message: 'Vendor is required'
+        });
+      }
+      
       const response = await brandsAPI.create(brandData);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || 'Failed to create brand'
-      );
+      const err = parseError(error);
+      return rejectWithValue(err);
     }
   }
 );
@@ -75,12 +123,32 @@ export const updateBrand = createAsyncThunk(
   'brands/updateBrand',
   async ({ id, data }, { rejectWithValue }) => {
     try {
+      // Frontend validation
+      if (!id) {
+        return rejectWithValue({
+          message: 'Brand ID is required'
+        });
+      }
+      
+      if (!data.name || !data.name.trim()) {
+        return rejectWithValue({
+          fieldErrors: { name: 'Brand name is required' },
+          message: 'Brand name is required'
+        });
+      }
+      
+      if (!data.vendor) {
+        return rejectWithValue({
+          fieldErrors: { vendor: 'Vendor is required' },
+          message: 'Vendor is required'
+        });
+      }
+      
       const response = await brandsAPI.update(id, data);
       return response.data;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || 'Failed to update brand'
-      );
+      const err = parseError(error);
+      return rejectWithValue(err);
     }
   }
 );
@@ -119,6 +187,7 @@ const brandSlice = createSlice({
       .addCase(fetchBrands.fulfilled, (state, action) => {
         state.loading = false;
         state.brands = action.payload;
+        state.error = null;
       })
       .addCase(fetchBrands.rejected, (state, action) => {
         state.loading = false;
@@ -126,14 +195,34 @@ const brandSlice = createSlice({
       })
 
       // Create Brand
+      .addCase(createBrand.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(createBrand.fulfilled, (state, action) => {
+        state.loading = false;
         state.brands.unshift(action.payload);
+        state.error = null;
+      })
+      .addCase(createBrand.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
 
       // Update Brand
+      .addCase(updateBrand.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(updateBrand.fulfilled, (state, action) => {
+        state.loading = false;
         const index = state.brands.findIndex(b => b.id === action.payload.id);
         if (index !== -1) state.brands[index] = action.payload;
+        state.error = null;
+      })
+      .addCase(updateBrand.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
