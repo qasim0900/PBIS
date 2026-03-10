@@ -143,7 +143,6 @@ const SplitButton = ({ options = [], initialIndex = 0, buttonLabel, onSelect, di
                 anchorEl={anchorRef.current}
                 role={undefined}
                 transition
-                disablePortal
                 placement="bottom-start"
                 sx={{ 
                     zIndex: 1300,

@@ -62,32 +62,14 @@ const ReportsViewUI = ({
     // :: Extra Header Actions
     //---------------------------------------
     const extraHeaderActions = (
-        <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "flex-end" }}>
-            {/* Sheet Date Filter */}
-            {sheets.length > 0 && (
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
-                >
-                    <TextField
-                        select
-                        label="Select Sheet"
-                        size="small"
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        sx={{ minWidth: 150 }}
-                    >
-                        <MenuItem value="">All Dates</MenuItem>
-                        {availableDates.map((date) => (
-                            <MenuItem key={date} value={date}>
-                                {new Date(date).toLocaleDateString()}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                </motion.div>
-            )}
-
+        <Box
+            sx={{
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
+                alignItems: "flex-end",
+            }}
+        >
             {/* Location Filter */}
             <TextField
                 select
@@ -123,19 +105,16 @@ const ReportsViewUI = ({
                 ))}
             </TextField>
 
-            {/* SplitButton Actions */}
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <SplitButton
-                    options={["Load Report", "Download CSV", "View File", "Delete Report"]}
-                    initialIndex={0}
-                    buttonLabel="Load Report"
-                    onSelect={handleSplitButtonSelect}
-                    disabled={!selectedLocation || !selectedFrequency}
-                />
-            </motion.div>
+            {/* SplitButton */}
+            <SplitButton
+                options={["Load Report", "Download CSV", "View File", "Delete Report"]}
+                initialIndex={0}
+                buttonLabel="Load Report"
+                onSelect={handleSplitButtonSelect}
+                disabled={!selectedLocation || !selectedFrequency}
+            />
         </Box>
     );
-
     //---------------------------------------
     // :: Render Component
     //---------------------------------------
