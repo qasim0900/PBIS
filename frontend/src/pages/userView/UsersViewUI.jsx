@@ -20,7 +20,7 @@ export const getStatsCards = ({ total, admins, managers, staff }) => [
 
 export const UserDialog = ({ open, onClose, onSubmit, formData, setFormData, selectedUser }) => {
   const [errors, setErrors] = React.useState({});
-  
+
   useEffect(() => {
     const handleClick = () => setErrors({});
     document.addEventListener('click', handleClick);
@@ -59,17 +59,18 @@ export const UserDialog = ({ open, onClose, onSubmit, formData, setFormData, sel
             </DialogTitle>
 
             <form onSubmit={handleSubmit} noValidate>
-              <DialogContent dividers className="space-y-4 pt-4">
+              <DialogContent dividers className="pt-4">
                 <TextField
                   label="Username"
                   value={formData.username}
                   onChange={e => setFormData({ ...formData, username: e.target.value })}
                   error={!!errors.username}
                   helperText={errors.username}
-                  required
                   fullWidth
                   autoFocus
+                  sx={{ mb: 2 }} // adds professional spacing
                 />
+
                 <TextField
                   label="Email"
                   type="email"
@@ -77,10 +78,11 @@ export const UserDialog = ({ open, onClose, onSubmit, formData, setFormData, sel
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   error={!!errors.email}
                   helperText={errors.email}
-                  required
                   fullWidth
+                  sx={{ mb: 2 }}
                 />
-                <FormControl fullWidth error={!!errors.role}>
+
+                <FormControl fullWidth error={!!errors.role} sx={{ mb: 2 }}>
                   <InputLabel>Role</InputLabel>
                   <Select
                     value={formData.role}
@@ -89,7 +91,7 @@ export const UserDialog = ({ open, onClose, onSubmit, formData, setFormData, sel
                   >
                     {ROLES.map(r => (
                       <MenuItem key={r.value} value={r.value}>
-                        <Box className="flex items-center gap-2">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           {r.icon}
                           <span>{r.label}</span>
                         </Box>
@@ -108,8 +110,8 @@ export const UserDialog = ({ open, onClose, onSubmit, formData, setFormData, sel
                       onChange={e => setFormData({ ...formData, password: e.target.value })}
                       error={!!errors.password}
                       helperText={errors.password}
-                      required
                       fullWidth
+                      sx={{ mb: 2 }}
                     />
                     <TextField
                       label="Confirm Password"
@@ -118,14 +120,14 @@ export const UserDialog = ({ open, onClose, onSubmit, formData, setFormData, sel
                       onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                       error={!!errors.confirmPassword}
                       helperText={errors.confirmPassword}
-                      required
                       fullWidth
+                      sx={{ mb: 2 }}
                     />
                   </>
                 )}
               </DialogContent>
 
-              <DialogActions className="p-4">
+              <DialogActions sx={{ p: 3, gap: 2 }}>
                 <Button onClick={onClose}>Cancel</Button>
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button type="submit" variant="contained">

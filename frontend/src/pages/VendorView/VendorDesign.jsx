@@ -203,22 +203,20 @@ export default function VendorDesign({
                                 <DialogContent dividers>
                                     <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                         <TextField
-                                            label="Vendor Name *"
+                                            label="Vendor Name"
                                             value={formData.name}
                                             onChange={updateForm("name")}
                                             fullWidth
-                                            required
                                             error={!!errors.name}
                                             helperText={errors.name || "Enter vendor name (2-255 characters)"}
                                             autoFocus
                                         />
 
                                         <TextField
-                                            label="Vendor Color *"
+                                            label="Vendor Color"
                                             value={formData.color}
                                             onClick={() => setShowColorPicker(true)}
                                             fullWidth
-                                            required
                                             InputProps={{
                                                 readOnly: true,
                                                 startAdornment: (
@@ -256,7 +254,7 @@ export default function VendorDesign({
                                         )}
 
                                         <TextField
-                                            label="Contact Person"
+                                            label="Contact Person (Optional)"
                                             value={formData.contact_person}
                                             onChange={updateForm("contact_person")}
                                             fullWidth
@@ -265,7 +263,7 @@ export default function VendorDesign({
                                         />
 
                                         <TextField
-                                            label="Phone"
+                                            label="Phone (Optional)"
                                             value={formData.phone}
                                             onChange={updateForm("phone")}
                                             fullWidth
@@ -275,7 +273,7 @@ export default function VendorDesign({
                                         />
 
                                         <TextField
-                                            label="Email"
+                                            label="Email (Optional)"
                                             type="email"
                                             value={formData.email}
                                             onChange={updateForm("email")}
@@ -303,7 +301,7 @@ export default function VendorDesign({
                                         </TextField>
 
                                         <TextField
-                                            label="Notes"
+                                            label="Notes (Optional)"
                                             multiline
                                             rows={3}
                                             value={formData.notes}

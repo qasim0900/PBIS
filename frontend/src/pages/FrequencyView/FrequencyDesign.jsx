@@ -144,7 +144,6 @@ export default function FrequencyDesign({
                                             value={formData.frequency_name || ''}
                                             onChange={(e) => setFormData({ ...formData, frequency_name: e.target.value })}
                                             fullWidth
-                                            required
                                             error={!!errors.frequency_name}
                                             helperText={errors.frequency_name}
                                         />

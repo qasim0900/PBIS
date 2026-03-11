@@ -124,7 +124,7 @@ export default function BrandDesign({
                                     >
                                         {/* Name */}
                                         <TextField
-                                            label="Brand Name *"
+                                            label="Brand Name"
                                             value={formData.name}
                                             onChange={updateForm('name')}
                                             fullWidth
@@ -134,7 +134,7 @@ export default function BrandDesign({
                                         {/* Vendor Dropdown */}
                                         <TextField
                                             select
-                                            label="Vendor *"
+                                            label="Vendor"
                                             value={formData.vendor || ''}
                                             onChange={updateForm('vendor')}
                                             fullWidth
@@ -148,7 +148,7 @@ export default function BrandDesign({
 
                                         {/* Description */}
                                         <TextField
-                                            label="Description"
+                                            label="Description (Optional)"
                                             multiline
                                             rows={3}
                                             value={formData.description || ''}

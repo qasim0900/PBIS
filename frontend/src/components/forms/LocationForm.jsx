@@ -59,7 +59,7 @@ const LocationForm = ({ values, onChange, errors = {} }) => {
     return (
         <Box display="flex" flexDirection="column" gap={2.5}>
             <TextField
-                label="Location Name *"
+                label="Location Name"
                 value={values.name}
                 onChange={handleChange('name')}
                 required
@@ -71,7 +71,7 @@ const LocationForm = ({ values, onChange, errors = {} }) => {
             />
 
             <TextField
-                label="Location Code *"
+                label="Location Code"
                 value={values.code}
                 onChange={handleChange('code')}
                 required
@@ -84,7 +84,7 @@ const LocationForm = ({ values, onChange, errors = {} }) => {
 
             <TextField
                 select
-                label="Timezone *"
+                label="Timezone"
                 value={values.timezone}
                 onChange={handleChange('timezone')}
                 fullWidth

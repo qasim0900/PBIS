@@ -178,7 +178,7 @@ export default function LocationsDesign({
                                         <TextField
                                             select
                                             fullWidth
-                                            label="Inventory List *"
+                                            label="Inventory List"
                                             value={formData.frequency || ''}
                                             onChange={updateForm('frequency')}
                                             error={!!errors.frequency}
