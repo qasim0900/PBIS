@@ -213,6 +213,15 @@ const CatalogDesign = ({
                                             <MenuItem value="">Select location</MenuItem>
                                             {(locations || []).map((l) => <MenuItem key={l.id} value={l.id}>{l.name}</MenuItem>)}
                                         </TextField>
+                                        <TextField
+                                            select
+                                            label="Inventory List"
+                                            value={formData.frequency || ''}
+                                            onChange={updateForm('frequency')}
+                                        >
+                                            <MenuItem value="">Select inventory list</MenuItem>
+                                            {(frequencies || []).map((f) => <MenuItem key={f.id} value={f.id}>{f.frequency_name}</MenuItem>)}
+                                        </TextField>
                                     </FormSection>
 
                                     {/* --- Inventory Configuration --- */}
@@ -230,11 +239,11 @@ const CatalogDesign = ({
                                             helperText="e.g., case, box, bundle"
                                         />
                                         <TextField
-                                            label="Pack Size"
+                                            label="Order Point"
                                             type="number"
-                                            value={formData.pack_size}
-                                            onChange={updateForm('pack_size')}
-                                            helperText="How many count units = 1 order unit"
+                                            value={formData.order_point}
+                                            onChange={updateForm('order_point')}
+                                            helperText="Reorder when stock reaches this level"
                                         />
                                         <TextField
                                             label="Par Level"
@@ -250,25 +259,17 @@ const CatalogDesign = ({
                                             }}
                                         />
                                         <TextField
-                                            label="Order Point"
+                                            label="Pack Size"
                                             type="number"
-                                            value={formData.order_point}
-                                            onChange={updateForm('order_point')}
-                                            helperText="Reorder when stock reaches this level"
+                                            value={formData.pack_size}
+                                            onChange={updateForm('pack_size')}
+                                            helperText="How many count units = 1 order unit"
                                         />
+
                                     </FormSection>
 
                                     {/* --- Vendor & Procurement --- */}
                                     <FormSection title="Vendor & Procurement" description="Supplier and purchasing configuration.">
-                                        <TextField
-                                            select
-                                            label="Inventory List"
-                                            value={formData.frequency || ''}
-                                            onChange={updateForm('frequency')}
-                                        >
-                                            <MenuItem value="">Select inventory list</MenuItem>
-                                            {(frequencies || []).map((f) => <MenuItem key={f.id} value={f.id}>{f.frequency_name}</MenuItem>)}
-                                        </TextField>
                                         <TextField
                                             select
                                             label="Vendor (Optional)"
@@ -325,5 +326,4 @@ const CatalogDesign = ({
         </motion.div>
     );
 };
-
 export default CatalogDesign;

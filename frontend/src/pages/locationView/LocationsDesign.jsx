@@ -12,8 +12,6 @@ import {
     DialogContent,
     DialogActions,
     IconButton,
-    TextField,
-    MenuItem,
 } from '@mui/material';
 
 //---------------------------------------
@@ -36,7 +34,6 @@ export default function LocationsDesign({
     openDialog,
     closeDialog,
     handleSubmit,
-    frequencies,
 }) {
     const [errors, setErrors] = useState({});
 
@@ -55,21 +52,11 @@ export default function LocationsDesign({
     const updateForm = (key) => (e) => setFormData((prev) => ({ ...prev, [key]: e.target.value }));
 
     //---------------------------------------
-    // :: Validate form
-    //---------------------------------------
-    const validateForm = () => {
-        const err = {};
-        if (!formData.frequency) err.frequency = 'Inventory List is required';
-        setErrors(err);
-        return Object.keys(err).length === 0;
-    };
-
-    //---------------------------------------
     // :: Handle form submission
     //---------------------------------------
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        if (validateForm()) handleSubmit();
+        handleSubmit();
     };
 
     //---------------------------------------
@@ -77,34 +64,21 @@ export default function LocationsDesign({
     //---------------------------------------
     const columns = [
         {
-            header: 'Location',
-            render: (row) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box
-                        sx={{
-                            bgcolor: 'primary.main',
-                            width: 40,
-                            height: 40,
-                            borderRadius: '50%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <LocationOn sx={{ color: '#fff' }} />
-                    </Box>
-                    <Box sx={{ fontWeight: 600 }}>{row.name}</Box>
-                </Box>
-            ),
+            header: 'Location Name',
+            render: (row) => row.name,
         },
         {
-            header: 'Code',
-            render: (row) => <Chip icon={<Code fontSize="small" />} label={row.code} size="small" />,
-            align: 'center',
+            header: 'Description',
+            render: (row) => row.description || '-',
         },
         {
-            header: 'Timezone',
-            render: (row) => <Chip icon={<Schedule fontSize="small" />} label={row.timezone} size="small" />,
+            header: 'Status',
+            render: (row) =>
+                row.is_active ? (
+                    <Chip label="Active" color="success" size="small" />
+                ) : (
+                    <Chip label="Inactive" color="default" size="small" />
+                ),
             align: 'center',
         },
     ];
@@ -114,7 +88,7 @@ export default function LocationsDesign({
     //---------------------------------------
     const actions = (row) => (
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <IconButton size="small" color="primary" onClick={() => openDialog({ ...row, frequency: row.frequency })}>
+            <IconButton size="small" color="primary" onClick={() => openDialog(row)}>
                 <Edit fontSize="small" />
             </IconButton>
         </motion.div>
@@ -174,28 +148,8 @@ export default function LocationsDesign({
 
                             <form onSubmit={handleFormSubmit}>
                                 <DialogContent dividers>
-                                    <Box sx={{ mb: 2 }}>
-                                        <TextField
-                                            select
-                                            fullWidth
-                                            label="Inventory List"
-                                            value={formData.frequency || ''}
-                                            onChange={updateForm('frequency')}
-                                            error={!!errors.frequency}
-                                            helperText={errors.frequency || 'Select the inventory list for this location'}
-                                        >
-                                            <MenuItem value="">— Select Inventory List —</MenuItem>
-                                            {frequencies?.map((f) => (
-                                                <MenuItem key={f.id} value={f.id}>
-                                                    {f.frequency_name}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-                                    </Box>
-
                                     <LocationForm values={formData} onChange={setFormData} errors={errors} />
                                 </DialogContent>
-
                                 <DialogActions>
                                     <Button onClick={closeDialog}>Cancel</Button>
                                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

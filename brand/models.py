@@ -8,14 +8,6 @@ class Brand(models.Model):
         verbose_name=_("Brand Name")
     )
     
-    vendor = models.ForeignKey(
-        'vendor.Vendor',
-        on_delete=models.SET_NULL,
-        related_name="brands",
-        null=True,
-        blank=True,
-        verbose_name=_("Vendor")
-    )
     
     description = models.TextField(
         blank=True,

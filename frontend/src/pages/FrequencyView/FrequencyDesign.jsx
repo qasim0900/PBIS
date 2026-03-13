@@ -100,8 +100,8 @@ export default function FrequencyDesign({
     return (
         <motion.div {...fadeIn}>
             <TableView
-                title="Count Inventory List"
-                subtitle={`Manage count Inventory List (${frequencies.length})`}
+                title="Inventory List"
+                subtitle={`Manage Inventory List (${frequencies.length})`}
                 columns={columns}
                 data={frequencies}
                 actions={actions}

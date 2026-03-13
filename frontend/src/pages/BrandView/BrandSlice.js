@@ -94,13 +94,6 @@ export const createBrand = createAsyncThunk(
         });
       }
       
-      if (!brandData.vendor) {
-        return rejectWithValue({
-          fieldErrors: { vendor: 'Vendor is required' },
-          message: 'Vendor is required'
-        });
-      }
-      
       const response = await brandsAPI.create(brandData);
       return response.data;
     } catch (error) {
@@ -137,15 +130,37 @@ export const updateBrand = createAsyncThunk(
         });
       }
       
-      if (!data.vendor) {
+      const response = await brandsAPI.update(id, data);
+      return response.data;
+    } catch (error) {
+      const err = parseError(error);
+      return rejectWithValue(err);
+    }
+  }
+);
+
+//---------------------------------------
+// :: Delete Brand
+//---------------------------------------
+
+/*
+Sends DELETE request to remove a brand
+Removes brand from state on success
+*/
+
+export const deleteBrand = createAsyncThunk(
+  'brands/deleteBrand',
+  async (id, { rejectWithValue }) => {
+    try {
+      // Frontend validation
+      if (!id) {
         return rejectWithValue({
-          fieldErrors: { vendor: 'Vendor is required' },
-          message: 'Vendor is required'
+          message: 'Brand ID is required'
         });
       }
       
-      const response = await brandsAPI.update(id, data);
-      return response.data;
+      await brandsAPI.remove(id);
+      return id; // Return the ID for removal from state
     } catch (error) {
       const err = parseError(error);
       return rejectWithValue(err);
@@ -221,6 +236,21 @@ const brandSlice = createSlice({
         state.error = null;
       })
       .addCase(updateBrand.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Delete Brand
+      .addCase(deleteBrand.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteBrand.fulfilled, (state, action) => {
+        state.loading = false;
+        state.brands = state.brands.filter(b => b.id !== action.payload);
+        state.error = null;
+      })
+      .addCase(deleteBrand.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

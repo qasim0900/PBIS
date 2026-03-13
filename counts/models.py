@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from django.utils import timezone
 from reports.models import Report
 from django.core.exceptions import ValidationError
+from decimal import Decimal, ROUND_CEILING
 from django.utils.translation import gettext_lazy as _
-from decimal import Decimal, ROUND_HALF_UP, ROUND_CEILING
 
 class CountSheetStatus(models.TextChoices):
     DRAFT = "draft", _("Draft")
@@ -23,6 +23,11 @@ class OrderCalculation:
 class CountSheet(models.Model):
     location = models.ForeignKey(
         'locations.Location',
+        on_delete=models.PROTECT,
+        related_name="count_sheets"
+    )
+    frequency = models.ForeignKey(
+        'frequency.Frequency',
         on_delete=models.PROTECT,
         related_name="count_sheets"
     )
@@ -65,12 +70,14 @@ class CountSheet(models.Model):
 
         report, created = Report.objects.get_or_create(
             location=self.location,
-            frequency=self.location.frequency,
+            frequency=self.frequency,
             period_start=self.count_date,
             defaults={'is_active': True}
         )
         report.count_entries.add(*self.entries.all())
         report.save()
+
+
 
 class CountEntry(models.Model):
     HIGHLIGHT_RED = "red"

@@ -98,27 +98,6 @@ export const createLocation = createAsyncThunk(
         });
       }
 
-      if (!locationData.code || !locationData.code.trim()) {
-        return rejectWithValue({
-          fieldErrors: { code: 'Location code is required' },
-          message: 'Location code is required'
-        });
-      }
-
-      if (!locationData.frequency) {
-        return rejectWithValue({
-          fieldErrors: { frequency: 'Inventory List is required' },
-          message: 'Inventory List is required'
-        });
-      }
-
-      if (!locationData.timezone) {
-        return rejectWithValue({
-          fieldErrors: { timezone: 'Timezone is required' },
-          message: 'Timezone is required'
-        });
-      }
-
       const { data } = await locationsAPI.create(locationData);
       return data;
     } catch (err) {
@@ -153,20 +132,6 @@ export const updateLocation = createAsyncThunk(
         return rejectWithValue({
           fieldErrors: { name: 'Location name is required' },
           message: 'Location name is required'
-        });
-      }
-
-      if (!data.code || !data.code.trim()) {
-        return rejectWithValue({
-          fieldErrors: { code: 'Location code is required' },
-          message: 'Location code is required'
-        });
-      }
-
-      if (!data.frequency) {
-        return rejectWithValue({
-          fieldErrors: { frequency: 'Inventory List is required' },
-          message: 'Inventory List is required'
         });
       }
 

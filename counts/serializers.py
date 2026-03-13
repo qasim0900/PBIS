@@ -43,11 +43,6 @@ class CountEntrySerializer(serializers.ModelSerializer):
     def validate_on_hand_quantity(self, value):
         if value < 0:
             raise serializers.ValidationError("Quantity cannot be negative.")
-        
-        # Removed validation that on_hand_quantity cannot exceed par_level
-        # This allows cases where inventory might be above par level due to bulk purchases
-        # or case size constraints
-        
         return value
         
     def create(self, validated_data):

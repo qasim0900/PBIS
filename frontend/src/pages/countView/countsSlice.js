@@ -155,6 +155,7 @@ export const submitCountSheet = createAsyncThunk(
     try {
       const sheetPayload = {
         location: selectedSheet.location,
+        frequency: selectedSheet.frequency,
         count_date: new Date().toISOString().split('T')[0],
       };
 
@@ -162,7 +163,7 @@ export const submitCountSheet = createAsyncThunk(
       const sheetId = sheetResponse.data.id;
 
       // Filter out entries without counts (only submit entries with on_hand_quantity > 0)
-      const entriesToSubmit = entries.filter(entry => 
+      const entriesToSubmit = entries.filter(entry =>
         entry.on_hand_quantity && Number(entry.on_hand_quantity) > 0
       );
 

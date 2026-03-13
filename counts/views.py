@@ -40,6 +40,7 @@ class CountSheetViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='submit')
     def submit(self, request, pk=None):
         sheet = self.get_object()
+        print("request",request)
         try:
             sheet.submit(request.user)
             return Response({'status': 'submitted'}, status=status.HTTP_200_OK)

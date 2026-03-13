@@ -19,20 +19,24 @@ const parseError = (err) => {
             return {
                 fieldErrors,
                 message: 'Validation failed. Please check your input.',
-                rawError: data
+                rawError: JSON.parse(JSON.stringify(data))
             };
         }
         
         // Handle error/detail messages
         return {
             message: data.error || data.detail || JSON.stringify(data),
-            rawError: data
+            rawError: JSON.parse(JSON.stringify(data))
         };
     }
     
     return {
         message: err.message || 'An unexpected error occurred',
-        rawError: err
+        rawError: {
+            message: err.message,
+            status: err.response?.status,
+            statusText: err.response?.statusText
+        }
     };
 };
 

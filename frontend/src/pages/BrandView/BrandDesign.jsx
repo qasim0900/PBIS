@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import TableView from '../../components/template';
-import { Add, Close, Edit } from '@mui/icons-material';
+import { Add, Close, Edit, Delete } from '@mui/icons-material';
 import {
     Box,
     Button,
@@ -10,7 +10,6 @@ import {
     DialogActions,
     IconButton,
     TextField,
-    MenuItem,
 } from '@mui/material';
 
 //---------------------------------------
@@ -24,7 +23,6 @@ const scaleIn = { initial: { scale: 0.95, opacity: 0 }, animate: { scale: 1, opa
 //---------------------------------------
 export default function BrandDesign({
     brands,
-    vendors,
     loading,
     open,
     editing,
@@ -33,6 +31,7 @@ export default function BrandDesign({
     openDialog,
     closeDialog,
     handleSubmit,
+    handleDelete,
 }) {
     //---------------------------------------
     // :: Form Update Handler
@@ -44,10 +43,6 @@ export default function BrandDesign({
     //---------------------------------------
     const columns = [
         { header: 'Name', render: (r) => r.name },
-        {
-            header: 'Vendor',
-            render: (r) => vendors?.find(v => v.id === r.vendor)?.name || '—',
-        },
         { header: 'Description', render: (r) => r.description || '—' },
     ];
 
@@ -55,11 +50,18 @@ export default function BrandDesign({
     // :: Table Row Actions
     //---------------------------------------
     const actions = (row) => (
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <IconButton size="small" color="primary" onClick={() => openDialog(row)}>
-                <Edit fontSize="small" />
-            </IconButton>
-        </motion.div>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <IconButton size="small" color="primary" onClick={() => openDialog(row)}>
+                    <Edit fontSize="small" />
+                </IconButton>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <IconButton size="small" color="error" onClick={() => handleDelete(row)}>
+                    <Delete fontSize="small" />
+                </IconButton>
+            </motion.div>
+        </Box>
     );
 
     //---------------------------------------
@@ -130,21 +132,6 @@ export default function BrandDesign({
                                             fullWidth
                                             autoFocus
                                         />
-
-                                        {/* Vendor Dropdown */}
-                                        <TextField
-                                            select
-                                            label="Vendor"
-                                            value={formData.vendor || ''}
-                                            onChange={updateForm('vendor')}
-                                            fullWidth
-                                        >
-                                            {vendors?.map((vendor) => (
-                                                <MenuItem key={vendor.id} value={vendor.id}>
-                                                    {vendor.name}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
 
                                         {/* Description */}
                                         <TextField

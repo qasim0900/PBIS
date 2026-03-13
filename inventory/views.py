@@ -6,7 +6,6 @@ from .serializers import InventoryItemSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import FormParser, MultiPartParser, JSONParser
 from users.models import UserRole
-from users.permissions import IsAdminOrManager
 
 
 class InventoryItemViewSet(viewsets.ModelViewSet):

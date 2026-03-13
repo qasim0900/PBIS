@@ -131,9 +131,9 @@ const OverrideForm = ({ values, locations, catalogItems, vendors, onChange }) =>
 
 
             <FormControl fullWidth>
-                <InputLabel>Count Inventory List</InputLabel>
+                <InputLabel>Inventory List</InputLabel>
                 <Select
-                    label="Count Inventory List"
+                    label="Inventory List"
                     value={values.count_frequency ?? 'weekly'}
                     onChange={handleChange('count_frequency')}
                 >

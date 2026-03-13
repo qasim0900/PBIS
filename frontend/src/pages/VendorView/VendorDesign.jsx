@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { ChromePicker } from "react-color";
 import { motion, AnimatePresence } from "framer-motion";
 import TableView from "../../components/template";
+import VendorForm from "../../components/forms/VendorForm";
 import { Add, Close, Edit } from "@mui/icons-material";
 import {
     Box,
@@ -13,8 +12,6 @@ import {
     DialogContent,
     DialogActions,
     IconButton,
-    TextField,
-    MenuItem,
 } from "@mui/material";
 
 //---------------------------------------
@@ -48,14 +45,8 @@ export default function VendorDesign({
     handleSubmit,
 }) {
     //---------------------------------------
-    // :: Redux State (Locations)
-    //---------------------------------------
-    const { locations } = useSelector((state) => state.locations);
-
-    //---------------------------------------
     // :: Local UI State
     //---------------------------------------
-    const [showColorPicker, setShowColorPicker] = useState(false);
     const [errors, setErrors] = useState({});
 
     //---------------------------------------
@@ -77,11 +68,13 @@ export default function VendorDesign({
     };
 
     //---------------------------------------
-    // :: Submit Handler
+    // :: Handle form submission
     //---------------------------------------
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        if (validateForm()) handleSubmit(e);
+        if (validateForm()) {
+            handleSubmit();
+        }
     };
 
     //---------------------------------------
@@ -122,11 +115,6 @@ export default function VendorDesign({
             ),
         },
         { header: "Contact Person", render: (r) => r.contact_person || "—" },
-        {
-            header: "Location",
-            render: (r) =>
-                r.location_names?.length ? r.location_names.join(", ") : "—",
-        },
         {
             header: "Phone",
             align: "center",
@@ -201,116 +189,7 @@ export default function VendorDesign({
 
                             <form onSubmit={handleFormSubmit} noValidate>
                                 <DialogContent dividers>
-                                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                                        <TextField
-                                            label="Vendor Name"
-                                            value={formData.name}
-                                            onChange={updateForm("name")}
-                                            fullWidth
-                                            error={!!errors.name}
-                                            helperText={errors.name || "Enter vendor name (2-255 characters)"}
-                                            autoFocus
-                                        />
-
-                                        <TextField
-                                            label="Vendor Color"
-                                            value={formData.color}
-                                            onClick={() => setShowColorPicker(true)}
-                                            fullWidth
-                                            InputProps={{
-                                                readOnly: true,
-                                                startAdornment: (
-                                                    <Box
-                                                        sx={{
-                                                            width: 20,
-                                                            height: 20,
-                                                            bgcolor: formData.color,
-                                                            borderRadius: 1,
-                                                            mr: 1,
-                                                            border: '1px solid #ccc',
-                                                        }}
-                                                    />
-                                                ),
-                                            }}
-                                            error={!!errors.color}
-                                            helperText={errors.color || "Click to select a color for this vendor"}
-                                        />
-
-                                        {showColorPicker && (
-                                            <Box sx={{ position: "relative" }}>
-                                                <Box
-                                                    sx={{ position: "fixed", inset: 0 }}
-                                                    onClick={() => setShowColorPicker(false)}
-                                                />
-                                                <Box sx={{ position: "absolute", zIndex: 10 }}>
-                                                    <ChromePicker
-                                                        color={formData.color}
-                                                        onChange={(c) =>
-                                                            setFormData({ ...formData, color: c.hex })
-                                                        }
-                                                    />
-                                                </Box>
-                                            </Box>
-                                        )}
-
-                                        <TextField
-                                            label="Contact Person (Optional)"
-                                            value={formData.contact_person}
-                                            onChange={updateForm("contact_person")}
-                                            fullWidth
-                                            error={!!errors.contact_person}
-                                            helperText={errors.contact_person || "Primary contact person name"}
-                                        />
-
-                                        <TextField
-                                            label="Phone (Optional)"
-                                            value={formData.phone}
-                                            onChange={updateForm("phone")}
-                                            fullWidth
-                                            error={!!errors.phone}
-                                            helperText={errors.phone || "Contact phone number"}
-                                            placeholder="e.g., +1 (555) 123-4567"
-                                        />
-
-                                        <TextField
-                                            label="Email (Optional)"
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={updateForm("email")}
-                                            fullWidth
-                                            error={!!errors.email}
-                                            helperText={errors.email || "Contact email address"}
-                                            placeholder="e.g., vendor@example.com"
-                                        />
-
-                                        <TextField
-                                            select
-                                            label="Location"
-                                            value={formData.location || ""}
-                                            onChange={updateForm("location")}
-                                            fullWidth
-                                            error={!!errors.location}
-                                            helperText={errors.location || "Optional: Associate vendor with a location"}
-                                        >
-                                            <MenuItem value="">— None —</MenuItem>
-                                            {locations.map(({ id, name }) => (
-                                                <MenuItem key={id} value={id}>
-                                                    {name}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-
-                                        <TextField
-                                            label="Notes (Optional)"
-                                            multiline
-                                            rows={3}
-                                            value={formData.notes}
-                                            onChange={updateForm("notes")}
-                                            fullWidth
-                                            error={!!errors.notes}
-                                            helperText={errors.notes || "Additional notes or information"}
-                                        />
-                                    </Box>
+                                    <VendorForm values={formData} onChange={setFormData} errors={errors} />
                                 </DialogContent>
 
                                 <DialogActions>

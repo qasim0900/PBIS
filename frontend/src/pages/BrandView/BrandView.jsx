@@ -3,8 +3,7 @@ import AppLoading from '../../components/AppLoading';
 import { showNotification } from '../../api/uiSlice.js';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
-import { fetchBrands, createBrand, updateBrand } from './BrandSlice';
-import { fetchVendors } from '../VendorView/VendorSlice';
+import { fetchBrands, createBrand, updateBrand, deleteBrand } from './BrandSlice';
 
 //---------------------------------------
 // :: Default Form Data
@@ -12,7 +11,6 @@ import { fetchVendors } from '../VendorView/VendorSlice';
 const DEFAULT_FORM = {
   name: '',
   description: '',
-  vendor: '',
 };
 
 //---------------------------------------
@@ -21,7 +19,6 @@ const DEFAULT_FORM = {
 const BrandView = () => {
   const dispatch = useDispatch();
   const { brands, loading } = useSelector((state) => state.brands);
-  const { vendors } = useSelector((state) => state.vendors);
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -43,16 +40,6 @@ const BrandView = () => {
           type: 'error' 
         }));
       });
-    
-    dispatch(fetchVendors())
-      .unwrap()
-      .catch((err) => {
-        console.error('Fetch vendors error:', err);
-        dispatch(showNotification({ 
-          message: 'Failed to load vendors', 
-          type: 'warning' 
-        }));
-      });
   }, [dispatch]);
 
   //---------------------------------------
@@ -63,7 +50,6 @@ const BrandView = () => {
     setFormData(brand ? {
       name: brand.name,
       description: brand.description || '',
-      vendor: brand.vendor || '',
     } : DEFAULT_FORM);
     setOpen(true);
   }, []);
@@ -103,18 +89,9 @@ const BrandView = () => {
       return;
     }
 
-    if (!formData.vendor) {
-      dispatch(showNotification({ 
-        message: 'Vendor is required', 
-        type: 'error' 
-      }));
-      return;
-    }
-
     const payload = {
       name: formData.name.trim(),
       description: formData.description?.trim() || '',
-      vendor: formData.vendor,
     };
 
     try {
@@ -151,7 +128,6 @@ const BrandView = () => {
         const errorMessage = 
           err?.message ||
           err?.name?.[0] ||
-          err?.vendor?.[0] ||
           err?.detail ||
           'Unable to save brand. Please try again.';
         
@@ -160,6 +136,34 @@ const BrandView = () => {
           type: 'error'
         }));
       }
+    }
+  };
+
+  //---------------------------------------
+  // :: Delete Handler
+  //---------------------------------------
+  const handleDelete = async (brand) => {
+    if (!window.confirm(`Are you sure you want to delete "${brand.name}"?`)) {
+      return;
+    }
+
+    try {
+      await dispatch(deleteBrand(brand.id)).unwrap();
+      dispatch(showNotification({ 
+        message: `✓ Brand "${brand.name}" deleted successfully`, 
+        type: 'success' 
+      }));
+    } catch (err) {
+      console.error('Brand delete error:', err);
+      const errorMessage = 
+        err?.message ||
+        err?.detail ||
+        'Unable to delete brand. Please try again.';
+      
+      dispatch(showNotification({
+        message: errorMessage,
+        type: 'error'
+      }));
     }
   };
 
@@ -175,7 +179,6 @@ const BrandView = () => {
   return (
     <BrandDesign
       brands={brands}
-      vendors={vendors}
       loading={loading}
       open={open}
       editing={editing}
@@ -184,6 +187,7 @@ const BrandView = () => {
       openDialog={openDialog}
       closeDialog={closeDialog}
       handleSubmit={handleSubmit}
+      handleDelete={handleDelete}
     />
   );
 };

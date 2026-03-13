@@ -8,7 +8,6 @@ class BrandSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'vendor',
             'description',
             'created_at',
             'updated_at',
@@ -40,14 +39,8 @@ class BrandSerializer(serializers.ModelSerializer):
 
         return value
 
-    def validate_vendor(self, value):
-        """Validate vendor"""
-        if not value:
-            raise serializers.ValidationError("Vendor is required.")
-        return value
 
     def validate_description(self, value):
-        """Validate description"""
         if value and len(value) > 500:
             raise serializers.ValidationError("Description must be 500 characters or less.")
         return value.strip() if value else ""

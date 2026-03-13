@@ -1,33 +1,35 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+
 class Location(models.Model):
     name = models.CharField(
         max_length=255,
         unique=True,
-        help_text=_("Human-readable location name."),
+        verbose_name=_("Name"),
+        help_text=_("Location name"),
     )
-    code = models.SlugField(
-        max_length=32,
-        unique=True,
-        help_text=_("Short unique code used in exports and views."),
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name=_("Description"),
     )
-    timezone = models.CharField(
-        max_length=64,
-        default="UTC",
-        help_text=_("Timezone for scheduling and exports."),
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("Is Active"),
     )
-    frequency = models.ForeignKey(
-        'frequency.Frequency',
-        on_delete=models.PROTECT,
-        related_name="locations"
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_("Created At"),
     )
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name=_("Updated At"),
+    )
 
     class Meta:
-        ordering = ("name",)
+        ordering = ["name"]
         verbose_name = _("Location")
         verbose_name_plural = _("Locations")
 

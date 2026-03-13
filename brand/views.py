@@ -1,10 +1,10 @@
 from .models import Brand
-from .serializers import BrandSerializer
 from rest_framework import status
+from .serializers import BrandSerializer
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
 
 class BrandViewSet(ModelViewSet):
     queryset = Brand.objects.all()
@@ -15,7 +15,6 @@ class BrandViewSet(ModelViewSet):
     ordering = ("name",)
 
     def create(self, request, *args, **kwargs):
-        """Create a new brand with enhanced error handling"""
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -38,7 +37,6 @@ class BrandViewSet(ModelViewSet):
             )
 
     def update(self, request, *args, **kwargs):
-        """Update a brand with enhanced error handling"""
         try:
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
