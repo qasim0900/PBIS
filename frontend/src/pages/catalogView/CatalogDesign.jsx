@@ -72,6 +72,7 @@ const CatalogDesign = ({
     brands,
     frequencies,
     fieldErrors = {},
+    isAdmin = false,
 }) => {
     const getCategoryColor = (cat) => CATEGORIES.find((c) => c.value === cat)?.color || '#64748b';
 
@@ -240,7 +241,13 @@ const CatalogDesign = ({
                                             type="number"
                                             value={formData.par_level}
                                             onChange={updateForm('par_level')}
-                                            helperText="Maximum inventory level"
+                                            helperText={isAdmin ? "Preferred stock level" : "Only administrators can modify this field"}
+                                            disabled={!isAdmin && currentItem !== null}
+                                            sx={{
+                                                '& .MuiInputBase-input.Mui-disabled': {
+                                                    color: isAdmin ? 'inherit' : 'text.secondary'
+                                                }
+                                            }}
                                         />
                                         <TextField
                                             label="Order Point"

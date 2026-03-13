@@ -114,9 +114,9 @@ const InventoryCard = ({ item }) => {
         const countValue = Number(modalData.on_hand_quantity);
         const parValue = Number(modalData.par_level);
         
-        // Validation: Count should not exceed par level
-        if (countValue > parValue) {
-            alert(`Current count (${countValue}) cannot exceed Par Level (${parValue})`);
+        // Only validate that count is not negative
+        if (countValue < 0) {
+            alert("Current count cannot be negative");
             return;
         }
         
@@ -137,12 +137,10 @@ const InventoryCard = ({ item }) => {
 
     const handleCountChange = (value) => {
         const numValue = Number(value);
-        const currentPar = Number(modalData.par_level) || Number(par_level) || 0;
         
-        // STRICT VALIDATION: Don't allow values above par level or below 0
-        if (numValue < 0 || numValue > currentPar) {
-            // Don't update the value at all - reject the input
-            return;
+        // Only prevent negative values
+        if (numValue < 0) {
+            return; // Reject negative input
         }
         
         setShowWarning(false);
@@ -162,19 +160,6 @@ const InventoryCard = ({ item }) => {
         if ([".", ",", "e", "E", "-", "+"].includes(e.key)) {
             e.preventDefault();
             return;
-        }
-        
-        // Check if the new value would exceed par level
-        if (e.key >= '0' && e.key <= '9') {
-            const currentValue = localCount.toString();
-            const newValue = currentValue + e.key;
-            const numValue = Number(newValue);
-            const currentPar = Number(modalData.par_level) || Number(par_level) || 0;
-            
-            if (numValue > currentPar) {
-                e.preventDefault();
-                return;
-            }
         }
         
         if (e.key === "Enter") {
@@ -257,7 +242,7 @@ const InventoryCard = ({ item }) => {
 
                     <Box sx={{ mb: 2 }}>
                         <Typography sx={{ color: "text.secondary", fontSize: 12, fontWeight: 600, mb: 0.75 }}>
-                            Enter Current Count ({order_unit}) - Max: {par.toFixed(1)}
+                            Enter Current Count ({order_unit})
                         </Typography>
                         <TextField
                             fullWidth
@@ -277,15 +262,12 @@ const InventoryCard = ({ item }) => {
                             inputRef={inputRef}
                             inputProps={{ 
                                 step: "1", 
-                                min: 0, 
-                                max: par,
+                                min: 0,
                                 onInput: (e) => {
-                                    // Additional check on paste/input
+                                    // Only prevent negative values
                                     const value = Number(e.target.value);
                                     if (value < 0) {
                                         e.target.value = 0;
-                                    } else if (value > par) {
-                                        e.target.value = par;
                                     }
                                 }
                             }}
@@ -301,7 +283,7 @@ const InventoryCard = ({ item }) => {
                             }}
                         />
                         <Typography sx={{ color: "text.secondary", fontSize: 11, mt: 0.5, textAlign: "center" }}>
-                            Valid range: 0 to {par.toFixed(1)} {count_unit}
+                            Valid count: 0+ {count_unit}
                         </Typography>
                     </Box>
 
@@ -381,11 +363,10 @@ const InventoryCard = ({ item }) => {
                                 }
                                 
                                 const val = Number(value);
-                                const parVal = Number(modalData.par_level);
                                 
-                                // STRICT: Don't allow invalid values
-                                if (val < 0 || val > parVal) {
-                                    return; // Reject the input
+                                // Only prevent negative values
+                                if (val < 0) {
+                                    return; // Reject negative input
                                 }
                                 
                                 setShowWarning(false);
@@ -397,31 +378,15 @@ const InventoryCard = ({ item }) => {
                                     e.preventDefault();
                                     return;
                                 }
-                                
-                                // Check if new value would exceed par
-                                if (e.key >= '0' && e.key <= '9') {
-                                    const currentValue = modalData.on_hand_quantity.toString();
-                                    const newValue = currentValue + e.key;
-                                    const numValue = Number(newValue);
-                                    const parValue = Number(modalData.par_level);
-                                    
-                                    if (numValue > parValue) {
-                                        e.preventDefault();
-                                    }
-                                }
                             }}
                             error={showWarning}
-                            helperText={`Valid range: 0 to ${modalData.par_level}`}
+                            helperText="Enter current count (0 or higher)"
                             inputProps={{ 
-                                min: 0, 
-                                max: modalData.par_level,
+                                min: 0,
                                 onInput: (e) => {
                                     const value = Number(e.target.value);
-                                    const parVal = Number(modalData.par_level);
                                     if (value < 0) {
                                         e.target.value = 0;
-                                    } else if (value > parVal) {
-                                        e.target.value = parVal;
                                     }
                                 }
                             }}

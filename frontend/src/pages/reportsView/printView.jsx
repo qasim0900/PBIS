@@ -14,7 +14,9 @@ export const printReport = (
   selectedLocation,
   username,
   dispatch,
-  showNotification
+  showNotification,
+  selectedFrequency = null,
+  frequencies = []
 ) => {
   if (!sheetEntries?.length) return;
 
@@ -29,6 +31,10 @@ export const printReport = (
 
   const locationName =
     locations.find(l => l.id == selectedLocation)?.name || "Unknown";
+
+  const frequencyName = selectedFrequency && frequencies 
+    ? frequencies.find(f => f.id == selectedFrequency)?.frequency_name || "Unknown"
+    : (sheetEntries[0]?.reportFrequency || "Unknown");
 
   const rows = sheetEntries.map(e => {
     const par = Number(e.par_level) || 0;
@@ -86,6 +92,7 @@ td{padding:12px;border:1px solid #e2e8f0;text-align:center}
 <h1>Order Replenishment Report</h1>
 <p><strong>Generated:</strong> ${today}</p>
 <p><strong>Location:</strong> ${locationName}</p>
+<p><strong>Inventory List:</strong> ${frequencyName}</p>
 
 <table>
 <thead>

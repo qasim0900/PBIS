@@ -1,16 +1,12 @@
 import { motion } from "framer-motion";
 import TableView from "../../components/template";
 import SplitButton from "../../components/SplitButton";
-import { Box, TextField, MenuItem } from "@mui/material";
+import { Box, TextField, MenuItem, Typography, Card, CardContent } from "@mui/material";
 
 //---------------------------------------
 // :: Animations
 //---------------------------------------
 const fadeIn = { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.4 } };
-
-//---------------------------------------
-// :: ReportsViewUI Component
-//---------------------------------------
 
 /*
 A presentational component for viewing, filtering, and exporting inventory reports.
@@ -36,6 +32,12 @@ const ReportsViewUI = ({
     reportColumns,
     data,
 }) => {
+    // Get report metadata for display
+    const reportMetadata = data && data.length > 0 ? {
+        location: data[0].reportLocation,
+        frequency: data[0].reportFrequency
+    } : null;
+
     //---------------------------------------
     // :: Handle SplitButton Actions
     //---------------------------------------
@@ -115,11 +117,41 @@ const ReportsViewUI = ({
             />
         </Box>
     );
+
     //---------------------------------------
     // :: Render Component
     //---------------------------------------
     return (
         <motion.div {...fadeIn}>
+            {/* Report Metadata Display */}
+            {reportMetadata && (
+                <Card sx={{ mb: 3, backgroundColor: 'grey.50' }}>
+                    <CardContent sx={{ pb: 2 }}>
+                        <Typography variant="h6" gutterBottom>
+                            Inventory Report
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                            <Box>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Location
+                                </Typography>
+                                <Typography variant="body1" fontWeight="medium">
+                                    {reportMetadata.location}
+                                </Typography>
+                            </Box>
+                            <Box>
+                                <Typography variant="subtitle2" color="text.secondary">
+                                    Inventory List
+                                </Typography>
+                                <Typography variant="body1" fontWeight="medium">
+                                    {reportMetadata.frequency}
+                                </Typography>
+                            </Box>
+                        </Box>
+                    </CardContent>
+                </Card>
+            )}
+            
             <TableView
                 title="Reports"
                 subtitle="Download your inventory reports"

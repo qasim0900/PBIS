@@ -4,6 +4,7 @@ from vendor.models import Vendor
 from locations.models import Location
 from frequency.models import Frequency
 from brand.models import Brand
+from users.models import UserRole
 
 
 class InventoryItemSerializer(serializers.ModelSerializer):
@@ -92,6 +93,18 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     def validate_par_level(self, value):
         if value is not None and value < 0:
             raise serializers.ValidationError("Par level cannot be negative.")
+        
+        # Check if user is admin for par level changes
+        # This validation works with the view-level permission check
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and 'par_level' in self.initial_data:
+            user = request.user
+            if not (user.is_superuser or getattr(user, 'role', None) == UserRole.ADMIN):
+                # Only validate if par_level is being changed
+                instance = getattr(self, 'instance', None)
+                if instance is None or instance.par_level != value:
+                    raise serializers.ValidationError("Only administrators can modify Par Level.")
+        
         return value
 
     def validate_order_point(self, value):
@@ -169,15 +182,9 @@ class InventoryItemSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Cross-field validation"""
-        # Validate order_point vs par_level
-        order_point = data.get('order_point')
-        par_level = data.get('par_level')
-        
-        if order_point is not None and par_level is not None:
-            if order_point > par_level:
-                raise serializers.ValidationError({
-                    'order_point': 'Order point should not exceed par level.'
-                })
+        # Removed validation that order_point should not exceed par_level
+        # This allows cases where inventory might be above par level due to bulk purchases
+        # or case size constraints
         
         return data
 

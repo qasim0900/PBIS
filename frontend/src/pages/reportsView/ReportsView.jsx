@@ -95,6 +95,8 @@ const ReportsView = () => {
       (sheet.count_entries || []).map((entry) => ({
         id: entry.id,
         sheetId: sheet.id,
+        reportLocation: sheet.location?.name || "—",
+        reportFrequency: sheet.frequency_name || "—",
         item: entry.item_detail.name,
         vendor: entry.item_detail.vendor_name,
         storage: entry.item_detail.storage_location,
@@ -285,14 +287,15 @@ const ReportsView = () => {
       return;
     }
 
-    // Validate against par level
-    if (editRow.par_level && count > editRow.par_level) {
-      dispatch(showNotification({
-        message: `Current count (${count}) cannot exceed Par Level (${editRow.par_level})`,
-        type: "error"
-      }));
-      return;
-    }
+    // Validate against par level - REMOVED to allow above-par scenarios
+    // Users can now have counts above par level for bulk purchases or case size constraints
+    // if (editRow.par_level && count > editRow.par_level) {
+    //   dispatch(showNotification({
+    //     message: `Current count (${count}) cannot exceed Par Level (${editRow.par_level})`,
+    //     type: "error"
+    //   }));
+    //   return;
+    // }
 
     try {
       await dispatch(
@@ -346,6 +349,10 @@ const ReportsView = () => {
     {
       header: "Current Count",
       render: (r) => `${r.currentCount} ${r.orderUnit || ""}`.trim(),
+    },
+    {
+      header: "Par Level",
+      render: (r) => r.par_level ? `${r.par_level} ${r.orderUnit || ""}`.trim() : "—",
     },
     {
       header: "Status",
@@ -408,7 +415,18 @@ const ReportsView = () => {
         return;
       }
       
-      downloadCSVReport(rows, dispatch, showNotification);
+      // Create metadata for CSV
+      const metadata = {};
+      if (selectedLocation && locations.length > 0) {
+        const location = locations.find(l => l.id == selectedLocation);
+        if (location) metadata.location = location.name;
+      }
+      if (selectedFrequency && frequencies.length > 0) {
+        const frequency = frequencies.find(f => f.id == selectedFrequency);
+        if (frequency) metadata.frequency = frequency.frequency_name;
+      }
+      
+      downloadCSVReport(rows, dispatch, showNotification, metadata);
     } catch (err) {
       console.error('CSV download error:', err);
       dispatch(showNotification({
@@ -416,7 +434,7 @@ const ReportsView = () => {
         type: "error"
       }));
     }
-  }, [rows, dispatch]);
+  }, [rows, dispatch, locations, selectedLocation, frequencies, selectedFrequency]);
 
   const handlePrint = useCallback(() => {
     try {
@@ -442,7 +460,9 @@ const ReportsView = () => {
         selectedLocation,
         username,
         dispatch,
-        showNotification
+        showNotification,
+        selectedFrequency,
+        frequencies
       );
     } catch (err) {
       console.error('Print error:', err);
@@ -451,7 +471,7 @@ const ReportsView = () => {
         type: "error"
       }));
     }
-  }, [rows, locations, selectedLocation, username, dispatch]);
+  }, [rows, locations, selectedLocation, username, dispatch, selectedFrequency, frequencies]);
 
   // Show loading screen when initial data is being fetched
   if (loading && (!reports || reports.length === 0)) {
@@ -566,14 +586,11 @@ const ReportsView = () => {
             helperText={
               editRow && (editRow.currentCount === null || editRow.currentCount === undefined || editRow.currentCount === '')
                 ? "Current count is required"
-                : editRow?.par_level
-                ? `Valid range: 0 to ${editRow.par_level}`
-                : "Enter the current inventory count"
+                : "Enter current inventory count"
             }
             InputProps={{ 
               inputProps: { 
                 min: 0, 
-                max: editRow?.par_level || undefined,
                 step: 1 
               } 
             }}

@@ -8,6 +8,7 @@ import { fetchVendors } from '../VendorView/VendorSlice.js';
 import { fetchLocations } from '../locationView/locationsSlice.js';
 import { fetchFrequencies } from '../FrequencyView/frequencySlice.js';
 import { AnimatePresence } from 'framer-motion';
+import { selectIsAdmin } from '../loginView/authSlice.js';
 import {
   fetchAllItems,
   createItem,
@@ -31,6 +32,7 @@ const CatalogView = () => {
   const { frequencies } = useSelector((state) => state.frequencies);
   const { brands } = useSelector((state) => state.brands);
   const { items, currentItem, loading } = useSelector((state) => state.inventory);
+  const isAdmin = useSelector(selectIsAdmin);
 
 
   //-----------------------------------
@@ -361,6 +363,7 @@ const CatalogView = () => {
         vendors={vendors}
         brands={brands}
         fieldErrors={fieldErrors}
+        isAdmin={isAdmin}
       />
     </AnimatePresence>
   );

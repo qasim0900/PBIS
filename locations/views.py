@@ -16,9 +16,9 @@ class LocationViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return Location.objects.none()
         queryset = Location.objects.filter(is_active=True)
-        if user.is_superuser or getattr(user, "role", None) != UserRole.STAFF:
-            return queryset
-        return queryset.filter(assigned_users=user)
+        # Remove assigned_users filter since Location model doesn't have this field
+        # All authenticated users can see all active locations
+        return queryset
 
     def create(self, request, *args, **kwargs):
         """Create a new location with enhanced error handling"""
@@ -34,12 +34,15 @@ class LocationViewSet(viewsets.ModelViewSet):
             )
         except ValidationError as e:
             return Response(
-                e.detail, 
+                {"error": "Validation failed", "details": e.detail}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Location creation error: {str(e)}", exc_info=True)
             return Response(
-                {"error": "An unexpected error occurred. Please try again."}, 
+                {"error": "An unexpected error occurred. Please try again.", "details": str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

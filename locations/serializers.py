@@ -85,18 +85,35 @@ class LocationSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("Timezone is required.")
         
-        # List of valid timezones (can be expanded)
+        # List of valid timezones (expanded to include common options)
         valid_timezones = [
             'America/New_York',
             'America/Chicago',
             'America/Denver',
             'America/Los_Angeles',
+            'America/Phoenix',
+            'America/Anchorage',
+            'America/Honolulu',
+            'America/Toronto',
+            'America/Vancouver',
+            'America/Mexico_City',
+            'America/Sao_Paulo',
+            'Europe/London',
+            'Europe/Paris',
+            'Europe/Berlin',
+            'Europe/Rome',
+            'Europe/Moscow',
+            'Asia/Dubai',
+            'Asia/Kolkata',
+            'Asia/Shanghai',
+            'Asia/Tokyo',
+            'Australia/Sydney',
             'UTC',
         ]
         
         if value not in valid_timezones:
             raise serializers.ValidationError(
-                f"Invalid timezone. Please select a valid timezone."
+                f"Invalid timezone '{value}'. Please select a valid timezone from the list."
             )
         
         return value

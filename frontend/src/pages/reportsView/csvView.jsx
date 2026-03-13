@@ -8,11 +8,14 @@ Exports a function that converts sheet entries into a CSV file, triggers a
 download, and displays success or warning notifications.
 */
 
-export const downloadCSVReport = (sheetEntries, dispatch, showNotification) => {
+export const downloadCSVReport = (sheetEntries, dispatch, showNotification, metadata = {}) => {
   if (!sheetEntries?.length) {
     dispatch(showNotification({ message: "No data to export", type: "warning" }));
     return;
   }
+
+  // Extract metadata
+  const { location, frequency } = metadata;
 
 
   //---------------------------------------
@@ -73,7 +76,19 @@ export const downloadCSVReport = (sheetEntries, dispatch, showNotification) => {
   Generates a CSV file from the provided data, triggers a browser download, and displays a success notification.
   */
 
-  const csv = [headers, ...rows]
+  // Create metadata rows
+  const metadataRows = [];
+  if (location) {
+    metadataRows.push(["Location", location]);
+  }
+  if (frequency) {
+    metadataRows.push(["Inventory List", frequency]);
+  }
+  if (metadataRows.length > 0) {
+    metadataRows.push([]); // Empty row to separate metadata from data
+  }
+
+  const csv = [...metadataRows, headers, ...rows]
     .map(row =>
       row.map(col => `"${String(col).replace(/"/g, '""')}"`).join(",")
     )
