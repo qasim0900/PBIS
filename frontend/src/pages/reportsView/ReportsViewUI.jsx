@@ -16,14 +16,10 @@ Includes filters for Location, Inventory List, and Sheet Date.
 const ReportsViewUI = ({
     locations,
     frequencies,
-    availableDates = [],
     selectedLocation,
     setSelectedLocation,
     selectedFrequency,
     setSelectedFrequency,
-    selectedDate,
-    setSelectedDate,
-    sheets,
     handleLoadSheets,
     handleDownloadCSV,
     handlePrint,
@@ -35,7 +31,10 @@ const ReportsViewUI = ({
     // Get report metadata for display
     const reportMetadata = data && data.length > 0 ? {
         location: data[0].reportLocation,
-        frequency: data[0].reportFrequency
+        frequency: data[0].reportFrequency,
+        createdDate: data[0].reportCreatedDate,
+        createdTime: data[0].reportCreatedTime,
+        createdBy: data[0].reportCreatedBy
     } : null;
 
     //---------------------------------------
@@ -147,11 +146,21 @@ const ReportsViewUI = ({
                                     {reportMetadata.frequency}
                                 </Typography>
                             </Box>
+                            {reportMetadata.createdDate && (
+                                <Box>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        Report Created
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight="medium">
+                                        {reportMetadata.createdDate} at {reportMetadata.createdTime}
+                                    </Typography>
+                                </Box>
+                            )}
                         </Box>
                     </CardContent>
                 </Card>
             )}
-            
+
             <TableView
                 title="Reports"
                 subtitle="Download your inventory reports"

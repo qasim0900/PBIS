@@ -115,6 +115,23 @@ class CountEntry(models.Model):
         max_length=8, choices=HIGHLIGHT_CHOICES, editable=False)
     notes = models.TextField(blank=True, null=True, help_text=_(
         "Optional notes for the count entry"))
+    
+    # Audit fields
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="count_entries_created", db_index=True
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="count_entries_updated", db_index=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="count_entries_deleted"
+    )
 
     def __str__(self) -> str:
         return f"{self.sheet} · {self.item}"
@@ -125,12 +142,18 @@ class CountEntry(models.Model):
             raise ValidationError(
                 {"on_hand_quantity": _("Cannot be negative.")})
 
-    def save(self, *args, recalculate: bool = True, **kwargs):
+    def save(self, *args, recalculate: bool = True, user=None, **kwargs):
         if recalculate:
             calc = self.perform_calculation()
             self.calculated_qty_to_order = calc.qty_to_order
             self.calculated_order_units = calc.order_units
             self.highlight_state = calc.highlight_state
+
+        # Set audit fields
+        if not self.pk and user:
+            self.created_by = user
+        if user:
+            self.updated_by = user
 
         super().save(*args, **kwargs)
         if self.sheet.status == CountSheetStatus.SUBMITTED and not self.sheet.submitted_at:
@@ -145,6 +168,26 @@ class CountEntry(models.Model):
                 defaults={'is_active': True}
             )
             report.count_entries.add(self)
+
+    def soft_delete(self, user):
+        """Soft delete the count entry with user tracking"""
+        self.deleted_at = timezone.now()
+        self.deleted_by = user
+        self.save(update_fields=['deleted_at', 'deleted_by'])
+
+    @property
+    def is_deleted(self):
+        """Check if count entry is soft deleted"""
+        return self.deleted_at is not None
+
+    class Meta:
+        verbose_name = _("Count Entry")
+        verbose_name_plural = _("Count Entries")
+        indexes = [
+            models.Index(fields=['sheet', 'item']),
+            models.Index(fields=['created_at', 'created_by']),
+            models.Index(fields=['deleted_at']),
+        ]
 
     def perform_calculation(self) -> OrderCalculation:
         par_level = self.par_level if self.par_level is not None else (self.item.par_level or Decimal("0"))

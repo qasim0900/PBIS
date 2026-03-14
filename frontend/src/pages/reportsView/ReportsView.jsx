@@ -107,7 +107,22 @@ const ReportsView = () => {
         notes: entry.notes,
         itemId: entry.item_detail.id,
         order_point: entry.item_detail.order_point,
-        par_level: entry.item_detail.par_level
+        par_level: entry.item_detail.par_level,
+        // Add audit fields
+        createdDate: entry.created_at ? new Date(entry.created_at).toLocaleDateString() : "—",
+        createdTime: entry.created_at ? new Date(entry.created_at).toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit', 
+          hour12: true 
+        }) : "—",
+        createdBy: entry.created_by_detail?.username || "—",
+        reportCreatedDate: sheet.created_at ? new Date(sheet.created_at).toLocaleDateString() : "—",
+        reportCreatedTime: sheet.created_at ? new Date(sheet.created_at).toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit', 
+          hour12: true 
+        }) : "—",
+        reportCreatedBy: sheet.created_by_detail?.username || "—"
       }))
     );
 
@@ -375,6 +390,22 @@ const ReportsView = () => {
         ),
     },
     { header: "Notes", render: (r) => r.notes || "—" },
+    // Add audit columns
+    { 
+      header: "Created Date", 
+      render: (r) => r.createdDate || "—",
+      width: 120
+    },
+    { 
+      header: "Created Time", 
+      render: (r) => r.createdTime || "—",
+      width: 100
+    },
+    { 
+      header: "Created By", 
+      render: (r) => r.createdBy || "—",
+      width: 120
+    },
     {
       header: "Actions",
       render: (r) => (
@@ -399,6 +430,7 @@ const ReportsView = () => {
           </Tooltip>
         </Stack>
       ),
+      width: 120
     },
   ], [dispatch]);
 

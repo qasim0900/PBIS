@@ -25,6 +25,18 @@ class CountEntryViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
+    @action(detail=True, methods=['post'], url_path='soft-delete')
+    def soft_delete(self, request, pk=None):
+        entry = self.get_object()
+        entry.soft_delete(request.user)
+        return Response({'status': 'deleted'}, status=status.HTTP_200_OK)
+
 class CountSheetViewSet(viewsets.ModelViewSet):
     serializer_class = CountSheetSerializer
     permission_classes = [IsAuthenticated]
@@ -37,6 +49,9 @@ class CountSheetViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
+
     @action(detail=True, methods=['post'], url_path='submit')
     def submit(self, request, pk=None):
         sheet = self.get_object()
@@ -46,3 +61,9 @@ class CountSheetViewSet(viewsets.ModelViewSet):
             return Response({'status': 'submitted'}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='soft-delete')
+    def soft_delete(self, request, pk=None):
+        sheet = self.get_object()
+        sheet.soft_delete(request.user)
+        return Response({'status': 'deleted'}, status=status.HTTP_200_OK)
