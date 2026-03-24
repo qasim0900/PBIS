@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 
-// Motion variants for consistent animations
 export const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -61,22 +60,16 @@ export const scaleVariants = {
   },
 };
 
-// Motion Button Component
 export const MotionButton = motion.button;
 
-// Motion Card Component
 export const MotionCard = motion.div;
 
-// Motion Box Component
 export const MotionBox = motion.div;
 
-// Motion Table Row Component
 export const MotionTableRow = motion.tr;
 
-// Motion Dialog Content Component
 export const MotionDialogContent = motion.div;
 
-// Hover animation props
 export const hoverProps = {
   whileHover: { 
     scale: 1.05,
@@ -88,7 +81,6 @@ export const hoverProps = {
   }
 };
 
-// Table row hover animation
 export const tableRowHoverProps = {
   whileHover: { 
     backgroundColor: 'rgba(216, 180, 254, 0.15)',
@@ -96,7 +88,6 @@ export const tableRowHoverProps = {
   }
 };
 
-// Card hover animation
 export const cardHoverProps = {
   whileHover: { 
     y: -8,
@@ -105,7 +96,6 @@ export const cardHoverProps = {
   }
 };
 
-// Modal animation
 export const modalVariants = {
   hidden: { 
     opacity: 0,
@@ -133,7 +123,6 @@ export const modalVariants = {
   }
 };
 
-// Page transition animation
 export const pageTransition = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -144,7 +133,6 @@ export const pageTransition = {
   }
 };
 
-// Staggered animation for lists
 export const staggerContainer = {
   hidden: { opacity: 0 },
   visible: {

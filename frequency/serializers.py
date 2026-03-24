@@ -16,7 +16,6 @@ class FrequencySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def validate_frequency_name(self, value):
-        """Validate frequency name"""
         if not value or not value.strip():
             raise serializers.ValidationError("Inventory List name cannot be empty.")
         
@@ -28,7 +27,6 @@ class FrequencySerializer(serializers.ModelSerializer):
         if len(value) > 100:
             raise serializers.ValidationError("Inventory List name must be 100 characters or less.")
         
-        # Check for duplicate names (case-insensitive)
         queryset = Frequency.objects.filter(frequency_name__iexact=value)
 
         if self.instance:
@@ -42,7 +40,6 @@ class FrequencySerializer(serializers.ModelSerializer):
         return value
 
     def validate_description(self, value):
-        """Validate description"""
         if value and len(value) > 500:
             raise serializers.ValidationError("Description must be 500 characters or less.")
         return value.strip() if value else ""

@@ -47,7 +47,6 @@ class UpdateUserView(generics.UpdateAPIView):
         
         data = request.data.copy()
 
-        # Validate role if provided
         if role := data.get("role"):
             valid_roles = [choice[0] for choice in User._meta.get_field("role").choices]
             if role not in valid_roles:
@@ -56,7 +55,6 @@ class UpdateUserView(generics.UpdateAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # Validate username if provided
         if username := data.get("username"):
             if not username.strip():
                 return Response(
@@ -64,14 +62,12 @@ class UpdateUserView(generics.UpdateAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Check for duplicate username
             if User.objects.filter(username=username).exclude(id=user.id).exists():
                 return Response(
                     {"error": "A user with this username already exists."}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-        # Validate email if provided
         if email := data.get("email"):
             if not email.strip():
                 return Response(
@@ -79,7 +75,6 @@ class UpdateUserView(generics.UpdateAPIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             
-            # Check for duplicate email
             if User.objects.filter(email=email).exclude(id=user.id).exists():
                 return Response(
                     {"error": "A user with this email already exists."}, 

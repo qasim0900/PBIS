@@ -1,14 +1,10 @@
 import { frequenciesAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-//---------------------------------------
-// :: Helper: Parse Error
-//---------------------------------------
 const parseError = (err) => {
     if (err.response?.data) {
         const data = err.response.data;
         
-        // Handle field-specific errors
         if (typeof data === 'object' && !data.error && !data.detail) {
             const fieldErrors = {};
             Object.keys(data).forEach(field => {
@@ -23,7 +19,6 @@ const parseError = (err) => {
             };
         }
         
-        // Handle error/detail messages
         return {
             message: data.error || data.detail || JSON.stringify(data),
             rawError: data
@@ -36,25 +31,11 @@ const parseError = (err) => {
     };
 };
 
-//---------------------------------------
-// :: Initial State
-//---------------------------------------
-/*
-Defines default structure for frequencies state
-*/
-
 const initialState = {
     frequencies: [],
     loading: false,
     error: null,
 };
-
-//---------------------------------------
-// :: Async Thunks
-//---------------------------------------
-/*
-Handles asynchronous API calls for frequencies
-*/
 
 export const fetchFrequencies = createAsyncThunk(
     'frequencies/fetchFrequencies',
@@ -69,12 +50,10 @@ export const fetchFrequencies = createAsyncThunk(
     }
 );
 
-
 export const createFrequency = createAsyncThunk(
     'frequencies/createFrequency',
     async (frequencyData, { rejectWithValue }) => {
         try {
-            // Frontend validation
             if (!frequencyData.frequency_name || !frequencyData.frequency_name.trim()) {
                 return rejectWithValue({
                     fieldErrors: { frequency_name: 'Inventory List name is required' },
@@ -91,12 +70,10 @@ export const createFrequency = createAsyncThunk(
     }
 );
 
-
 export const updateFrequency = createAsyncThunk(
     'frequencies/updateFrequency',
     async ({ id, data }, { rejectWithValue }) => {
         try {
-            // Frontend validation
             if (!id) {
                 return rejectWithValue({
                     message: 'Inventory List ID is required'
@@ -119,25 +96,14 @@ export const updateFrequency = createAsyncThunk(
     }
 );
 
-//---------------------------------------
-// :: Slice
-//---------------------------------------
-/*
-Creates Redux slice with reducers and extraReducers to handle async actions
-*/
-
 const frequencySlice = createSlice({
     name: 'frequencies',
     initialState,
     reducers: {
-        // Clears error state
         clearError: (state) => { state.error = null; },
     },
     extraReducers: (builder) => {
         builder
-            // -------------------------------
-            // :: Fetch Frequencies
-            // -------------------------------
             .addCase(fetchFrequencies.pending, (state) => { 
                 state.loading = true; 
                 state.error = null; 
@@ -152,9 +118,6 @@ const frequencySlice = createSlice({
                 state.error = payload; 
             })
 
-            // -------------------------------
-            // :: Create Frequency
-            // -------------------------------
             .addCase(createFrequency.pending, (state) => { 
                 state.loading = true; 
                 state.error = null; 
@@ -169,9 +132,6 @@ const frequencySlice = createSlice({
                 state.error = payload; 
             })
 
-            // -------------------------------
-            // :: Update Frequency
-            // -------------------------------
             .addCase(updateFrequency.pending, (state) => { 
                 state.loading = true; 
                 state.error = null; 
@@ -189,8 +149,5 @@ const frequencySlice = createSlice({
     },
 });
 
-//---------------------------------------
-// :: Export Actions & Reducer
-//---------------------------------------
 export const { clearError } = frequencySlice.actions;
 export default frequencySlice.reducer;

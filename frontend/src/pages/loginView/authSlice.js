@@ -1,27 +1,8 @@
 import { authAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-//---------------------------------------
-// :: normalizeError Function
-//---------------------------------------
-
-
-/*
-Normalizes an error object to return a user-friendly message.
-*/
-
 const normalizeError = (err) =>
   err?.detail || err?.message || err?.non_field_errors?.[0] || 'An unknown error occurred.';
-
-
-//---------------------------------------
-// :: loginUser Function
-//---------------------------------------
-
-
-/*
-Handles user login by authenticating, storing tokens, fetching user info, and returning the result (or a normalized error).
-*/
 
 export const loginUser = createAsyncThunk(
   'auth/loginUser',
@@ -38,16 +19,6 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-
-//---------------------------------------
-// :: fetchCurrentUser Function
-//---------------------------------------
-
-
-/*
-Fetches the current logged-in user, and if the session is expired it clears tokens and returns an error.
-*/
-
 export const fetchCurrentUser = createAsyncThunk(
   'auth/fetchCurrentUser',
   async (_, { rejectWithValue }) => {
@@ -60,16 +31,6 @@ export const fetchCurrentUser = createAsyncThunk(
     }
   }
 );
-
-
-//---------------------------------------
-// :: refresh Token Function
-//---------------------------------------
-
-
-/*
-Refreshes the access token using the stored refresh token, and clears tokens if the refresh fails.
-*/
 
 export const refreshToken = createAsyncThunk(
   'auth/refreshToken',
@@ -90,15 +51,6 @@ export const refreshToken = createAsyncThunk(
   }
 );
 
-//---------------------------------------
-// :: initialState Function
-//---------------------------------------
-
-
-/*
-A Redux slice that manages authentication state (user, tokens, loading, and errors) and handles login, session refresh, and logout actions.
-*/
-
 const initialState = {
   user: null,
   token: localStorage.getItem('access_token'),
@@ -108,27 +60,9 @@ const initialState = {
   error: null,
 };
 
-//---------------------------------------
-// :: authSlice Function
-//---------------------------------------
-
-
-/*
-A Redux slice that manages the authentication state (user, tokens, loading, and errors) for the application.
-*/
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
-
-  //---------------------------------------
-  // :: reducers
-  //---------------------------------------
-
-
-  /*
-  Defines Redux reducers for logging out the user and clearing authentication errors.
-  */
 
   reducers: {
     logoutUser: (state) => {
@@ -140,15 +74,6 @@ const authSlice = createSlice({
     clearError: (state) => { state.error = null; },
   },
 
-  //---------------------------------------
-  // :: extra Reducers
-  //---------------------------------------
-
-
-  /*
-  Handles common pending and rejected states for async auth actions (loading, error, and logout cleanup).
-  */
-
   extraReducers: (builder) => {
     const pending = (state) => { state.loading = true; state.error = null; };
     const rejected = (state, action) => {
@@ -159,16 +84,6 @@ const authSlice = createSlice({
     };
 
     builder
-
-      //---------------------------------------
-      // :: loginUser Case
-      //---------------------------------------
-
-
-      /*
-      Handles login state updates: sets loading, saves user + tokens, and marks the user as authenticated.
-      */
-
       .addCase(loginUser.pending, pending)
       .addCase(loginUser.fulfilled, (state, { payload }) => {
         state.loading = false;
@@ -177,16 +92,6 @@ const authSlice = createSlice({
         state.refreshToken = payload.tokens.refresh;
         state.isAuthenticated = true;
       })
-
-      //---------------------------------------
-      // :: loginUser Case
-      //---------------------------------------
-
-
-      /*
-      Handles failed login and fetch-user states, updating loading/error and setting the user when successful.
-      */
-
       .addCase(loginUser.rejected, rejected)
       .addCase(fetchCurrentUser.pending, pending)
       .addCase(fetchCurrentUser.fulfilled, (state, { payload }) => {
@@ -194,16 +99,6 @@ const authSlice = createSlice({
         state.user = payload;
         state.isAuthenticated = true;
       })
-
-      //---------------------------------------
-      // :: fetchCurrentUser Case
-      //---------------------------------------
-
-
-      /*
-      Updates authentication state on token refresh success or failure, keeping the user logged in if the refresh succeeds and clearing auth on failure.
-      */
-
       .addCase(fetchCurrentUser.rejected, rejected)
       .addCase(refreshToken.fulfilled, (state, { payload }) => {
         state.token = payload;
@@ -214,29 +109,8 @@ const authSlice = createSlice({
   },
 });
 
-
-//---------------------------------------
-// :: Exports auth actions
-//---------------------------------------
-
-
-/*
-Exports auth actions and the reducer for handling authentication state in Redux.
-*/
-
 export const { logoutUser, clearError } = authSlice.actions;
 export default authSlice.reducer;
-
-
-
-//---------------------------------------
-// :: Export Selectors 
-//---------------------------------------
-
-
-/*
-Export Selector
-*/
 
 export const selectAuthState = (state) => state.auth;
 export const selectUser = (state) => state.auth.user;

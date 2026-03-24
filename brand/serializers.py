@@ -14,7 +14,6 @@ class BrandSerializer(serializers.ModelSerializer):
         ]
 
     def validate_name(self, value):
-        """Validate brand name"""
         if not value or not value.strip():
             raise serializers.ValidationError("Brand name cannot be empty.")
         
@@ -26,7 +25,6 @@ class BrandSerializer(serializers.ModelSerializer):
         if len(value) > 100:
             raise serializers.ValidationError("Brand name must be 100 characters or less.")
         
-        # Check for duplicate names (case-insensitive)
         queryset = Brand.objects.filter(name__iexact=value)
 
         if self.instance:

@@ -2,33 +2,6 @@ import { memo } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Box, Typography, Button, Alert } from '@mui/material';
 
-
-//---------------------------------------
-// :: Error Alert With Message
-//---------------------------------------
-
-/*
-A React component that shows an error alert with a message, optional icon, and an optional retry button callback.
-*/
-
-/**
- * ErrorDisplay Component
- * Displays an error message with optional retry button
- *
- * @param {string|Error} error - Error message or object
- * @param {Function} onRetry - Optional retry callback
- * @param {boolean} showIcon - Whether to show the error icon
- */
-
-
-//---------------------------------------
-// :: Error Display Function
-//---------------------------------------
-
-/*
-A React component that conditionally displays an error alert with a message, optional icon, and a retry button if `onRetry` is provided.
-*/
-
 const ErrorDisplay = ({ error, onRetry, showIcon = true }) => {
   if (!error) return null;
 
@@ -36,15 +9,6 @@ const ErrorDisplay = ({ error, onRetry, showIcon = true }) => {
     typeof error === 'string'
       ? error
       : error?.message || 'An error occurred';
-
-  //---------------------------------------
-  // :: Return Code
-  //---------------------------------------
-
-  /*
-  Renders a styled error alert with a bold "Error" title, the error message, an optional icon, 
-  and an optional retry button if `onRetry` is provided.
-  */
 
   return (
     <Alert
@@ -81,13 +45,5 @@ const ErrorDisplay = ({ error, onRetry, showIcon = true }) => {
     </Alert>
   );
 };
-
-//---------------------------------------
-// :: Export Memo Error Display
-//---------------------------------------
-
-/*
-Exports the `ErrorDisplay` component wrapped in `React.memo` to prevent unnecessary re-renders when its props haven’t changed.
-*/
 
 export default memo(ErrorDisplay);

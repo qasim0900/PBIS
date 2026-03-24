@@ -6,7 +6,6 @@ class Command(BaseCommand):
     help = 'Create sample units for the inventory system'
 
     def handle(self, *args, **options):
-        # Define sample units as requested
         sample_units = [
             {
                 'name': 'Case',
@@ -73,7 +72,6 @@ class Command(BaseCommand):
                     self.style.SUCCESS(f'Created unit: {unit.name} ({unit.quantity} items)')
                 )
             else:
-                # Update existing unit with new data
                 unit.quantity = unit_data['quantity']
                 unit.description = unit_data['description']
                 unit.save()

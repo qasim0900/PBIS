@@ -5,15 +5,6 @@ import { useState, useEffect, useCallback } from 'react';
 import locationsAPI from '../pages/locationView/locationsAPI';
 import { ensureCountSheet, fetchCountEntries, setSelectedSheet } from '../pages/countView/countsSlice';
 
-
-//---------------------------------------
-// :: use Counts Data Operations
-//---------------------------------------
-
-/*
-Custom hook to manage locations, selected frequency, count data loading, and submission with notifications.
-*/
-
 export const useCountsData = () => {
     const dispatch = useDispatch();
 
@@ -22,16 +13,6 @@ export const useCountsData = () => {
     const [selectedFrequency, setSelectedFrequency] = useState('');
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-
-
-    //---------------------------------------
-    // :: Load locations on mount Function
-    //---------------------------------------
-
-    /*
-    This `useEffect` automatically fetches all locations on mount and updates state, showing an error 
-    notification if the request fails.
-    */
 
     useEffect(() => {
         const loadLocations = async () => {
@@ -47,16 +28,6 @@ export const useCountsData = () => {
         };
         loadLocations();
     }, [dispatch]);
-
-
-    //---------------------------------------
-    // :: load Count Data Function
-    //---------------------------------------
-
-    /*
-    This `loadCountData` function fetches the count sheet and its entries for the selected location and frequency, updates the Redux state, 
-    and handles loading and error notifications.
-    */
 
     const loadCountData = useCallback(async () => {
         if (!selectedLocation || !selectedFrequency) return;
@@ -82,15 +53,6 @@ export const useCountsData = () => {
         }
     }, [dispatch, selectedLocation, selectedFrequency]);
 
-
-    //---------------------------------------
-    // :: Submit Sheet Function
-    //---------------------------------------
-
-    /*
-    This `submitSheet` function submits a count sheet by ID, shows success or error notifications, and manages the submitting state.
-    */
-
     const submitSheet = useCallback(
         async (sheetId) => {
             if (!sheetId) return;
@@ -112,16 +74,6 @@ export const useCountsData = () => {
         [dispatch]
     );
 
-
-    //---------------------------------------
-    // :: Return Code
-    //---------------------------------------
-
-    /*
-    This hook returns the current locations, selected location/frequency, loading/submitting states, 
-    and functions to load or submit count data.
-    */
-
     return {
         locations,
         selectedLocation,
@@ -134,14 +86,5 @@ export const useCountsData = () => {
         submitSheet,
     };
 };
-
-
-//---------------------------------------
-// :: Export use Count Data
-//---------------------------------------
-
-/*
-Exports the `useCountsData` hook for managing locations, count sheets, and submission logic.
-*/
 
 export default useCountsData;

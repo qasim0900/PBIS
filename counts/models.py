@@ -115,8 +115,6 @@ class CountEntry(models.Model):
         max_length=8, choices=HIGHLIGHT_CHOICES, editable=False)
     notes = models.TextField(blank=True, null=True, help_text=_(
         "Optional notes for the count entry"))
-    
-    # Audit fields
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="count_entries_created", db_index=True
@@ -148,8 +146,6 @@ class CountEntry(models.Model):
             self.calculated_qty_to_order = calc.qty_to_order
             self.calculated_order_units = calc.order_units
             self.highlight_state = calc.highlight_state
-
-        # Set audit fields
         if not self.pk and user:
             self.created_by = user
         if user:

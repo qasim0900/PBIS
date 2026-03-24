@@ -156,8 +156,8 @@ const InventoryCard = ({ item }) => {
     };
 
     const handleKeyDown = (e) => {
-        // Prevent decimal point, comma, minus, and 'e' (scientific notation)
-        if ([".", ",", "e", "E", "-", "+"].includes(e.key)) {
+        // Prevent comma, minus, and 'e' (scientific notation) but allow decimal point
+        if ([",", "e", "E", "-", "+"].includes(e.key)) {
             e.preventDefault();
             return;
         }
@@ -261,7 +261,7 @@ const InventoryCard = ({ item }) => {
                             onKeyDown={handleKeyDown}
                             inputRef={inputRef}
                             inputProps={{ 
-                                step: "1", 
+                                step: "0.5", 
                                 min: 0,
                                 onInput: (e) => {
                                     // Only prevent negative values

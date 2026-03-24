@@ -9,11 +9,6 @@ import {
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
-/*
-Professional Enterprise Loading Screen for PBIS
-Clean • Corporate • Dark Theme • Minimal Animation
-*/
-
 export default function AppLoading() {
   const [loadingStep, setLoadingStep] = useState(0);
 
@@ -45,7 +40,6 @@ export default function AppLoading() {
       <Container maxWidth="sm">
         <Stack spacing={4} alignItems="center">
 
-          {/* PBIS Logo Box */}
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -77,7 +71,6 @@ export default function AppLoading() {
             </Box>
           </motion.div>
 
-          {/* Title */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -106,7 +99,6 @@ export default function AppLoading() {
             </Stack>
           </motion.div>
 
-          {/* Loading Text */}
           <motion.div
             key={loadingStep}
             initial={{ opacity: 0 }}
@@ -124,7 +116,6 @@ export default function AppLoading() {
             />
           </motion.div>
 
-          {/* Loader */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

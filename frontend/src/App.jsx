@@ -7,17 +7,6 @@ import { ThemeProvider } from '@mui/material/styles';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
-
-//--------------------------------
-// :: App Function
-//--------------------------------
-
-/*
-This defines the `App` component that **wraps the application with Redux for state management, 
-MUI Theme Provider for consistent styling, React Router for routing, renders all routes, 
-and includes a global notification system**.
-*/
-
 const App = () => (
   <Provider store={store}>
     <ThemeProvider theme={theme}>
@@ -30,15 +19,5 @@ const App = () => (
     </ThemeProvider>
   </Provider>
 );
-
-
-//--------------------------------
-// :: Export App Function
-//--------------------------------
-
-/*
-This line **exports the `App` component as the default export**, allowing it to be 
-imported elsewhere in the project without using curly braces.
-*/
 
 export default App;

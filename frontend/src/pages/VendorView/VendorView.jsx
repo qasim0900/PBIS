@@ -5,16 +5,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
 import { fetchVendors, createVendor, updateVendor } from './VendorSlice';
 
-
-//---------------------------------------
-// :: Default Form Data
-//---------------------------------------
-
-/*
-Initial structure for vendor form fields.
-Used for both create and edit operations.
-*/
-
 const DEFAULT_FORM = {
   name: '',
   color: '#6366F1',
@@ -24,35 +14,13 @@ const DEFAULT_FORM = {
   notes: '',
 };
 
-//---------------------------------------
-// :: VendorView Component
-//---------------------------------------
-
 const VendorView = () => {
   const dispatch = useDispatch();
   const { vendors, loading } = useSelector((state) => state.vendors);
 
-
-  //---------------------------------------
-  // :: Local State
-  //---------------------------------------
-
-  /*
-  Controls dialog visibility, editing state, and form data
-  */
-
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState(DEFAULT_FORM);
-
-
-  //---------------------------------------
-  // :: Initial Fetch Vendors
-  //---------------------------------------
-
-  /*
-  Dispatches fetchVendors thunk on component mount
-  */
 
   useEffect(() => {
     dispatch(fetchVendors())
@@ -69,15 +37,6 @@ const VendorView = () => {
       });
   }, [dispatch]);
 
-
-  //---------------------------------------
-  // :: Dialog Handlers
-  //---------------------------------------
-  /*
-  openDialog: Opens create/edit dialog and populates formData
-  closeDialog: Resets formData and closes dialog
-  */
-
   const openDialog = useCallback((vendor = null) => {
     setEditing(vendor);
     setFormData(vendor ?? DEFAULT_FORM);
@@ -90,19 +49,7 @@ const VendorView = () => {
     setFormData(DEFAULT_FORM);
   }, []);
 
-
-
-  //---------------------------------------
-  // :: Form Submit Handler
-  //---------------------------------------
-
-  /*
-  Validates form data and dispatches create or update actions
-  Shows notifications for success/failure
-  */
-
   const handleSubmit = async () => {
-    // Comprehensive validation
     if (!formData.name || !formData.name.trim()) {
       dispatch(showNotification({ 
         message: 'Vendor name is required', 
@@ -127,7 +74,6 @@ const VendorView = () => {
       return;
     }
 
-    // Email validation
     if (formData.email && formData.email.trim()) {
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
       if (!emailRegex.test(formData.email.trim())) {
@@ -139,7 +85,6 @@ const VendorView = () => {
       }
     }
 
-    // Color validation
     if (formData.color && formData.color.trim()) {
       const colorRegex = /^#[0-9A-Fa-f]{6}$/;
       if (!colorRegex.test(formData.color.trim())) {
@@ -179,7 +124,6 @@ const VendorView = () => {
     } catch (err) {
       console.error('Vendor save error:', err);
       
-      // Handle field-specific errors
       if (err.fieldErrors) {
         const errorMessages = Object.entries(err.fieldErrors)
           .map(([field, message]) => `${field}: ${message}`)
@@ -190,7 +134,6 @@ const VendorView = () => {
           type: 'error'
         }));
       } else {
-        // Handle general errors
         const errorMessage = 
           err?.message ||
           err?.name?.[0] ||
@@ -205,15 +148,6 @@ const VendorView = () => {
     }
   };
 
-
-  //---------------------------------------
-  // :: Render
-  //---------------------------------------
-  /*
-  Passes data, form state, and handlers to VendorDesign component
-  */
-
-  // Show loading screen when initial data is being fetched
   if (loading && vendors.length === 0) {
     return <AppLoading />;
   }

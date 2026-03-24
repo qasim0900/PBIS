@@ -1,14 +1,10 @@
 import { locationsAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-//---------------------------------------
-// :: Helper: Parse Error
-//---------------------------------------
 const parseError = (err) => {
     if (err.response?.data) {
         const data = err.response.data;
         
-        // Handle field-specific errors
         if (typeof data === 'object' && !data.error && !data.detail) {
             const fieldErrors = {};
             Object.keys(data).forEach(field => {
@@ -23,7 +19,6 @@ const parseError = (err) => {
             };
         }
         
-        // Handle error/detail messages
         return {
             message: data.error || data.detail || JSON.stringify(data),
             rawError: data
@@ -36,14 +31,6 @@ const parseError = (err) => {
     };
 };
 
-//---------------------------------------
-// :: Initial State
-//---------------------------------------
-
-/*
-Defines the default structure of the locations slice
-*/
-
 const initialState = {
   locations: [],
   overrides: [],
@@ -51,16 +38,6 @@ const initialState = {
   loading: false,
   error: null,
 };
-
-
-//---------------------------------------
-// :: Fetch Locations
-//---------------------------------------
-
-/*
-Fetches all locations from the API.
-Handles loading & error state.
-*/
 
 export const fetchLocations = createAsyncThunk(
   'locations/fetchLocations',
@@ -75,22 +52,10 @@ export const fetchLocations = createAsyncThunk(
   }
 );
 
-
-
-//---------------------------------------
-// :: Create Location
-//---------------------------------------
-
-/*
-Creates a new location via API
-Adds new location to state on success
-*/
-
 export const createLocation = createAsyncThunk(
   'locations/createLocation',
   async (locationData, { rejectWithValue }) => {
     try {
-      // Frontend validation
       if (!locationData.name || !locationData.name.trim()) {
         return rejectWithValue({
           fieldErrors: { name: 'Location name is required' },
@@ -107,21 +72,10 @@ export const createLocation = createAsyncThunk(
   }
 );
 
-
-//---------------------------------------
-// :: Update Location
-//---------------------------------------
-
-/*
-Updates an existing location via API
-Updates the location in state on success
-*/
-
 export const updateLocation = createAsyncThunk(
   'locations/updateLocation',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      // Frontend validation
       if (!id) {
         return rejectWithValue({
           message: 'Location ID is required'
@@ -144,42 +98,13 @@ export const updateLocation = createAsyncThunk(
   }
 );
 
-
-
-//---------------------------------------
-// :: Slice Definition
-//---------------------------------------
-
-/*
-Creates Redux slice with reducers and extraReducers for async thunks
-*/
-
 const locationsSlice = createSlice({
   name: 'locations',
   initialState,
   reducers: {
-
-
-    //-----------------------------------
-    // :: Set Selected Location
-    //-----------------------------------
-
-    /*
-    Updates the currently selected location in state
-    */
-
     setSelectedLocation: (state, { payload }) => {
       state.selectedLocation = payload;
     },
-
-    //-----------------------------------
-    // :: Clear Error
-    //-----------------------------------
-
-    /*
-    Clears the error state
-    */
-
     clearError: (state) => {
       state.error = null;
     },
@@ -230,10 +155,6 @@ const locationsSlice = createSlice({
       });
   },
 });
-
-//---------------------------------------
-// :: Export Actions & Reducer
-//---------------------------------------
 
 export const { setSelectedLocation, clearError } = locationsSlice.actions;
 export default locationsSlice.reducer;

@@ -5,29 +5,10 @@ import { showNotification } from '../../api/uiSlice.js';
 import { useEffect, useState, useCallback } from 'react';
 import { fetchFrequencies, createFrequency, updateFrequency } from './frequencySlice.js';
 
-
-//---------------------------------------
-// :: DEFAULT_FORM List
-//---------------------------------------
-
-
-/*
-Defines the default form values for creating or editing a frequency entry.
-*/
-
 const DEFAULT_FORM = {
   frequency_name: '',
   description: '',
 };
-
-
-//---------------------------------------
-// :: FrequencyView Function
-//---------------------------------------
-
-/*
-Manages frequency data by fetching, creating, and updating frequency records, and passes state to the FrequencyDesign UI.
-*/
 
 const FrequencyView = () => {
   const dispatch = useDispatch();
@@ -35,15 +16,6 @@ const FrequencyView = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState(DEFAULT_FORM);
-
-
-  //---------------------------------------
-  // :: useEffect Dispatch Function
-  //---------------------------------------
-
-  /*
-  Fetches frequency data from the server when the component mounts.
-  */
 
   useEffect(() => {
     dispatch(fetchFrequencies())
@@ -60,15 +32,6 @@ const FrequencyView = () => {
       });
   }, [dispatch]);
 
-
-  //---------------------------------------
-  // :: openDialog Function
-  //---------------------------------------
-
-  /*
-  Opens the dialog and sets form data for editing if a frequency is provided, otherwise loads default form values.
-  */
-
   const openDialog = useCallback((frequency = null) => {
     setEditing(frequency);
     setFormData(
@@ -82,32 +45,13 @@ const FrequencyView = () => {
     setOpen(true);
   }, []);
 
-
-  //---------------------------------------
-  // :: closeDialog Function
-  //---------------------------------------
-
-  /*
-  Closes the dialog, resets editing state, and clears the form to default values.
-  */
-
   const closeDialog = useCallback(() => {
     setOpen(false);
     setEditing(null);
     setFormData(DEFAULT_FORM);
   }, []);
 
-
-  //---------------------------------------
-  // :: handleSubmit Function
-  //---------------------------------------
-
-  /*
-  Saves a new or existing frequency, shows a notification, refreshes the list, and closes the dialog
-  */
-
   const handleSubmit = useCallback(async (payload) => {
-    // Comprehensive validation
     if (!payload.frequency_name || !payload.frequency_name.trim()) {
       dispatch(showNotification({ 
         message: 'Inventory List name is required', 
@@ -156,7 +100,6 @@ const FrequencyView = () => {
     } catch (err) {
       console.error('Frequency save error:', err);
       
-      // Handle field-specific errors
       if (err.fieldErrors) {
         const errorMessages = Object.entries(err.fieldErrors)
           .map(([field, message]) => `${field}: ${message}`)
@@ -167,7 +110,6 @@ const FrequencyView = () => {
           type: 'error'
         }));
       } else {
-        // Handle general errors
         const errorMessage = 
           err?.message ||
           err?.frequency_name?.[0] ||
@@ -182,17 +124,6 @@ const FrequencyView = () => {
     }
   }, [dispatch, editing, closeDialog]);
 
-
-  //---------------------------------------
-  // :: Return Code
-  //---------------------------------------
-
-
-  /*
-  Passing state and handlers from the container to the FrequencyDesign component for rendering.
-  */
-
-  // Show loading screen when initial data is being fetched
   if (loading && frequencies.length === 0) {
     return <AppLoading />;
   }
@@ -211,14 +142,5 @@ const FrequencyView = () => {
     />
   );
 };
-
-
-//---------------------------------------
-// :: Export FrequencyView
-//---------------------------------------
-
-/*
-A container component that manages frequency data and actions, then renders the `FrequencyDesign` UI.
-*/
 
 export default FrequencyView;

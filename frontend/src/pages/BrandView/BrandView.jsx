@@ -5,17 +5,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useEffect, useState, useCallback } from 'react';
 import { fetchBrands, createBrand, updateBrand, deleteBrand } from './BrandSlice';
 
-//---------------------------------------
-// :: Default Form Data
-//---------------------------------------
 const DEFAULT_FORM = {
   name: '',
   description: '',
 };
 
-//---------------------------------------
-// :: BrandView Component
-//---------------------------------------
 const BrandView = () => {
   const dispatch = useDispatch();
   const { brands, loading } = useSelector((state) => state.brands);
@@ -24,9 +18,6 @@ const BrandView = () => {
   const [editing, setEditing] = useState(null);
   const [formData, setFormData] = useState(DEFAULT_FORM);
 
-  //---------------------------------------
-  // :: Initial Fetch
-  //---------------------------------------
   useEffect(() => {
     dispatch(fetchBrands())
       .unwrap()
@@ -42,9 +33,6 @@ const BrandView = () => {
       });
   }, [dispatch]);
 
-  //---------------------------------------
-  // :: Dialog Handlers
-  //---------------------------------------
   const openDialog = useCallback((brand = null) => {
     setEditing(brand);
     setFormData(brand ? {
@@ -60,11 +48,7 @@ const BrandView = () => {
     setFormData(DEFAULT_FORM);
   }, []);
 
-  //---------------------------------------
-  // :: Form Submit Handler
-  //---------------------------------------
   const handleSubmit = async () => {
-    // Comprehensive validation
     if (!formData.name || !formData.name.trim()) {
       dispatch(showNotification({ 
         message: 'Brand name is required', 
@@ -113,7 +97,6 @@ const BrandView = () => {
     } catch (err) {
       console.error('Brand save error:', err);
       
-      // Handle field-specific errors
       if (err.fieldErrors) {
         const errorMessages = Object.entries(err.fieldErrors)
           .map(([field, message]) => `${field}: ${message}`)
@@ -124,7 +107,6 @@ const BrandView = () => {
           type: 'error'
         }));
       } else {
-        // Handle general errors
         const errorMessage = 
           err?.message ||
           err?.name?.[0] ||
@@ -139,9 +121,6 @@ const BrandView = () => {
     }
   };
 
-  //---------------------------------------
-  // :: Delete Handler
-  //---------------------------------------
   const handleDelete = async (brand) => {
     if (!window.confirm(`Are you sure you want to delete "${brand.name}"?`)) {
       return;
@@ -167,11 +146,6 @@ const BrandView = () => {
     }
   };
 
-  //---------------------------------------
-  // :: Render
-  //---------------------------------------
-
-  // Show loading screen when initial data is being fetched
   if (loading && brands.length === 0) {
     return <AppLoading />;
   }

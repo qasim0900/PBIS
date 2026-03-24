@@ -1,30 +1,9 @@
 import { Box, Typography, Link, IconButton, useMediaQuery, useTheme } from '@mui/material';
 import { Phone, Email, LocationOn, Facebook, Twitter, Instagram } from '@mui/icons-material';
 
-
-//---------------------------------------
-// :: Footer Selectors 
-//---------------------------------------
-
-
-/*
-A responsive footer component displaying contact details, social links, 
-and copyright information with a blurred background style.
-*/
-
 export default function Footer() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-
-
-    //---------------------------------------
-    // :: contactInfo List
-    //---------------------------------------
-
-
-    /*
-    A list of contact details with icons and optional clickable links for phone and email.
-    */
 
     const contactInfo = [
         { icon: <LocationOn sx={{ fontSize: 20, opacity: 0.9 }} />, text: '754 S. Crouse Ave. Syracuse, NY 13210' },
@@ -33,47 +12,17 @@ export default function Footer() {
         { icon: <Email sx={{ fontSize: 20, opacity: 0.9 }} />, text: 'Luke@purplebananaLLC.com', link: 'mailto:Luke@purplebananaLLC.com' },
     ];
 
-
-    //---------------------------------------
-    // :: Social Links
-    //---------------------------------------
-
-
-    /*
-    A set of social media links with corresponding icons for Facebook, Instagram, and Twitter.
-    */
-
     const socialLinks = [
         { icon: <Facebook />, href: 'https://facebook.com/PurpleBananaOnTheHill' },
         { icon: <Instagram />, href: 'https://instagram.com/purplebanana315' },
         { icon: <Twitter />, href: 'https://twitter.com/purplebanana315' },
     ];
 
-
-    //---------------------------------------
-    // :: iconBtnSx Function
-    //---------------------------------------
-
-
-    /*
-    A style object defining the appearance of social icon buttons, including hover effects.
-    */
-
     const iconBtnSx = {
         color: 'white',
         backgroundColor: 'rgba(255,255,255,0.1)',
         '&:hover': { backgroundColor: 'rgba(255,255,255,0.2)' },
     };
-
-
-    //---------------------------------------
-    // :: Return Code
-    //---------------------------------------
-
-
-    /*
-    A responsive footer component displaying contact details, social links, and copyright information with a blurred background.
-    */
 
     return (
         <Box

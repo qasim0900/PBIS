@@ -11,8 +11,8 @@ class CountEntryViewSet(viewsets.ModelViewSet):
     serializer_class = CountEntrySerializer
     permission_classes = [IsAuthenticated]
     filter_backends = (filters.OrderingFilter,)
-    ordering_fields = ("item__name",)
-    ordering = ("item__name",)
+    ordering_fields = ("item__display_order", "item__name",)
+    ordering = ("item__display_order", "item__name",)
     queryset = CountEntry.objects.select_related(
         "sheet", "sheet__location", "item"
     )

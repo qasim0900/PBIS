@@ -13,28 +13,10 @@ import {
     Box,
 } from "@mui/material";
 
-
-//-----------------------------------
-// :: exports the configured Axios
-//-----------------------------------
-
-/*
-This defines a **list of available units for counting or ordering items in the form.
-*/
-
 const UNITS = [
     "bags", "cans", "boxes", "pcs", "kg", "liters",
     "cases", "packs", "cartons", "tubs", "bottles", "each",
 ];
-
-
-//-----------------------------------
-// :: Default Form Function
-//-----------------------------------
-
-/*
-This defines the **default values for a new item form**, including name, category, units, pack size, and active status.
-*/
 
 const DEFAULT_FORM = {
     name: "",
@@ -45,29 +27,8 @@ const DEFAULT_FORM = {
     is_active: true,
 };
 
-
-//-----------------------------------
-// :: Catalog Modal Function
-//-----------------------------------
-
-/*
-`CatalogModal` is a reusable Material-UI modal form for adding or editing items with controlled state, dynamic fields, 
-validation, and save/cancel actions.
-*/
-
 export default function CatalogModal({ open, onClose, onSave, item, categories, saving }) {
     const [formData, setFormData] = useState(DEFAULT_FORM);
-
-
-
-    //-----------------------------------
-    // :: use Effect Function
-    //-----------------------------------
-
-    /*
-    This useEffect initializes or resets formData whenever item changes, populating 
-    fields from item if it exists or using default values otherwise.
-    */
 
     useEffect(() => {
         if (item) {
@@ -84,41 +45,11 @@ export default function CatalogModal({ open, onClose, onSave, item, categories, 
         }
     }, [item]);
 
-
-    //-----------------------------------
-    // :: Handle Change Function
-    //-----------------------------------
-
-    /*
-    This line **defines a memoized `handleChange` function** that updates a specific field in `formData` 
-    while keeping the rest of the data unchanged.
-    */
-
     const handleChange = useCallback((key, value) => {
         setFormData(prev => ({ ...prev, [key]: value }));
     }, []);
 
-
-    //-----------------------------------
-    // :: Handle Save Function
-    //-----------------------------------
-
-    /*
-    This line defines a memoized handleSave function that calls onSave with the current 
-    formData, updating only when formData or onSave changes.
-    */
-
     const handleSave = useCallback(() => onSave(formData), [formData, onSave]);
-
-
-    //-----------------------------------
-    // :: Return Code
-    //-----------------------------------
-
-    /*
-    This code renders a reusable Material-UI modal form for adding or editing an item with controlled fields, 
-    dynamic title, validation, and save/cancel actions.
-    */
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

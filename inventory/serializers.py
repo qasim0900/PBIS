@@ -94,13 +94,10 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         if value is not None and value < 0:
             raise serializers.ValidationError("Par level cannot be negative.")
         
-        # Check if user is admin for par level changes
-        # This validation works with the view-level permission check
         request = self.context.get('request')
         if request and hasattr(request, 'user') and 'par_level' in self.initial_data:
             user = request.user
             if not (user.is_superuser or getattr(user, 'role', None) == UserRole.ADMIN):
-                # Only validate if par_level is being changed
                 instance = getattr(self, 'instance', None)
                 if instance is None or instance.par_level != value:
                     raise serializers.ValidationError("Only administrators can modify Par Level.")
@@ -157,7 +154,6 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         return value
 
     def validate_location(self, value):
-        """Validate location"""
         if not value:
             raise serializers.ValidationError("Location is required.")
         
@@ -169,7 +165,6 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         return value
 
     def validate_frequency(self, value):
-        """Validate frequency"""
         if not value:
             raise serializers.ValidationError("Inventory List is required.")
         
@@ -181,11 +176,6 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        """Cross-field validation"""
-        # Removed validation that order_point should not exceed par_level
-        # This allows cases where inventory might be above par level due to bulk purchases
-        # or case size constraints
-        
         return data
 
     def get_vendor_name(self, obj):

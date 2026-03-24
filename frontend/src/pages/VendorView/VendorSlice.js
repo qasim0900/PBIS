@@ -1,14 +1,10 @@
 import { vendorsAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-//---------------------------------------
-// :: Helper: Parse Error
-//---------------------------------------
 const parseError = (err) => {
     if (err.response?.data) {
         const data = err.response.data;
         
-        // Handle field-specific errors
         if (typeof data === 'object' && !data.error && !data.detail) {
             const fieldErrors = {};
             Object.keys(data).forEach(field => {
@@ -23,7 +19,6 @@ const parseError = (err) => {
             };
         }
         
-        // Handle error/detail messages
         return {
             message: data.error || data.detail || JSON.stringify(data),
             rawError: JSON.parse(JSON.stringify(data))
@@ -40,30 +35,11 @@ const parseError = (err) => {
     };
 };
 
-//---------------------------------------
-// :: Initial State
-//---------------------------------------
-
-/*
-Defines default state structure for vendors slice
-*/
-
 const initialState = {
   vendors: [],
   loading: false,
   error: null,
 };
-
-
-//---------------------------------------
-// :: Fetch Vendors (LIST)
-//---------------------------------------
-
-/*
-Fetches vendor list from API
-Returns: array of vendors
-Handles errors and sets error state
-*/
 
 export const fetchVendors = createAsyncThunk(
   'vendors/fetchVendors',
@@ -78,20 +54,10 @@ export const fetchVendors = createAsyncThunk(
   }
 );
 
-
-//---------------------------------------
-// :: Create Vendor
-//---------------------------------------
-/*
-Sends POST request to create a new vendor
-Adds new vendor to state on success
-*/
-
 export const createVendor = createAsyncThunk(
   'vendors/createVendor',
   async (vendorData, { rejectWithValue }) => {
     try {
-      // Frontend validation
       if (!vendorData.name || !vendorData.name.trim()) {
         return rejectWithValue({
           fieldErrors: { name: 'Vendor name is required' },
@@ -108,20 +74,10 @@ export const createVendor = createAsyncThunk(
   }
 );
 
-
-//---------------------------------------
-// :: Update Vendor (PUT)
-//---------------------------------------
-/*
-Sends PUT request to update an existing vendor
-Updates the vendor in state on success
-*/
-
 export const updateVendor = createAsyncThunk(
   'vendors/updateVendor',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      // Frontend validation
       if (!id) {
         return rejectWithValue({
           message: 'Vendor ID is required'
@@ -144,36 +100,16 @@ export const updateVendor = createAsyncThunk(
   }
 );
 
-//---------------------------------------
-// :: Vendor Slice
-//---------------------------------------
-/*
-Redux slice for vendor management
-Includes reducers and extraReducers for async actions
-*/
-
-
 const vendorSlice = createSlice({
   name: 'vendors',
   initialState,
   reducers: {
-
-
-    //---------------------------------------
-    // :: Clear Error
-    //---------------------------------------
-    /*
-    Clears error state for vendors slice
-    */
-
-
     clearError: (state) => {
       state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Fetch Vendors
       .addCase(fetchVendors.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -188,7 +124,6 @@ const vendorSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Create Vendor
       .addCase(createVendor.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -203,7 +138,6 @@ const vendorSlice = createSlice({
         state.error = action.payload;
       })
 
-      // Update Vendor
       .addCase(updateVendor.pending, (state) => {
         state.loading = true;
         state.error = null;

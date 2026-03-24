@@ -1,14 +1,6 @@
 import { countsAPI } from '../../api/index';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-//-----------------------------------
-// :: initial State
-//-----------------------------------
-
-/*
-This defines the initial Redux state for managing sheets, entries, filters, loading status, and errors.
-*/
-
 const initialState = {
   sheets: [],
   entries: [],
@@ -21,26 +13,9 @@ const initialState = {
 };
 
 
-//-----------------------------------
-// :: Handle Api Error Function
-//-----------------------------------
-
-/*
-This helper extracts a meaningful error message from an API error response with a fallback message.
-*/
-
 const handleApiError = (error, fallback = 'Something went wrong') =>
   error?.response?.data?.detail || error?.response?.data || error.message || fallback;
 
-
-//-----------------------------------
-// :: fetch Count Entries Function
-//-----------------------------------
-
-/*
-This async thunk fetches count entries from the API and returns the results, 
-or rejects with a formatted error message if the request fails.
-*/
 
 export const fetchCountEntries = createAsyncThunk('counts/fetchEntries', async (_, { rejectWithValue }) => {
   try {
@@ -49,15 +24,6 @@ export const fetchCountEntries = createAsyncThunk('counts/fetchEntries', async (
   } catch (err) { return rejectWithValue(handleApiError(err, 'Failed to fetch entries')); }
 });
 
-
-//-----------------------------------
-// :: fetch Filter Function
-//-----------------------------------
-
-/*
-This async thunk fetches filtered count entries based on location 
-and date range, returning the results or an error message if the request fails.
-*/
 
 export const fetchFilter = createAsyncThunk(
   "counts/fetchFilter",
@@ -71,15 +37,6 @@ export const fetchFilter = createAsyncThunk(
   }
 );
 
-//-----------------------------------
-// :: create Count Entry Function
-//-----------------------------------
-
-/*
-This async thunk creates a new count entry via the API and returns the created data,
-or rejects with a formatted error message on failure.
-*/
-
 export const createCountEntry = createAsyncThunk('counts/createEntry', async (payload, { rejectWithValue }) => {
   try {
     const { data } = await countsAPI.create(payload);
@@ -87,15 +44,6 @@ export const createCountEntry = createAsyncThunk('counts/createEntry', async (pa
   } catch (err) { return rejectWithValue(handleApiError(err, 'Failed to create entry')); }
 });
 
-
-//-----------------------------------
-// :: update Count Entry Function
-//-----------------------------------
-
-/*
-This async thunk updates a count entry by ID via the API and returns the updated entry, 
-or rejects with a formatted error message if it fails.
-*/
 
 export const updateCountEntry = createAsyncThunk(
   "counts/updateCountEntry",
@@ -112,15 +60,6 @@ export const updateCountEntry = createAsyncThunk(
 );
 
 
-//---------------------------------------
-// :: fetch Low Stock Entries Function
-//---------------------------------------
-
-/*
-This async thunk fetches all count entries, filters those with `on_hand_quantity` ≤ 5,
-and returns them or an error message if the request fails.
-*/
-
 export const fetchLowStockEntries = createAsyncThunk('counts/fetchLowStock', async (_, { rejectWithValue }) => {
   try {
     const { data } = await countsAPI.list();
@@ -130,22 +69,12 @@ export const fetchLowStockEntries = createAsyncThunk('counts/fetchLowStock', asy
 
 
 
-//---------------------------------------
-// :: submit Count Sheet Function
-//---------------------------------------
-
-/*
-This async Redux thunk creates a new count sheet, bulk uploads the count entries, submits 
-the sheet, and clears the entries while handling errors and notifications.
-*/
-
 export const submitCountSheet = createAsyncThunk(
   'counts/submitCountSheet',
   async (_, { getState, rejectWithValue, dispatch }) => {
     const state = getState().counts;
     const { selectedSheet } = state;
 
-    // Selected sheet should contain entries array
     const entries = selectedSheet?.entries || [];
 
     if (!entries.length || !selectedSheet?.location) {
@@ -162,7 +91,6 @@ export const submitCountSheet = createAsyncThunk(
       const sheetResponse = await countsAPI.createSheet(sheetPayload);
       const sheetId = sheetResponse.data.id;
 
-      // Filter out entries without counts (only submit entries with on_hand_quantity > 0)
       const entriesToSubmit = entries.filter(entry =>
         entry.on_hand_quantity && Number(entry.on_hand_quantity) > 0
       );
@@ -199,10 +127,6 @@ export const submitCountSheet = createAsyncThunk(
 );
 
 
-//-----------------------------------
-// :: delete Count Entry Function
-//-----------------------------------
-
 export const deleteCountEntry = createAsyncThunk(
   "counts/deleteCountEntry",
   async (id, { rejectWithValue }) => {
@@ -218,15 +142,6 @@ export const deleteCountEntry = createAsyncThunk(
 );
 
 
-//-----------------------------------
-// :: Count Slice Function
-//-----------------------------------
-
-/*
-This slice defines reducers for updating selected sheet, entries, filters, and 
-clearing errors or stored data within the counts state.
-*/
-
 const countsSlice = createSlice({
   name: 'counts',
   initialState: {
@@ -235,16 +150,6 @@ const countsSlice = createSlice({
     loading: false,
     error: null,
   },
-
-
-  //-----------------------------------
-  // :: Reducers 
-  //-----------------------------------
-
-  /*
-  These reducers update the counts state by setting the selected sheet, entries, and filters, 
-  and by clearing errors or specific data arrays.
-  */
 
   reducers: {
     setSelectedSheet: (state, action) => {
@@ -285,41 +190,15 @@ const countsSlice = createSlice({
       state.error = null;
     },
   },
-  //-----------------------------------
-  // :: Extra Reducers
-  //-----------------------------------
-
-  /*
-  This `extraReducers` block handles loading, success, and error states for all count-related async actions in the Redux slice.
-  */
-
   extraReducers: builder => {
     const handlePending = state => { state.loading = true; state.error = null; };
     const handleRejected = (state, action) => { state.loading = false; state.error = action.payload; };
 
     builder
 
-      //-----------------------------------
-      // :: Fetch Entries Cases
-      //-----------------------------------
-
-      /*
-      This handles the loading, success, and error states for fetching all count entries.
-      */
-
       .addCase(fetchCountEntries.pending, handlePending)
       .addCase(fetchCountEntries.fulfilled, (state, { payload }) => { state.loading = false; state.entries = payload; })
       .addCase(fetchCountEntries.rejected, handleRejected)
-
-
-      //-----------------------------------
-      // :: Fetch filter Cases
-      //-----------------------------------
-
-      /*
-      This handles the loading, success, and error states for fetching filtered entries and (incorrectly) sets 
-      `selectedSheet` to the payload.
-      */
 
       .addCase(fetchFilter.pending, handlePending)
       .addCase(fetchFilter.fulfilled, (state, { payload }) => {
@@ -327,22 +206,13 @@ const countsSlice = createSlice({
 
         const entriesWithItem = payload.map((i) => ({
           ...i,
-          item: i.id,  // important
+          item: i.id,
         }));
 
         state.entries = entriesWithItem;
 
       })
       .addCase(fetchFilter.rejected, handleRejected)
-
-
-      //-----------------------------------
-      // :: Create Entry Cases
-      //-----------------------------------
-
-      /*
-      This handles the loading, success, and error states for creating a new count entry and adds it to the top of the entries list.
-      */
 
       .addCase(deleteCountEntry.pending, handlePending)
       .addCase(deleteCountEntry.fulfilled, (state, { payload: id }) => {
@@ -355,27 +225,10 @@ const countsSlice = createSlice({
         }
       })
       .addCase(deleteCountEntry.rejected, handleRejected)
-      //-----------------------------------
-      // :: Create Entry Cases
-      //-----------------------------------
-
-      /*
-      This handles the loading, success, and error states for creating a new count entry and adds it to the top of the entries list.
-      */
 
       .addCase(createCountEntry.pending, handlePending)
       .addCase(createCountEntry.fulfilled, (state, { payload }) => { state.loading = false; state.entries.unshift(payload); })
       .addCase(createCountEntry.rejected, handleRejected)
-
-
-      //-----------------------------------
-      // :: Update Entry Cases
-      //-----------------------------------
-
-      /*
-      This handles loading, success, and error states for updating a count entry, replacing the matching entry 
-      in the list when the update succeeds.
-      */
 
       .addCase(updateCountEntry.pending, handlePending)
       .addCase(updateCountEntry.fulfilled, (state, { payload }) => {
@@ -385,17 +238,6 @@ const countsSlice = createSlice({
       })
       .addCase(updateCountEntry.rejected, handleRejected)
 
-
-
-
-      //-----------------------------------
-      // :: submit Count SheetCases
-      //-----------------------------------
-
-      /*
-      Handles loading state and errors for the submitCountSheet async action in the Redux slice.
-      */
-
       .addCase(submitCountSheet.pending, (state) => { state.loading = true; })
       .addCase(submitCountSheet.fulfilled, (state) => { state.loading = false; })
       .addCase(submitCountSheet.rejected, (state, action) => {
@@ -403,30 +245,13 @@ const countsSlice = createSlice({
         state.error = action.payload;
       })
 
-      //-----------------------------------
-      // :: Low Stock Cases
-      //-----------------------------------
-
-      /*
-      This handles loading, success, and error states for fetching low-stock entries and stores them in `lowStock`.
-      */
-
       .addCase(fetchLowStockEntries.pending, handlePending)
       .addCase(fetchLowStockEntries.fulfilled, (state, { payload }) => { state.loading = false; state.lowStock = payload; })
       .addCase(fetchLowStockEntries.rejected, handleRejected);
 
-
   }
 
 });
-
-//-----------------------------------
-// :: Export Reducers
-//-----------------------------------
-
-/*
-This exports the Redux actions and the reducer from the `countsSlice` for use across the app.
-*/
 
 export const {
   setSelectedSheet,

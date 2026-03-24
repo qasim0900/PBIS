@@ -1,29 +1,10 @@
 import api from "./axiosConfig";
 
-// -------------------------
-// :: Auth APIs
-// -------------------------
-
-/*
-Handles authentication-related API calls including login,
-token refresh, and fetching the currently authenticated user.
-*/
-
 export const authAPI = {
   login: (data) => api.post('/auth/login/', data),
   refresh: (data) => api.post('/auth/refresh/', data),
   me: () => api.get('/auth/me/'),
 };
-
-// -------------------------
-// :: Users APIs
-// -------------------------
-
-/*
-Provides user management endpoints such as listing users,
-registering a new user, retrieving user details,
-and updating user information.
-*/
 
 export const usersAPI = {
   list: () => api.get("/auth/users-list/"),
@@ -31,16 +12,6 @@ export const usersAPI = {
   retrieve: (id) => api.get(`/auth/${id}/`),
   update: (id, data) => api.put(`/auth/${id}/update/`, data),
 };
-
-// -------------------------
-// :: Reports APIs
-// -------------------------
-
-/*
-Exposes API methods for managing reports, including
-listing all reports, creating a new report,
-and updating existing reports.
-*/
 
 export const reportsAPI = {
   list: (params) => api.get("/reports/", { params }),
@@ -51,17 +22,6 @@ export const reportsAPI = {
   hide: (id) => api.post(`/reports/${id}/hide/`),
 };
 
-
-// -------------------------
-// :: Vendors APIs
-// -------------------------
-
-/*
-Handles vendor-related operations such as listing vendors,
-creating a vendor, retrieving vendor details,
-updating vendor information, and deleting vendors.
-*/
-
 export const vendorsAPI = {
   list: () => api.get("/vendors/"),
   create: (data) => api.post("/vendors/create/", data),
@@ -70,16 +30,6 @@ export const vendorsAPI = {
   patch: (id, data) => api.patch(`/vendors/${id}/update/`, data),
   remove: (id) => api.delete(`/vendors/${id}/delete/`),
 };
-
-// -------------------------
-// :: Brands APIs
-// -------------------------
-
-/*
-Handles brand-related operations such as listing brands,
-creating a brand, retrieving brand details,
-updating brand information, and deleting brands.
-*/
 
 export const brandsAPI = {
   list: () => api.get("/brands/"),
@@ -90,38 +40,12 @@ export const brandsAPI = {
   remove: (id) => api.delete(`/brands/${id}/delete/`),
 };
 
-
-// -------------------------
-// :: Locations APIs
-// -------------------------
-
-/*
-Provides endpoints for managing locations, including
-fetching all locations, creating a new location,
-and updating existing location records.
-*/
-
 export const locationsAPI = {
   list: () => api.get("/locations/"),
   create: (data) => api.post("/locations/create/", data),
   update: (id, data) => api.put(`/locations/${id}/update/`, data),
   patch: (id, data) => api.patch(`/locations/${id}/update/`, data),
 };
-// -------------------------
-// :: Inventory APIs
-// -------------------------
-
-/*
-Manages inventory items by providing endpoints for
-listing items, creating new inventory records,
-retrieving item details, updating items,
-and deleting inventory entries.
-
-Also includes custom actions for quantity management:
-- addStock: Add stock to an item with optional unit conversion
-- updateQuantity: Update item quantity with optional unit conversion
-- processOrder: Process an order (deduct stock) with optional unit conversion
-*/
 
 export const inventoryAPI = {
   list: (params) => api.get("/inventory-items/", { params }),
@@ -130,22 +54,10 @@ export const inventoryAPI = {
   update: (id, data) => api.put(`/inventory-items/${id}/update/`, data),
   patch: (id, data) => api.patch(`/inventory-items/${id}/update/`, data),
   remove: (id) => api.delete(`/inventory-items/${id}/delete/`),
-  
-  // Custom actions for quantity management
   addStock: (id, data) => api.post(`/inventory-items/${id}/add-stock/`, data),
   updateQuantity: (id, data) => api.post(`/inventory-items/${id}/update-quantity/`, data),
   processOrder: (id, data) => api.post(`/inventory-items/${id}/process-order/`, data),
 };
-
-// -------------------------
-// :: Frequencies APIs
-// -------------------------
-
-/*
-Contains API methods for frequency management,
-including listing available frequencies,
-creating new frequencies, and updating frequency records.
-*/
 
 export const frequenciesAPI = {
   list: () => api.get("/frequencies/"),
@@ -153,16 +65,6 @@ export const frequenciesAPI = {
   update: (id, data) => api.put(`/frequencies/${id}/update/`, data),
   patch: (id, data) => api.patch(`/frequencies/${id}/update/`, data),
 };
-
-// -------------------------
-// :: Count Entries APIs
-// -------------------------
-
-/*
-Handles count entry operations such as listing entries,
-creating new count entries, retrieving entry details,
-updating existing entries, and deleting count records.
-*/
 
 export const countsAPI = {
   list: () => api.get("/count-entries/"),
@@ -178,16 +80,6 @@ export const countsAPI = {
   updateSheet: (id, data) => api.put(`/count-sheets/${id}/update/`, data),
   submitSheet: (id) => api.post(`/count-sheets/${id}/submit/`),
 };
-
-// -----------------------------
-// :: Exports Individual APIs
-// -----------------------------
-
-/*
-This exports all individual API service objects as a single default export,
-allowing any part of the application to import and access
-all backend endpoints from one centralized module.
-*/
 
 export default {
   authAPI,

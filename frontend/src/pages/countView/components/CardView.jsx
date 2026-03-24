@@ -11,16 +11,6 @@ import {
     useTheme,
 } from "@mui/material";
 
-
-//-----------------------------------
-// :: Card View Function
-//-----------------------------------
-
-/*
-This component shows loading skeletons, an empty state message, or a grid of `InventoryCard` 
-items depending on the data and loading status.
-*/
-
 const CardView = ({ data = [], loading = false }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -50,15 +40,6 @@ const CardView = ({ data = [], loading = false }) => {
         );
     }
 
-
-    //-----------------------------------
-    // :: Return Code
-    //-----------------------------------
-
-    /*
-    This renders a scrollable grid layout of `InventoryCard` components for each entry in the data.
-    */
-
     return (
         <Box sx={{ maxHeight: "70vh", overflowY: "auto", pr: 1 }}>
             <Box
@@ -76,13 +57,5 @@ const CardView = ({ data = [], loading = false }) => {
         </Box>
     );
 };
-
-//-----------------------------------
-// :: Export CardView
-//-----------------------------------
-
-/*
-This exports the `CardView` component so it can be used in other parts of the application.
-*/
 
 export default CardView;

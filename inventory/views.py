@@ -44,7 +44,6 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
         return qs
 
     def create(self, request, *args, **kwargs):
-        """Create a new inventory item with enhanced error handling"""
         try:
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
@@ -67,12 +66,10 @@ class InventoryItemViewSet(viewsets.ModelViewSet):
             )
 
     def update(self, request, *args, **kwargs):
-        """Update an inventory item with enhanced error handling"""
         try:
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             
-            # Check if user is trying to update par_level
             if 'par_level' in request.data:
                 user = request.user
                 if not (user.is_superuser or getattr(user, 'role', None) == UserRole.ADMIN):

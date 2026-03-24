@@ -1,13 +1,3 @@
-//---------------------------------------
-// :: print Report Funcation
-//---------------------------------------
-
-
-/*
-Generates a formatted HTML order replenishment report for the selected location, opens it in a new window for printing, 
-and displays a notification based on the outcome.
-*/
-
 export const printReport = (
   sheetEntries,
   locations,

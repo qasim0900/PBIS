@@ -10,29 +10,9 @@ import {
     useTheme,
 } from "@mui/material";
 
-
-
-//-----------------------------------
-// :: Page Header Function
-//-----------------------------------
-
-/*
-This `PageHeader` component renders a responsive header with a title, optional subtitle, refresh button, 
-and space for child elements like filters or actions.
-*/
-
 const PageHeader = ({ title, subtitle, children, showRefresh, onRefresh }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-
-    //-----------------------------------
-    // :: Return Code 
-    //-----------------------------------
-
-    /*
-    This JSX renders a responsive header bar with the title, optional subtitle, refresh button, and a container for child elements.
-    */
 
     return (
         <Box className="mb-6">
@@ -95,14 +75,5 @@ const PageHeader = ({ title, subtitle, children, showRefresh, onRefresh }) => {
         </Box>
     );
 };
-
-
-//-----------------------------------
-// :: Export Page Header 
-//-----------------------------------
-
-/*
-This exports the `PageHeader` component so it can be used in other parts of the app.
-*/
 
 export default PageHeader;

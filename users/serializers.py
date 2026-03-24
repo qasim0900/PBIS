@@ -67,7 +67,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         }
 
     def validate_username(self, value):
-        """Validate username"""
         if not value or not value.strip():
             raise serializers.ValidationError("Username cannot be empty.")
         
@@ -77,25 +76,21 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         if len(value) > 150:
             raise serializers.ValidationError("Username must be 150 characters or less.")
         
-        # Check if username already exists (for create)
         if not self.instance and User.objects.filter(username=value).exists():
             raise serializers.ValidationError("A user with this username already exists.")
         
         return value.strip()
 
     def validate_email(self, value):
-        """Validate email"""
         if not value or not value.strip():
             raise serializers.ValidationError("Email cannot be empty.")
         
-        # Check if email already exists (for create)
         if not self.instance and User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         
         return value.strip().lower()
 
     def validate_password(self, value):
-        """Validate password"""
         if not value:
             raise serializers.ValidationError("Password is required.")
         
