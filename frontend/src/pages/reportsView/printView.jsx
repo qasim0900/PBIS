@@ -29,7 +29,8 @@ export const printReport = (
   const rows = sheetEntries.map(e => {
     const par = Number(e.par_level) || 0;
     const orderPoint = Number(e.order_point) || 0;
-    const current = Number(e.currentCount) || 0;
+    // Show actual count value (including 0), or "—" if not counted
+    const current = e.currentCount !== null && e.currentCount !== undefined ? Number(e.currentCount) : null;
 
     const orderUnits = Number(e.orderQuantity) || 0;
     const unit = e.orderUnit || "unit";
@@ -53,7 +54,7 @@ export const printReport = (
         <td>${e.storage || "—"}</td>
         <td>${par}</td>
         <td>${orderPoint}</td>
-        <td>${current}</td>
+        <td>${current !== null ? current : "—"}</td>
         <td style="font-weight:bold;color:${statusColor}">
           ${e.status?.toUpperCase() || "—"}
         </td>

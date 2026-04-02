@@ -22,13 +22,15 @@ export const downloadCSVReport = (sheetEntries, dispatch, showNotification, meta
     const orderUnits = Number(e.orderQuantity) || 0;
     const unit = e.orderUnit || "";
     const orderText = orderUnits ? `${orderUnits} ${unit}` : "—";
+    // Show actual count value (including 0), or "—" if not counted
+    const countDisplay = e.currentCount !== null && e.currentCount !== undefined ? e.currentCount : "—";
     return [
       e.item || "—",
       e.vendor || "—",
       e.storage || "—",
       e.par_level ?? "—",
       e.order_point ?? "—",
-      e.currentCount ?? 0,
+      countDisplay,
       e.status || "—",
       orderText,
       e.notes || "—",

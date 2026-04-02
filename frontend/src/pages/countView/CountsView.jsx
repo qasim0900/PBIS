@@ -122,7 +122,11 @@ const CountsView = () => {
 
   const progress = useMemo(() => {
     if (!entries.length) return 0;
-    const countedEntries = entries.filter((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0).length;
+    const countedEntries = entries.filter((e) => 
+      e.on_hand_quantity !== null && 
+      e.on_hand_quantity !== undefined && 
+      e.on_hand_quantity !== ""
+    ).length;
     return Math.round((countedEntries / entries.length) * 100);
   }, [entries]);
 
@@ -132,13 +136,21 @@ const CountsView = () => {
 
   const canSubmit = useMemo(() => {
     if (!isLoaded || !selectedSheet || !entries.length) return false;
-    // Allow submit if at least ONE entry has a count > 0
-    return entries.some((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0);
+    // Allow submit if at least ONE entry has been counted (including 0)
+    return entries.some((e) => 
+      e.on_hand_quantity !== null && 
+      e.on_hand_quantity !== undefined && 
+      e.on_hand_quantity !== ""
+    );
   }, [isLoaded, selectedSheet, entries]);
 
   const handleSubmit = useCallback(async () => {
-    // Check if at least one entry has count
-    const hasAtLeastOneCount = entries.some((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0);
+    // Check if at least one entry has been counted (including 0)
+    const hasAtLeastOneCount = entries.some((e) => 
+      e.on_hand_quantity !== null && 
+      e.on_hand_quantity !== undefined && 
+      e.on_hand_quantity !== ""
+    );
     
     if (!hasAtLeastOneCount) {
       dispatch(showNotification({ 
@@ -253,7 +265,11 @@ const CountsView = () => {
               "All items have been counted. Once submitted, these counts will be added to the report."
             ) : (
               <>
-                <strong>Partial Submission:</strong> You have counted {entries.filter((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0).length} out of {entries.length} items ({progress}%).
+                <strong>Partial Submission:</strong> You have counted {entries.filter((e) => 
+                  e.on_hand_quantity !== null && 
+                  e.on_hand_quantity !== undefined && 
+                  e.on_hand_quantity !== ""
+                ).length} out of {entries.length} items ({progress}%).
                 <br /><br />
                 Items without counts will be excluded from the report. Do you want to continue?
               </>
@@ -279,7 +295,11 @@ const CountsView = () => {
           />
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Box sx={{ fontSize: 14, color: "text.secondary" }}>
-              Progress: {entries.filter((e) => e.on_hand_quantity && Number(e.on_hand_quantity) > 0).length} / {entries.length} items counted ({progress}%)
+              Progress: {entries.filter((e) => 
+                e.on_hand_quantity !== null && 
+                e.on_hand_quantity !== undefined && 
+                e.on_hand_quantity !== ""
+              ).length} / {entries.length} items counted ({progress}%)
             </Box>
             {progress < 100 && progress > 0 && (
               <Box sx={{ fontSize: 12, color: "warning.main", fontWeight: 600 }}>

@@ -92,7 +92,9 @@ export const submitCountSheet = createAsyncThunk(
       const sheetId = sheetResponse.data.id;
 
       const entriesToSubmit = entries.filter(entry =>
-        entry.on_hand_quantity && Number(entry.on_hand_quantity) > 0
+        entry.on_hand_quantity !== null && 
+        entry.on_hand_quantity !== undefined && 
+        entry.on_hand_quantity !== ""
       );
 
       if (entriesToSubmit.length === 0) {
